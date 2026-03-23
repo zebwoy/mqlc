@@ -1,0 +1,224 @@
+/* ─── Hero ──────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  height: 100vh;
+  min-height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  text-align: center;
+}
+
+/* Parallax background */
+.hero-bg {
+  position: absolute;
+  inset: -20%;
+  background-image: url('../images/hero-placeholder.jpg');
+  background-size: cover;
+  background-position: center;
+  will-change: transform;
+  z-index: 0;
+}
+
+/* Placeholder gradient when no image */
+.hero-bg-placeholder {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(160deg,
+      #0d2b1e 0%,
+      #1B4332 35%,
+      #2D6A4F 65%,
+      #1a1a2e 100%);
+  z-index: 0;
+}
+
+/* Geometric pattern overlay */
+.hero-pattern {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.06;
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      var(--gold) 0px,
+      var(--gold) 1px,
+      transparent 1px,
+      transparent 40px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      var(--gold) 0px,
+      var(--gold) 1px,
+      transparent 1px,
+      transparent 40px
+    );
+}
+
+/* Dark overlay */
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(26,26,46,0.55) 0%,
+    rgba(26,26,46,0.45) 50%,
+    rgba(26,26,46,0.75) 100%
+  );
+  z-index: 2;
+}
+
+/* Content */
+.hero-content {
+  position: relative;
+  z-index: 3;
+  max-width: 860px;
+  padding: 0 1.5rem;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(212,160,23,0.15);
+  border: 1px solid rgba(212,160,23,0.4);
+  border-radius: 50px;
+  padding: 0.4rem 1.1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold-light);
+  margin-bottom: 1.5rem;
+  opacity: 0;
+  animation: heroFadeUp 0.8s 0.3s forwards;
+}
+
+.hero-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: pulse 2s infinite;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 5.5vw, 4.2rem);
+  font-weight: 600;
+  color: var(--white);
+  line-height: 1.18;
+  margin-bottom: 1rem;
+  opacity: 0;
+  animation: heroFadeUp 0.8s 0.55s forwards;
+}
+
+.hero-title span {
+  color: var(--gold);
+  font-style: italic;
+}
+
+.hero-subtitle {
+  font-size: clamp(0.95rem, 2vw, 1.15rem);
+  color: rgba(255,255,255,0.78);
+  font-weight: 300;
+  margin-bottom: 0.75rem;
+  opacity: 0;
+  animation: heroFadeUp 0.8s 0.75s forwards;
+  line-height: 1.7;
+}
+
+.hero-urdu {
+  font-family: var(--font-arabic);
+  font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+  color: rgba(240,192,64,0.85);
+  direction: rtl;
+  margin-bottom: 2rem;
+  opacity: 0;
+  animation: heroFadeUp 0.8s 0.95s forwards;
+  line-height: 2;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  opacity: 0;
+  animation: heroFadeUp 0.8s 1.15s forwards;
+}
+
+/* Scroll indicator */
+.hero-scroll {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  opacity: 0;
+  animation: heroFadeUp 0.8s 1.5s forwards;
+}
+
+.hero-scroll span {
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+}
+
+.scroll-mouse {
+  width: 24px;
+  height: 38px;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-radius: 12px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding-top: 6px;
+}
+
+.scroll-mouse::before {
+  content: '';
+  width: 4px;
+  height: 8px;
+  background: var(--gold);
+  border-radius: 2px;
+  animation: scrollDot 1.8s infinite;
+}
+
+/* ─── Keyframes ─────────────────────────────────────────────── */
+@keyframes heroFadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.75); }
+}
+
+@keyframes scrollDot {
+  0%   { transform: translateY(0);  opacity: 1; }
+  75%  { transform: translateY(12px); opacity: 0; }
+  100% { transform: translateY(0);  opacity: 0; }
+}
+
+/* ─── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .hero-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hero-actions .btn {
+    width: 100%;
+    max-width: 280px;
+    justify-content: center;
+  }
+}
