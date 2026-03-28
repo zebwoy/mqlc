@@ -41,32 +41,26 @@
   z-index: 1;
   opacity: 0.06;
   background-image:
-    repeating-linear-gradient(
-      45deg,
+    repeating-linear-gradient(45deg,
       var(--gold) 0px,
       var(--gold) 1px,
       transparent 1px,
-      transparent 40px
-    ),
-    repeating-linear-gradient(
-      -45deg,
+      transparent 40px),
+    repeating-linear-gradient(-45deg,
       var(--gold) 0px,
       var(--gold) 1px,
       transparent 1px,
-      transparent 40px
-    );
+      transparent 40px);
 }
 
 /* Dark overlay */
 .hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(26,26,46,0.55) 0%,
-    rgba(26,26,46,0.45) 50%,
-    rgba(26,26,46,0.75) 100%
-  );
+  background: linear-gradient(to bottom,
+      rgba(26, 26, 46, 0.55) 0%,
+      rgba(26, 26, 46, 0.45) 50%,
+      rgba(26, 26, 46, 0.75) 100%);
   z-index: 2;
 }
 
@@ -82,8 +76,8 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(212,160,23,0.15);
-  border: 1px solid rgba(212,160,23,0.4);
+  background: rgba(212, 160, 23, 0.15);
+  border: 1px solid rgba(212, 160, 23, 0.4);
   border-radius: 50px;
   padding: 0.4rem 1.1rem;
   font-size: 0.75rem;
@@ -122,7 +116,7 @@
 
 .hero-subtitle {
   font-size: clamp(0.95rem, 2vw, 1.15rem);
-  color: rgba(255,255,255,0.78);
+  color: rgba(255, 255, 255, 0.78);
   font-weight: 300;
   margin-bottom: 0.75rem;
   opacity: 0;
@@ -130,15 +124,59 @@
   line-height: 1.7;
 }
 
-.hero-urdu {
+.hero-ar {
   font-family: var(--font-arabic);
   font-size: clamp(1.1rem, 2.5vw, 1.5rem);
-  color: rgba(240,192,64,0.85);
+  color: rgba(240, 192, 64, 0.85);
   direction: rtl;
   margin-bottom: 2rem;
   opacity: 0;
   animation: heroFadeUp 0.8s 0.95s forwards;
   line-height: 2;
+}
+
+.hero-ar.ayah-playable {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  transition: transform 0.3s ease, text-shadow 0.3s ease, color 0.3s ease;
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+}
+
+.hero-ar.ayah-playable:hover {
+  transform: scale(1.03);
+  color: var(--gold);
+  text-shadow: 0 0 12px rgba(212, 160, 23, 0.3);
+  background: rgba(212, 160, 23, 0.05);
+}
+
+.inline-play-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(212, 160, 23, 0.15);
+  border: 1.5px solid rgba(212, 160, 23, 0.5);
+  transition: all 0.3s;
+  flex-shrink: 0;
+}
+
+.hero-ar.ayah-playable:hover .inline-play-icon {
+  background: rgba(212, 160, 23, 0.3);
+  border-color: var(--gold);
+}
+
+.hero-ar.ayah-playable.playing .inline-play-icon {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 4px rgba(212, 160, 23, 0.15);
+  animation: audioRing 2s ease-in-out infinite;
 }
 
 .hero-actions {
@@ -153,7 +191,7 @@
 /* Scroll indicator */
 .hero-scroll {
   position: absolute;
-  bottom: 2rem;
+  bottom: 0.5rem;
   left: 50%;
   transform: translateX(-50%);
   z-index: 3;
@@ -169,13 +207,13 @@
   font-size: 0.65rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .scroll-mouse {
   width: 24px;
   height: 38px;
-  border: 2px solid rgba(255,255,255,0.35);
+  border: 2px solid rgba(255, 255, 255, 0.35);
   border-radius: 12px;
   position: relative;
   display: flex;
@@ -194,19 +232,46 @@
 
 /* ─── Keyframes ─────────────────────────────────────────────── */
 @keyframes heroFadeUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.5; transform: scale(0.75); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(0.75);
+  }
 }
 
 @keyframes scrollDot {
-  0%   { transform: translateY(0);  opacity: 1; }
-  75%  { transform: translateY(12px); opacity: 0; }
-  100% { transform: translateY(0);  opacity: 0; }
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  75% {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 0;
+  }
 }
 
 /* ─── Responsive ─────────────────────────────────────────────── */

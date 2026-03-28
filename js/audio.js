@@ -10,10 +10,12 @@
   let ready     = false;
   let initiated = false;
 
-  const btn     = document.querySelector('.audio-btn');
-  const label   = document.querySelector('.audio-label');
+  const floatingBtn = document.querySelector('.audio-btn');
+  const label       = document.querySelector('.audio-label');
+  const ayahBtn     = document.querySelector('.ayah-playable');
 
-  if (!btn) return;
+  /* We allow missing floatingBtn if ayahBtn exists */
+  if (!floatingBtn && !ayahBtn) return;
 
   /* Build audio object lazily on first user interaction */
   function initAudio() {
@@ -29,8 +31,14 @@
     audio.addEventListener('ended',  () => setPlaying(false));
     audio.addEventListener('error',  () => {
       console.warn('MQLC audio: could not load recitation.');
-      btn.style.opacity = '0.4';
-      btn.title = 'Audio unavailable';
+      if (floatingBtn) {
+        floatingBtn.style.opacity = '0.4';
+        floatingBtn.title = 'Audio unavailable';
+      }
+      if (ayahBtn) {
+        ayahBtn.style.opacity = '0.4';
+        ayahBtn.title = 'Audio unavailable';
+      }
     });
 
     audio.play().then(() => {
@@ -53,8 +61,8 @@
   document.addEventListener('touchend', onFirstInteraction, { once: true });
 
   /* Button click — toggle */
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation();
+  function handlePlayToggle(e) {
+    if (e) e.stopPropagation();
 
     if (!initiated) {
       initAudio();
@@ -69,25 +77,53 @@
       audio.pause();
       setPlaying(false);
     }
-  });
+  }
+
+  if (floatingBtn) floatingBtn.addEventListener('click', handlePlayToggle);
+  if (ayahBtn) ayahBtn.addEventListener('click', handlePlayToggle);
 
   function setPlaying(playing) {
-    btn.classList.toggle('playing', playing);
-    btn.setAttribute('aria-label', playing ? 'Pause recitation' : 'Play Surah Al-Alaq');
+    if (floatingBtn) {
+      floatingBtn.classList.toggle('playing', playing);
+      floatingBtn.setAttribute('aria-label', playing ? 'Pause recitation' : 'Play Surah Al-Alaq');
+    }
+    
+    if (ayahBtn) {
+      ayahBtn.classList.toggle('playing', playing);
+      ayahBtn.setAttribute('aria-label', playing ? 'Pause recitation' : 'Play Recitation');
+      
+      const inlineIcon = ayahBtn.querySelector('.inline-play-icon');
+      if (inlineIcon) {
+        if (playing) {
+          inlineIcon.innerHTML = `
+            <div class="audio-bars">
+              <span style="height:4px"></span>
+              <span style="height:8px"></span>
+              <span style="height:6px"></span>
+            </div>`;
+        } else {
+          inlineIcon.innerHTML = `<svg viewBox="0 0 24 24" fill="var(--gold)" width="18" height="18"><polygon points="5,3 19,12 5,21"/></svg>`;
+        }
+      }
+    }
+
     if (label) label.textContent = playing ? 'Playing' : 'Recitation';
 
-    /* Swap icon */
-    const iconEl = btn.querySelector('.audio-icon');
-    if (!iconEl) return;
-    if (playing) {
-      iconEl.innerHTML = `
-        <div class="audio-bars">
-          <span style="height:4px"></span>
-          <span style="height:8px"></span>
-          <span style="height:6px"></span>
-        </div>`;
-    } else {
-      iconEl.innerHTML = playIcon();
+    /* Swap icon for floating btn */
+    if (floatingBtn) {
+      const iconEl = floatingBtn.querySelector('.audio-icon');
+      if (iconEl) {
+        if (playing) {
+          iconEl.innerHTML = `
+            <div class="audio-bars">
+              <span style="height:4px"></span>
+              <span style="height:8px"></span>
+              <span style="height:6px"></span>
+            </div>`;
+        } else {
+          iconEl.innerHTML = playIcon();
+        }
+      }
     }
   }
 
