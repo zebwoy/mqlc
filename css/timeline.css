@@ -65,6 +65,15 @@
   text-align: left;
 }
 
+/* Centered item for the end of the timeline */
+.timeline-item.center {
+  width: 100%;
+  left: 0;
+  text-align: center;
+  padding: 0 40px;
+  margin-top: 5rem;
+}
+
 .timeline-item:last-child {
   margin-bottom: 0;
 }
@@ -89,6 +98,16 @@
 
 .timeline-item.right .timeline-dot {
   left: -10px;
+}
+
+.timeline-item.center .timeline-dot {
+  left: 50%;
+  transform: translateX(-50%);
+  top: -40px; /* Above the content because it spans full width */
+}
+
+.timeline-item.center:hover .timeline-dot {
+  transform: translateX(-50%) scale(1.3);
 }
 
 .timeline-item:hover .timeline-dot {
@@ -228,13 +247,28 @@
     left: 0;
   }
 
-  .timeline-item.left .timeline-dot,
-  .timeline-item.right .timeline-dot {
-    left: -10px;
-    right: auto;
+  .timeline-item.center {
+    width: 100%;
+    margin-top: 3rem;
+    text-align: left;
+    left: 0;
   }
 
-  .timeline-item.left .timeline-text {
+  .timeline-item.left .timeline-dot,
+  .timeline-item.right .timeline-dot,
+  .timeline-item.center .timeline-dot {
+    left: -10px;
+    right: auto;
+    top: 24px;
+    transform: none;
+  }
+
+  .timeline-item.center:hover .timeline-dot {
+    transform: scale(1.3);
+  }
+
+  .timeline-item.left .timeline-text,
+  .timeline-item.center .timeline-text {
     text-align: left;
   }
 }

@@ -1,0 +1,24 @@
+{
+  "name": "mqlc",
+  "version": "1.0.0",
+  "description": "``` mqlc/ ├── index.html              Main HTML file ├── css/ │   ├── main.css            Variables, reset, typography, utilities │   ├── navbar.css          Sticky navbar + language switcher │   ├── hero.css            Hero section with parallax │   ├── sections.css        (coming — shared section styles) │   ├── timeline.css        (coming — construction timeline) │   ├── programs.css        (coming — program cards) │   ├── donate.css          (coming — donation section) │   └── footer.css          (coming — footer) ├── js/ │   ├── main.js             Scroll animations, parallax, navbar, counters │   └── donate.js           (coming — donation toggle logic) ├── images/ │   └── (add your images here — see naming guide below) └── README.md ```",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zebwoy/mqlc.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zebwoy/mqlc/issues"
+  },
+  "homepage": "https://github.com/zebwoy/mqlc#readme",
+  "dependencies": {
+    "cloudinary": "^2.9.0",
+    "dotenv": "^17.3.1"
+  }
+}
