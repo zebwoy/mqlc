@@ -41,24 +41,8 @@
       }
     });
 
-    audio.play().then(() => {
-      setPlaying(true);
-    }).catch(() => {
-      /* Autoplay blocked — user must tap button */
-    });
+    /* Wait for explicit user action to play */
   }
-
-  /* One-time trigger on first scroll or click anywhere */
-  function onFirstInteraction() {
-    initAudio();
-    document.removeEventListener('scroll',   onFirstInteraction, { once: true });
-    document.removeEventListener('click',    onFirstInteraction, { once: true });
-    document.removeEventListener('touchend', onFirstInteraction, { once: true });
-  }
-
-  document.addEventListener('scroll',   onFirstInteraction, { once: true, passive: true });
-  document.addEventListener('click',    onFirstInteraction, { once: true });
-  document.addEventListener('touchend', onFirstInteraction, { once: true });
 
   /* Button click — toggle */
   function handlePlayToggle(e) {
@@ -66,7 +50,6 @@
 
     if (!initiated) {
       initAudio();
-      return;
     }
 
     if (!audio) return;

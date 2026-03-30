@@ -69,22 +69,42 @@
 }
 
 .audio-btn.playing .audio-bars span:nth-child(1),
-.ayah-playable.playing .audio-bars span:nth-child(1) { animation: bar 0.8s ease-in-out infinite; }
+.ayah-playable.playing .audio-bars span:nth-child(1) {
+  animation: bar 0.8s ease-in-out infinite;
+}
 
 .audio-btn.playing .audio-bars span:nth-child(2),
-.ayah-playable.playing .audio-bars span:nth-child(2) { animation: bar 0.8s ease-in-out infinite 0.2s; }
+.ayah-playable.playing .audio-bars span:nth-child(2) {
+  animation: bar 0.8s ease-in-out infinite 0.2s;
+}
 
 .audio-btn.playing .audio-bars span:nth-child(3),
-.ayah-playable.playing .audio-bars span:nth-child(3) { animation: bar 0.8s ease-in-out infinite 0.4s; }
+.ayah-playable.playing .audio-bars span:nth-child(3) {
+  animation: bar 0.8s ease-in-out infinite 0.4s;
+}
 
 @keyframes bar {
-  0%, 100% { height: 4px; }
-  50%       { height: 12px; }
+
+  0%,
+  100% {
+    height: 4px;
+  }
+
+  50% {
+    height: 12px;
+  }
 }
 
 @keyframes audioRing {
-  0%, 100% { box-shadow: 0 0 0 4px rgba(212,160,23,0.15); }
-  50%       { box-shadow: 0 0 0 7px rgba(212,160,23,0.08); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 4px rgba(212, 160, 23, 0.15);
+  }
+
+  50% {
+    box-shadow: 0 0 0 7px rgba(212, 160, 23, 0.08);
+  }
 }
 
 /* ─── Stats / Why It Matters ────────────────────────────────── */
@@ -373,8 +393,13 @@
 }
 
 @keyframes scrollMarquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 /* ─── Updates Carousel ────────────────────────────────────────── */
@@ -486,8 +511,13 @@
 }
 
 @keyframes loadingSkeleton {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* Date Bubble overlaid on card */
@@ -505,6 +535,62 @@
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   border: 1px solid rgba(212, 160, 23, 0.4);
+}
+
+/* ─── Bulletin Board ───────────────────────────────────────────── */
+.bulletin-section {
+  background: var(--cream-dark);
+  padding: var(--section-pad);
+  text-align: center;
+}
+
+.bulletin-header {
+  margin-bottom: 3rem;
+}
+
+.bulletin-header h2 {
+  color: var(--midnight);
+  margin-bottom: 1rem;
+}
+
+.bulletin-board {
+  max-width: 600px;
+  margin: 0 auto;
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 3rem 2rem;
+  box-shadow: 0 15px 35px rgba(26, 26, 46, 0.06);
+  border: 1px solid rgba(212, 160, 23, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.bulletin-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bulletin-title {
+  color: var(--green);
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.bulletin-desc {
+  color: var(--text-mid);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.bulletin-divider {
+  width: 50px;
+  height: 2px;
+  background: rgba(212, 160, 23, 0.3);
+  margin: 0.5rem auto;
+  border-radius: 2px;
 }
 
 /* ─── Responsive ─────────────────────────────────────────────── */
@@ -542,5 +628,384 @@
   .audio-player {
     bottom: 9rem;
     right: 1.25rem;
+  }
+
+  .bulletin-board {
+    padding: 2rem 1.5rem;
+  }
+}
+
+/* ─── Sprint 3: Features Grid ────────────────────────────────── */
+.features-section {
+  background: var(--white);
+  padding: var(--section-pad);
+}
+
+.features-header {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 3rem;
+}
+
+.features-header h2 {
+  color: var(--midnight);
+  margin-bottom: 0.5rem;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 2rem;
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+.feature-card {
+  text-align: center;
+  padding: 1.5rem;
+  background: var(--cream);
+  border: 1px solid rgba(212, 160, 23, 0.1);
+  border-radius: var(--radius);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(26, 26, 46, 0.05);
+  border-color: var(--gold);
+}
+
+.feature-icon {
+  width: 50px;
+  height: 50px;
+  background: var(--midnight);
+  color: var(--gold);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+  box-shadow: 0 4px 12px rgba(26, 26, 46, 0.15);
+  transition: transform 0.3s ease;
+}
+
+.feature-icon i,
+.feature-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.feature-card:hover .feature-icon {
+  transform: scale(1.1) rotate(5deg);
+  background: var(--gold);
+  color: var(--midnight);
+}
+
+.feature-card h4 {
+  font-size: 1.05rem;
+  color: var(--midnight);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ─── Sprint 4: Programs & Syllabus ──────────────────────────── */
+.programs-section {
+  background: var(--cream-dark);
+  padding: var(--section-pad);
+}
+
+.programs-header {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto 4rem;
+}
+
+.programs-header h2 {
+  color: var(--midnight);
+  margin-bottom: 0.5rem;
+}
+
+.programs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+.program-card {
+  background: var(--white);
+  padding: 2.5rem 2rem;
+  border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  position: relative;
+  border-top: 3px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.program-card:hover {
+  border-top-color: var(--gold);
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.08);
+}
+
+.program-number {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 700;
+  color: rgba(212, 160, 23, 0.15);
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  line-height: 1;
+  transition: color 0.3s ease;
+}
+
+.program-card:hover .program-number {
+  color: rgba(212, 160, 23, 0.4);
+}
+
+.program-card h3 {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  color: var(--green);
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.program-card p {
+  color: var(--text-mid);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  position: relative;
+  z-index: 1;
+}
+
+/* ─── Sprint 5: Impact Parallax ──────────────────────────────── */
+.impact-section {
+  position: relative;
+  padding: 8rem 2rem;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--midnight);
+  overflow: hidden;
+}
+
+.impact-bg {
+  position: absolute;
+  inset: -20%;
+  background: url('https://res.cloudinary.com/dlcowjk3q/image/upload/v1/home/mqlc/impact_bg.jpg') center/cover no-repeat;
+  will-change: transform;
+}
+
+.impact-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(45, 106, 79, 0.85) 100%);
+}
+
+.impact-content {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+}
+
+.quote-icon {
+  margin-bottom: 1.5rem;
+  opacity: 0.8;
+}
+
+.impact-content h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  color: var(--white);
+  line-height: 1.4;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.impact-cite {
+  font-size: 1.1rem;
+  color: var(--gold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* ─── Sprint 6: Donate Dual-Pane ─────────────────────────────── */
+.donate-section {
+  background: var(--cream);
+  padding: var(--section-pad);
+}
+
+.donate-header {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto 3rem;
+}
+
+.donate-header h2 {
+  color: var(--midnight);
+  margin-bottom: 0.5rem;
+}
+
+.donate-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.donate-card {
+  background: var(--white);
+  padding: 3rem 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 15px 35px rgba(26, 26, 46, 0.05);
+  border: 1px solid rgba(212, 160, 23, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.donate-card h3 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--green);
+  margin-bottom: 0.25rem;
+}
+
+.qr-wrapper {
+  margin-top: 2rem;
+  width: 200px;
+  height: 200px;
+  background: var(--cream);
+  border-radius: 1rem;
+  padding: 1rem;
+  border: 2px dashed rgba(212, 160, 23, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qr-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 0.5rem;
+}
+
+.bank-icon {
+  width: 64px;
+  height: 64px;
+  background: var(--gold-pale);
+  color: var(--gold);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.bank-list {
+  list-style: none;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.bank-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(26, 26, 46, 0.05);
+}
+
+.bank-list li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.bank-list span {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.bank-list strong {
+  font-size: 0.95rem;
+  color: var(--midnight);
+  font-weight: 600;
+  text-align: right;
+}
+
+@media (max-width: 768px) {
+  .donate-panels {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Sprint 7: Main Footer ──────────────────────────────────── */
+.site-footer {
+  background: var(--midnight);
+  color: var(--white);
+  padding: 4rem 1.5rem 0;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 3rem;
+  padding-bottom: 4rem;
+}
+
+.footer-brand .logo-circle {
+  margin-bottom: 1.5rem;
+}
+
+.footer-brand .footer-desc {
+  max-width: 350px;
+  margin-top: 1rem;
+  opacity: 0.8;
+  line-height: 1.6;
+}
+
+.footer-links ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.footer-links a {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.footer-links a:hover {
+  color: var(--gold);
+}
+
+.footer-contact p {
+  opacity: 0.8;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 900px) {
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
   }
 }

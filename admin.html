@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | MQLC</title>
+  
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Admin Styles -->
+  <link rel="stylesheet" href="css/admin.css">
+  
+  <!-- Flatpickr CSS for Beautiful Dates -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+  <!-- 3rd Party Libs -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       LOGIN STATE (Visible initially until session is verified)
+  ════════════════════════════════════════════════════════════ -->
+  <div id="auth-view" class="auth-wrapper fullscreen-flex">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="logo-circle">م</div>
+        <h2>MQLC Admin</h2>
+        <p>Restricted access. Please sign in.</p>
+      </div>
+      
+      <form id="login-form">
+        <div class="input-group">
+          <label for="email">Admin Email</label>
+          <input type="email" id="email" name="email" required autocomplete="email">
+        </div>
+        <div class="input-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required autocomplete="current-password">
+        </div>
+        <div id="auth-error" class="error-msg" style="display: none;">Invalid credentials</div>
+        
+        <button type="submit" id="btn-login" class="btn-primary" style="width: 100%; margin-top: 1rem;">
+          Sign In
+        </button>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       DASHBOARD STATE (Hidden until authorized)
+  ════════════════════════════════════════════════════════════ -->
+  <div id="dashboard-view" class="app-layout" style="display: none;">
+    
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-circle small">م</div>
+        <h3>MQLC Portal</h3>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-target="tab-registrations">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Maktab Registrations
+        </button>
+        <button class="nav-item" data-target="tab-media">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          Media Updates
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button id="btn-logout" class="nav-item danger">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          Sign Out
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- ──────────────────────────────────────────────────────────
+           TAB: REGISTRATIONS
+      ─────────────────────────────────────────────────────────── -->
+      <section id="tab-registrations" class="tab-pane active">
+        <header class="content-header">
+          <div>
+            <h2>Evening Maktab Registration</h2>
+            <p>Enter new student records. Data is synced to Supabase securely.</p>
+          </div>
+        </header>
+
+        <div class="card">
+          <form id="registration-form" class="multi-grid-form">
+            
+            <div class="form-section">
+              <h4>1. Application Details</h4>
+              <div class="grid-2">
+                <div class="input-group">
+                  <label>Date of Joining (DOJ)</label>
+                  <input type="date" name="doj" required>
+                </div>
+                <div class="input-group">
+                  <label>Form Number</label>
+                  <input type="text" name="form_no" required>
+                </div>
+                <div class="input-group full-width">
+                  <label>Applying For Course</label>
+                  <select name="course_applying" required>
+                    <option value="" disabled selected>Select a course...</option>
+                    <option value="Noorani Qaida">Noorani Qaida</option>
+                    <option value="Qur'an Reading (Nazra)">Qur'an Reading (Nazra)</option>
+                    <option value="Qur'an Memorization (Hifz)">Qur'an Memorization (Hifz)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h4>2. Student Identity</h4>
+              <div class="grid-2">
+                <div class="input-group full-width">
+                  <label>Student Full Name</label>
+                  <input type="text" name="student_name" required>
+                </div>
+                <div class="input-group full-width">
+                  <label>Father's Name</label>
+                  <input type="text" name="father_name" required>
+                </div>
+                <div class="input-group">
+                  <label>Gender</label>
+                  <select name="gender" required>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>Date of Birth</label>
+                  <input type="date" name="dob" required>
+                </div>
+                <div class="input-group full-width">
+                  <label>Aadhar Number</label>
+                  <input type="text" name="aadhar_no" placeholder="xxxx-xxxx-xxxx" required>
+                </div>
+                <div class="input-group full-width">
+                  <label>Residential Address</label>
+                  <textarea name="address" rows="2" required></textarea>
+                </div>
+                <div class="input-group">
+                  <label>Father's Contact No.</label>
+                  <input type="tel" name="contact_father" required>
+                </div>
+                <div class="input-group">
+                  <label>Mother's Contact No.</label>
+                  <input type="tel" name="contact_mother" required>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h4>3. Educational Background</h4>
+              <div class="grid-2">
+                <div class="input-group">
+                  <label>Currently studying in Class</label>
+                  <select name="current_class" required>
+                    <option value="">Select class...</option>
+                    <option value="Nursery/KG">Nursery/KG</option>
+                    <option value="Class 1">Class 1</option>
+                    <option value="Class 2">Class 2</option>
+                    <option value="Class 3">Class 3</option>
+                    <option value="Class 4">Class 4</option>
+                    <option value="Class 5">Class 5</option>
+                    <option value="Class 6">Class 6</option>
+                    <option value="Class 7">Class 7</option>
+                    <option value="Class 8">Class 8</option>
+                    <option value="Class 9">Class 9</option>
+                    <option value="Class 10">Class 10</option>
+                    <option value="Class 11">Class 11</option>
+                    <option value="Class 12">Class 12</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label>Name of School / College</label>
+                  <input type="text" name="school_name" required>
+                </div>
+                <div class="input-group full-width">
+                  <label>School Days</label>
+                  <div class="days-selector">
+                    <label class="day-pill"><input type="checkbox" name="school_days_arr" value="Mon"><span>Mon</span></label>
+                    <label class="day-pill"><input type="checkbox" name="school_days_arr" value="Tue"><span>Tue</span></label>
+                    <label class="day-pill"><input type="checkbox" name="school_days_arr" value="Wed"><span>Wed</span></label>
+                    <label class="day-pill"><input type="checkbox" name="school_days_arr" value="Thu"><span>Thu</span></label>
+                    <label class="day-pill"><input type="checkbox" name="school_days_arr" value="Fri"><span>Fri</span></label>
+                    <label class="day-pill"><input type="checkbox" name="school_days_arr" value="Sat"><span>Sat</span></label>
+                    <label class="day-pill"><input type="checkbox" name="school_days_arr" value="Sun"><span>Sun</span></label>
+                  </div>
+                </div>
+                <div class="input-group full-width">
+                  <label>School Timings</label>
+                  <div class="time-range">
+                    <input type="time" name="school_time_from" required>
+                    <span class="text-muted">to</span>
+                    <input type="time" name="school_time_to" required>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h4>4. Personal Assessment</h4>
+              <div class="checkbox-group">
+                <label class="check-box">
+                  <input type="checkbox" name="can_read_arabic">
+                  <span>Is child able to read and recognize Arabic letters?</span>
+                </label>
+                <label class="check-box">
+                  <input type="checkbox" name="can_read_quran_fluently">
+                  <span>Can child read the Qur'an fluently?</span>
+                </label>
+                <label class="check-box">
+                  <input type="checkbox" name="knows_tajweed">
+                  <span>Is child well versed with Tajweed rules?</span>
+                </label>
+              </div>
+            </div>
+
+            <div id="reg-status" class="status-msg"></div>
+            
+            <div class="form-actions">
+              <button type="submit" id="btn-submit-reg" class="btn-primary">
+                Submit Registration
+              </button>
+              <button type="reset" class="btn-secondary">Clear Form</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ──────────────────────────────────────────────────────────
+           TAB: MEDIA MANAGER
+      ─────────────────────────────────────────────────────────── -->
+      <section id="tab-media" class="tab-pane" style="display: none;">
+        <header class="content-header">
+          <div>
+            <h2>Homepage Updates Media</h2>
+            <p>Upload new photos/videos to the Cloudinary live-feed directly from here.</p>
+          </div>
+          <button id="btn-upload-widget" class="btn-primary">
+            + Upload Media
+          </button>
+        </header>
+
+        <div class="card empty-state">
+          <svg viewBox="0 0 24 24" width="64" height="64" stroke="#d4d4d4" fill="none" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          <h3>Upload to the Homepage</h3>
+          <p>Click the button above to launch the Cloudinary Widget. Any file uploaded here drops directly into `/mqlc/updates/` and instantly appears in the home slider.</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Application Logic -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
