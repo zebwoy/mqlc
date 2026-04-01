@@ -554,7 +554,7 @@
 }
 
 .bulletin-board {
-  max-width: 600px;
+  max-width: 750px;
   margin: 0 auto;
   background: var(--white);
   border-radius: var(--radius);
@@ -969,6 +969,12 @@
 
 .footer-brand .logo-circle {
   margin-bottom: 1.5rem;
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  background: var(--gold);
+  border-radius: 50%;
+  display: block;
 }
 
 .footer-brand .footer-desc {
@@ -1007,5 +1013,89 @@
   .footer-grid {
     grid-template-columns: 1fr;
     gap: 2.5rem;
+  }
+}
+
+/* ─── Jamat Timings Grid ─────────────────────────────────────── */
+.jamat-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.jamat-card {
+  background: var(--midnight);
+  border-radius: 0.75rem;
+  padding: 1.25rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(212, 160, 23, 0.15);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.jamat-card:hover {
+  border-color: var(--gold);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(26, 26, 46, 0.25);
+}
+
+.jamat-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(212, 160, 23, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+}
+
+.jamat-icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: var(--gold);
+}
+
+.jamat-name {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.jamat-time {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.02em;
+}
+
+.jamat-note {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  background: rgba(212, 160, 23, 0.1);
+  padding: 0.15rem 0.5rem;
+  border-radius: 2rem;
+  margin-top: -0.15rem;
+}
+
+@media (max-width: 768px) {
+  .jamat-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .jamat-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
