@@ -99,13 +99,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* ── Counter animation & Dynamic Fetch ─────────────────────── */
   async function setupDynamicStats() {
-    // 1. JS-Inferred Years Running (From Dec 2025)
-    // We floor the year diff, guaranteeing it scales into the future automatically.
-    const startYear = 2025;
-    const currentYear = new Date().getFullYear();
-    const yearsRunning = Math.max(1, currentYear - startYear);
+    // 1. JS-Inferred Time Running (From Dec 2025)
+    const startDate = new Date(2025, 11); // December 2025
+    const currentDate = new Date();
+    
+    let monthsRunning = (currentDate.getFullYear() - startDate.getFullYear()) * 12;
+    monthsRunning -= startDate.getMonth();
+    monthsRunning += currentDate.getMonth();
+
     const yrEl = document.getElementById('stat-years');
-    if (yrEl) yrEl.dataset.count = yearsRunning.toString();
+    if (yrEl) {
+      if (monthsRunning < 12) {
+        yrEl.dataset.count = Math.max(1, monthsRunning).toString();
+        yrEl.dataset.suffix = ' mos';
+        
+        // Dynamically update the label below to "Months"
+        const labelEl = yrEl.nextElementSibling;
+        if (labelEl && labelEl.classList.contains('stat-label')) {
+          labelEl.dataset.en = "Months running";
+          labelEl.dataset.mr = "महिने सुरू";
+          labelEl.dataset.ur = "مہینے سے جاری";
+          labelEl.dataset.hi = "महीने से चल रहे";
+          
+          const currentLang = localStorage.getItem('site_lang') || 'en';
+          labelEl.textContent = labelEl.dataset[currentLang];
+        }
+      } else {
+        const yearsRunning = Math.floor(monthsRunning / 12);
+        yrEl.dataset.count = Math.max(1, yearsRunning).toString();
+        yrEl.dataset.suffix = ' yrs';
+      }
+    }
 
     // 2. Fetch Aggregations & Constant values from DB
     if (window._supabase) {
@@ -135,6 +159,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if (s.setting_key === 'active_programs') {
               const progEl = document.getElementById('stat-programs');
               if (progEl) progEl.dataset.count = parseInt(s.setting_value, 10);
+            }
+            if (s.setting_key.startsWith('namaz_')) {
+              const namePart = s.setting_key.split('_')[1]; // fajr, zuhr, asr, etc.
+              const timeEl = document.getElementById(`time-${namePart}`);
+              
+              if (timeEl && s.setting_value) {
+                // Strip garbage text
+                const cleanStr = s.setting_value.replace(/[a-zA-Z\s]/g, '').trim(); 
+                let [h, m] = cleanStr.split(':');
+                
+                // Force to native 12-hour clock bounds
+                h = parseInt(h, 10);
+                h = h % 12 || 12; 
+                
+                // Hardcode the suffix based on the exact prayer
+                const suffix = namePart === 'fajr' ? 'AM' : 'PM';
+                timeEl.textContent = `${h}:${m} ${suffix}`;
+              }
             }
           });
         }
@@ -176,6 +218,59 @@ document.addEventListener('DOMContentLoaded', () => {
 
     requestAnimationFrame(update);
   }
+
+  /* ── Cloudinary Bulletin Board ─────────────────────────────── */
+  const bulletinCarousel = document.querySelector('.bulletin-carousel');
+  const bulletinModal = document.getElementById('bulletin-modal');
+  const modalBody = document.getElementById('modal-body');
+  const modalDownloadBtn = document.getElementById('modal-download-btn');
+
+  async function fetchBulletinCards() {
+    if (!bulletinCarousel || !bulletinModal) return;
+
+    try {
+      const response = await fetch('/api/get-bulletin');
+      if (!response.ok) throw new Error("API not reachable in this dev environment");
+      const data = await response.json();
+      
+      if (data.success && data.resources) {
+        data.resources.forEach(item => {
+          const isPdf = item.format === 'pdf';
+          
+          // Cloudinary dynamically converts the 1st page of a PDF to JPG automatically!
+          const previewUrl = isPdf ? item.secure_url.replace('.pdf', '.jpg') : item.secure_url;
+          
+          // Parse a clean title from the raw Cloudinary ID
+          const rawId = item.public_id.split('/').pop();
+          const safeTitle = rawId.replace(/[_-]/g, ' ');
+
+          // Generate physical card
+          const card = document.createElement('div');
+          card.className = 'bulletin-card expandable';
+          
+          card.innerHTML = `
+            <h4 class="bulletin-title" style="text-transform: capitalize;">${safeTitle}</h4>
+            <div class="gold-divider" style="margin: 1rem 0;"></div>
+            <img src="${previewUrl}" loading="lazy" style="width:100%; border-radius:8px; object-fit:cover; margin-top: auto; aspect-ratio: 4/3; background: #f8f9fa;" alt="${safeTitle} Preview">
+          `;
+
+          // Wiring the Lightbox Modal trigger securely without layout shift!
+          card.addEventListener('click', () => {
+            modalBody.innerHTML = `<img src="${previewUrl}" alt="Full Announcement" style="width:100%; border-radius: 8px;">`;
+            modalDownloadBtn.href = item.secure_url; // Direct raw file link
+            modalDownloadBtn.download = `${rawId}.${item.format}`;
+            bulletinModal.showModal();
+          });
+
+          bulletinCarousel.appendChild(card);
+        });
+      }
+    } catch (err) {
+      console.warn("Dynamic Bulletin Note:", err.message);
+    }
+  }
+
+  fetchBulletinCards();
 
   /* ── Smooth scroll for nav links ──────────────────────────── */
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {

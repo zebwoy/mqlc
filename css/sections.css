@@ -638,6 +638,98 @@
   border-radius: 2px;
 }
 
+/* ─── Bulletin Modal ───────────────────────────────────────────── */
+.lightbox-modal {
+  border: none;
+  background: transparent;
+  padding: 0;
+  max-width: 100vw;
+  max-height: 100vh;
+  margin: auto;
+}
+
+.lightbox-modal::backdrop {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+}
+
+.lightbox-modal[open] {
+  animation: modalFadeIn 0.3s ease forwards;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.lightbox-modal .modal-content {
+  background: var(--white);
+  border-radius: var(--radius);
+  width: 90vw;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 2rem;
+  position: relative;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.lightbox-modal .modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  border: none;
+  background: rgba(0,0,0,0.05);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.lightbox-modal .modal-close:hover {
+  background: rgba(0,0,0,0.1);
+}
+
+.lightbox-modal img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.lightbox-modal .modal-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+/* Make expandable cards clickable */
+.bulletin-card.expandable {
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bulletin-card.expandable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px rgba(26, 26, 46, 0.1);
+}
+
+.bulletin-card.expandable::after {
+  content: '👆 Click to maximize';
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  font-size: 0.8rem;
+  color: var(--gold);
+  opacity: 0.8;
+  font-weight: 500;
+}
+
 /* ─── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .stats-grid {
@@ -676,11 +768,26 @@
   }
 
   .bulletin-board {
-    width: 90%;
+    width: 95%; /* Reclaim screen real estate */
+  }
+
+  .bulletin-carousel {
+    gap: 1rem;
+    padding: 0.5rem 0 1.5rem 0;
+    -webkit-overflow-scrolling: touch; /* Momentum swiping on iOS */
   }
 
   .bulletin-card {
-    padding: 2rem 1.5rem;
+    flex: 0 0 90%; /* Expand card to 90% allowing a perfect 10% peek */
+    padding: 1.5rem 1rem; /* Compress internal padding to fit content safely */
+  }
+
+  .bulletin-title {
+    font-size: 1.25rem;
+  }
+
+  .bulletin-desc {
+    font-size: 0.95rem;
   }
 }
 
@@ -1141,10 +1248,19 @@
   .jamat-grid {
     grid-template-columns: repeat(3, 1fr);
   }
+  .jamat-card {
+    padding: 1rem 0.5rem; /* Tighter padding for tablets/mobiles */
+  }
 }
 
 @media (max-width: 480px) {
   .jamat-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+  
+  /* Orphan card handler: Center the 5th item naturally */
+  .jamat-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1; 
   }
 }

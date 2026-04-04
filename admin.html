@@ -77,6 +77,10 @@
           <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
           Media Updates
         </button>
+        <button class="nav-item" data-target="tab-jamat">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Jamat Timings
+        </button>
         <button class="nav-item" data-target="tab-settings">
           <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
           Global Settings
@@ -239,18 +243,89 @@
       <section id="tab-media" class="tab-pane" style="display: none;">
         <header class="content-header">
           <div>
-            <h2>Homepage Updates Media</h2>
-            <p>Upload new photos/videos to the Cloudinary live-feed directly from here.</p>
+            <h2>Media & Bulletin</h2>
+            <p class="text-muted">Select a destination to securely upload new photos, videos, or PDF flyers.</p>
           </div>
-          <button id="btn-upload-widget" class="btn-primary">
-            + Upload Media
-          </button>
         </header>
 
-        <div class="card empty-state">
-          <svg viewBox="0 0 24 24" width="64" height="64" stroke="#d4d4d4" fill="none" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-          <h3>Upload to the Homepage</h3>
-          <p>Click the button above to launch the Cloudinary Widget. Any file uploaded here drops directly into `/mqlc/updates/` and instantly appears in the home slider.</p>
+        <div class="upload-grid">
+          
+          <div class="upload-widget-card" id="card-upload-updates" tabindex="0" role="button">
+            <div class="upload-icon-wrapper" style="background: rgba(45, 106, 79, 0.1); color: var(--admin-accent);">
+              <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" fill="none" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            </div>
+            <div class="upload-info">
+              <h3>Live Updates Media</h3>
+              <p>Upload photos and videos to the scrolling gallery carousel located at the bottom of the homepage.</p>
+            </div>
+            <div class="upload-action">
+              <span class="btn-text">Open Uploader &rarr;</span>
+            </div>
+          </div>
+
+          <div class="upload-widget-card" id="card-upload-bulletin" tabindex="0" role="button">
+            <div class="upload-icon-wrapper" style="background: rgba(212, 160, 23, 0.1); color: var(--admin-gold);">
+              <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            </div>
+            <div class="upload-info">
+              <h3>Bulletin Documents</h3>
+              <p>Upload flyers or pure PDF files directly to the horizontal bulletin board on the homepage.</p>
+            </div>
+            <div class="upload-action">
+              <span class="btn-text">Open Uploader &rarr;</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ──────────────────────────────────────────────────────────
+           TAB: JAMAT TIMINGS
+      ─────────────────────────────────────────────────────────── -->
+      <section id="tab-jamat" class="tab-pane" style="display: none;">
+        <header class="content-header">
+          <div>
+            <h2>Namaz Jamat Timings</h2>
+            <p>Update congregational prayer timings. Time automatically formats on the homepage.</p>
+          </div>
+        </header>
+
+        <div class="card">
+          <form id="jamat-form" class="multi-grid-form">
+            <div class="form-section">
+              <h4>Update Timings (24-Hour Format)</h4>
+              <div class="grid-2">
+                <div class="input-group">
+                  <label>Fajr</label>
+                  <input type="time" name="namaz_fajr" id="cfg-fajr" required>
+                </div>
+                <div class="input-group">
+                  <label>Zuhr</label>
+                  <input type="time" name="namaz_zuhr" id="cfg-zuhr" required>
+                </div>
+                <div class="input-group">
+                  <label>Asr</label>
+                  <input type="time" name="namaz_asr" id="cfg-asr" required>
+                </div>
+                <div class="input-group">
+                  <label>Maghrib</label>
+                  <input type="time" name="namaz_maghrib" id="cfg-maghrib" required>
+                </div>
+                <div class="input-group">
+                  <label>Isha</label>
+                  <input type="time" name="namaz_isha" id="cfg-isha" required>
+                </div>
+              </div>
+            </div>
+            
+            <div id="jamat-status" class="status-msg"></div>
+            
+            <div class="form-actions">
+              <button type="submit" id="btn-submit-jamat" class="btn-primary">
+                Save Timings
+              </button>
+            </div>
+          </form>
         </div>
       </section>
 

@@ -160,7 +160,9 @@
         <h2>Education is a right,<br />not a privilege</h2>
         <div class="gold-divider center"></div>
         <p>Millions of children in underserved communities grow up without access to quality Qur'anic education. MQLC
-          exists to change that — one child at a time, at a cost that never turns anyone away.</p>
+          exists to change that.</p>
+        <br>
+        <p>One child at a time, at a cost that never turns anyone away.</p>
       </div>
 
       <div class="stats-grid">
@@ -509,7 +511,7 @@
                   </svg>
                 </div>
                 <span class="jamat-name">Fajr</span>
-                <span class="jamat-time">5:50 AM</span>
+                <span class="jamat-time" id="time-fajr">5:50 AM</span>
               </div>
               <div class="jamat-card">
                 <div class="jamat-icon">
@@ -526,7 +528,7 @@
                   </svg>
                 </div>
                 <span class="jamat-name">Zuhr</span>
-                <span class="jamat-time">1:15 PM</span>
+                <span class="jamat-time" id="time-zuhr">1:15 PM</span>
               </div>
               <div class="jamat-card">
                 <div class="jamat-icon">
@@ -537,7 +539,7 @@
                   </svg>
                 </div>
                 <span class="jamat-name">Asr</span>
-                <span class="jamat-time">4:30 PM</span>
+                <span class="jamat-time" id="time-asr">4:30 PM</span>
               </div>
               <div class="jamat-card">
                 <div class="jamat-icon">
@@ -546,7 +548,7 @@
                   </svg>
                 </div>
                 <span class="jamat-name">Maghrib</span>
-                <span class="jamat-time">6:51 PM</span>
+                <span class="jamat-time" id="time-maghrib">6:51 PM</span>
                 <span class="jamat-note">Azan</span>
               </div>
               <div class="jamat-card">
@@ -560,7 +562,7 @@
                   </svg>
                 </div>
                 <span class="jamat-name">Isha</span>
-                <span class="jamat-time">8:45 PM</span>
+                <span class="jamat-time" id="time-isha">8:45 PM</span>
               </div>
             </div>
           </div>
@@ -805,6 +807,23 @@
     </svg>
   </button>
 
+
+  <!-- ═══════════════════════════════════════════════════════════
+       BULLETIN MODAL
+  ════════════════════════════════════════════════════════════ -->
+  <dialog id="bulletin-modal" class="lightbox-modal">
+    <div class="modal-content">
+      <button class="modal-close" aria-label="Close" onclick="document.getElementById('bulletin-modal').close()">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+      <div id="modal-body"></div>
+      <div class="modal-actions">
+        <a href="#" id="modal-download-btn" class="btn-primary" target="_blank" download>
+          Download Document
+        </a>
+      </div>
+    </div>
+  </dialog>
 
   <!-- ═══════════════════════════════════════════════════════════
        SCRIPTS

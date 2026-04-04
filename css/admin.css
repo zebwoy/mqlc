@@ -405,3 +405,71 @@ a { color: var(--admin-accent); text-decoration: none; }
   border-color: var(--admin-accent);
 }
 
+/* ─── Upload Action Cards ────────────────────────────────────── */
+.upload-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.upload-widget-card {
+  background: var(--admin-white);
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  outline: none;
+}
+
+.upload-widget-card:hover, .upload-widget-card:focus-visible {
+  border-color: var(--admin-accent);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.upload-icon-wrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.upload-info h3 {
+  font-size: 1.15rem;
+  margin-bottom: 0.5rem;
+}
+
+.upload-info p {
+  color: var(--admin-muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.upload-action {
+  margin-top: auto;
+  border-top: 1px solid var(--admin-border);
+  padding-top: 1rem;
+}
+
+.upload-action .btn-text {
+  color: var(--admin-accent);
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s ease;
+}
+
+.upload-widget-card:hover .btn-text {
+  color: #1B4332;
+}
