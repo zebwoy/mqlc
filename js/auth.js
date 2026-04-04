@@ -1,18 +1,7 @@
 /* ─── js/auth.js ─────────────────────────────────────────────── */
 
-// ⚠️ REQUIRED: Paste your active Supabase URL and Anon Key here from Vercel/Supabase
-const SUPABASE_URL = 'https://xtgpgavrptueujndvduv.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0Z3BnYXZycHR1ZXVqbmR2ZHV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MzEzNTUsImV4cCI6MjA5MDMwNzM1NX0.Jn5sLJIAY9UsfLR7X7CREXg2ZRB3Vuc993kpxusNdaw';
-
-if (SUPABASE_URL === 'YOUR_SUPABASE_URL_HERE') {
-  document.getElementById('auth-error').innerHTML = "<b>Configuration Missing:</b><br/>Please open <code>js/auth.js</code> and add your SUPABASE_URL and SUPABASE_ANON_KEY.";
-  document.getElementById('auth-error').style.display = 'block';
-  document.getElementById('btn-login').disabled = true;
-}
-
-// Initialize Supabase Client (via global CDN script in admin.html)
-const _supabase = typeof supabase !== 'undefined' ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-window._supabase = _supabase; // export to global for admin.js
+// Supabase is now initialized globally via js/supabase-config.js
+const _supabase = window._supabase;
 
 document.addEventListener("DOMContentLoaded", () => {
   if (!_supabase) return;

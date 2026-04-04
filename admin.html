@@ -21,6 +21,7 @@
 
   <!-- 3rd Party Libs -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
   <script src="https://upload-widget.cloudinary.com/global/all.js" type="text/javascript"></script>
 </head>
 <body>
@@ -75,6 +76,10 @@
         <button class="nav-item" data-target="tab-media">
           <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
           Media Updates
+        </button>
+        <button class="nav-item" data-target="tab-settings">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          Global Settings
         </button>
       </nav>
 
@@ -216,24 +221,6 @@
               </div>
             </div>
 
-            <div class="form-section">
-              <h4>4. Personal Assessment</h4>
-              <div class="checkbox-group">
-                <label class="check-box">
-                  <input type="checkbox" name="can_read_arabic">
-                  <span>Is child able to read and recognize Arabic letters?</span>
-                </label>
-                <label class="check-box">
-                  <input type="checkbox" name="can_read_quran_fluently">
-                  <span>Can child read the Qur'an fluently?</span>
-                </label>
-                <label class="check-box">
-                  <input type="checkbox" name="knows_tajweed">
-                  <span>Is child well versed with Tajweed rules?</span>
-                </label>
-              </div>
-            </div>
-
             <div id="reg-status" class="status-msg"></div>
             
             <div class="form-actions">
@@ -264,6 +251,40 @@
           <svg viewBox="0 0 24 24" width="64" height="64" stroke="#d4d4d4" fill="none" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
           <h3>Upload to the Homepage</h3>
           <p>Click the button above to launch the Cloudinary Widget. Any file uploaded here drops directly into `/mqlc/updates/` and instantly appears in the home slider.</p>
+        </div>
+      </section>
+
+      <!-- ──────────────────────────────────────────────────────────
+           TAB: SETTINGS
+      ─────────────────────────────────────────────────────────── -->
+      <section id="tab-settings" class="tab-pane" style="display: none;">
+        <header class="content-header">
+          <div>
+            <h2>Site Configurations</h2>
+            <p>Modify global constants displayed across the site dynamically.</p>
+          </div>
+        </header>
+
+        <div class="card">
+          <form id="settings-form" class="multi-grid-form">
+            <div class="form-section">
+              <h4>Website Metrics</h4>
+              <div class="grid-2">
+                <div class="input-group">
+                  <label>Monthly Fee Amount (&#8377;)</label>
+                  <input type="number" name="monthly_fee" id="cfg-fee" required>
+                </div>
+                <div class="input-group">
+                  <label>Active Programs</label>
+                  <input type="number" name="active_programs" id="cfg-programs" required>
+                </div>
+              </div>
+            </div>
+            <div id="cfg-status" class="status-msg"></div>
+            <div class="form-actions">
+              <button type="submit" id="btn-save-settings" class="btn-primary">Save Settings</button>
+            </div>
+          </form>
         </div>
       </section>
 

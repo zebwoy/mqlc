@@ -97,22 +97,71 @@ document.addEventListener('DOMContentLoaded', () => {
 
   revealEls.forEach(el => revealObserver.observe(el));
 
-  /* ── Counter animation ────────────────────────────────────── */
-  const counters = document.querySelectorAll('[data-count]');
+  /* ── Counter animation & Dynamic Fetch ─────────────────────── */
+  async function setupDynamicStats() {
+    // 1. JS-Inferred Years Running (From Dec 2025)
+    // We floor the year diff, guaranteeing it scales into the future automatically.
+    const startYear = 2025;
+    const currentYear = new Date().getFullYear();
+    const yearsRunning = Math.max(1, currentYear - startYear);
+    const yrEl = document.getElementById('stat-years');
+    if (yrEl) yrEl.dataset.count = yearsRunning.toString();
 
-  const counterObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        animateCounter(entry.target);
-        counterObserver.unobserve(entry.target);
+    // 2. Fetch Aggregations & Constant values from DB
+    if (window._supabase) {
+      try {
+        // Fetch total children (aggregate row count)
+        const { count } = await window._supabase
+          .from('student_registrations')
+          .select('*', { count: 'exact', head: true });
+        
+        if (count !== null) {
+          const chEl = document.getElementById('stat-children');
+          // Fallback to 120 offset if DB is empty, otherwise use DB count
+          if (chEl) chEl.dataset.count = count > 0 ? count : 120;
+        }
+
+        // Fetch Global Settings
+        const { data: settings } = await window._supabase
+          .from('site_settings')
+          .select('*');
+
+        if (settings) {
+          settings.forEach(s => {
+            if (s.setting_key === 'monthly_fee') {
+              const feeEl = document.getElementById('stat-fee');
+              if (feeEl) feeEl.dataset.count = parseInt(s.setting_value, 10);
+            }
+            if (s.setting_key === 'active_programs') {
+              const progEl = document.getElementById('stat-programs');
+              if (progEl) progEl.dataset.count = parseInt(s.setting_value, 10);
+            }
+          });
+        }
+      } catch (err) {
+        console.error('Silent fail on stats fetch:', err);
       }
-    });
-  }, { threshold: 0.5 });
+    }
 
-  counters.forEach(el => counterObserver.observe(el));
+    // 3. Mount Observers After DB Setup
+    const counters = document.querySelectorAll('[data-count]');
+    const counterObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          animateCounter(entry.target);
+          counterObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.5 });
+
+    counters.forEach(el => counterObserver.observe(el));
+  }
+  
+  // Kick off the script immediately
+  setupDynamicStats();
 
   function animateCounter(el) {
-    const target   = parseInt(el.dataset.count, 10);
+    const target   = parseInt(el.dataset.count, 10) || 0;
     const suffix   = el.dataset.suffix || '';
     const duration = 2000;
     const start    = performance.now();

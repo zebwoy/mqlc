@@ -118,10 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         current_class: fd.get('current_class'),
         school_name: fd.get('school_name'),
         school_days: Array.from(form.querySelectorAll('input[name="school_days_arr"]:checked')).map(cb => cb.value).join(', '),
-        school_time: `${fd.get('school_time_from')} - ${fd.get('school_time_to')}`,
-        can_read_arabic: fd.get('can_read_arabic') === 'on',
-        can_read_quran_fluently: fd.get('can_read_quran_fluently') === 'on',
-        knows_tajweed: fd.get('knows_tajweed') === 'on',
+        school_time: `${fd.get('school_time_from')} - ${fd.get('school_time_to')}`
       };
 
       try {
@@ -146,6 +143,68 @@ document.addEventListener('DOMContentLoaded', () => {
       } finally {
         const btn = document.getElementById('btn-submit-reg');
         btn.textContent = 'Submit Registration';
+        btn.disabled = false;
+      }
+    });
+  }
+
+  // ─── 4. GLOBAL SETTINGS BINDING ───────────────────────────────
+  const settingsForm = document.getElementById('settings-form');
+  const cfgStatus = document.getElementById('cfg-status');
+
+  if (settingsForm) {
+    // Pre-fill data
+    async function loadSettings() {
+      if (!window._supabase) return;
+      try {
+        const { data, error } = await window._supabase.from('site_settings').select('*');
+        if (error) throw error;
+        if (data) {
+          data.forEach(item => {
+            if (item.setting_key === 'monthly_fee') document.getElementById('cfg-fee').value = item.setting_value;
+            if (item.setting_key === 'active_programs') document.getElementById('cfg-programs').value = item.setting_value;
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load settings:", err);
+      }
+    }
+
+    // Call load when Settings tab is clicked
+    const settingsTabBtn = document.querySelector('[data-target="tab-settings"]');
+    if (settingsTabBtn) {
+      settingsTabBtn.addEventListener('click', loadSettings);
+    }
+
+    // Save Data
+    settingsForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!window._supabase) return;
+
+      const fee = document.getElementById('cfg-fee').value;
+      const prog = document.getElementById('cfg-programs').value;
+
+      const btn = document.getElementById('btn-save-settings');
+      btn.textContent = 'Saving...';
+      btn.disabled = true;
+
+      try {
+        const { error } = await window._supabase.from('site_settings').upsert([
+          { setting_key: 'monthly_fee', setting_value: fee.toString() },
+          { setting_key: 'active_programs', setting_value: prog.toString() }
+        ]);
+
+        if (error) throw error;
+
+        cfgStatus.textContent = 'Global settings applied instantly!';
+        cfgStatus.className = 'status-msg success';
+        setTimeout(() => { cfgStatus.style.display = 'none'; cfgStatus.className = 'status-msg'; }, 4000);
+      } catch (err) {
+        console.error(err);
+        cfgStatus.textContent = err.message;
+        cfgStatus.className = 'status-msg error';
+      } finally {
+        btn.textContent = 'Save Settings';
         btn.disabled = false;
       }
     });
