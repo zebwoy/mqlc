@@ -16,15 +16,24 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // Search the exact folder, but actively filter out any PDFs or items tagged as 'bulletin'
-    // This fixes the issue where Cloudinary presets force all uploads into a single directory.
+    // Pull standard updates from Cloudinary strictly to Javascript memory
+    // Bypassing native Search Engine filters to avoid Lucene query crashing on missing metadata
     const result = await cloudinary.search
-      .expression('folder:home/mqlc/updates AND -tags:bulletin AND -format:pdf')
+      .expression('folder:home/mqlc/updates')
+      .with_field('tags')
       .sort_by('created_at', 'desc')
-      .max_results(30)
+      .max_results(50)
       .execute();
 
-    res.status(200).json({ success: true, resources: result.resources });
+    // Safely execute aggressive fallback sorting entirely via Javascript map 
+    // to isolate any PDF docs or hidden bulletin tagged items that cloud presets maliciously forced
+    const safeUpdates = result.resources.filter(item => {
+      const isPdf = item.format === 'pdf';
+      const isBulletin = item.tags && item.tags.includes('bulletin');
+      return !isPdf && !isBulletin;
+    });
+
+    res.status(200).json({ success: true, resources: safeUpdates });
   } catch (error) {
     console.error("Cloudinary Search Error:", error);
     res.status(500).json({ success: false, error: 'Failed to fetch updates' });
