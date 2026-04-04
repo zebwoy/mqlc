@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
           card.innerHTML = `
             <h4 class="bulletin-title" style="text-transform: capitalize;">${safeTitle}</h4>
             <div class="gold-divider" style="margin: 1rem 0;"></div>
-            <img src="${previewUrl}" loading="lazy" style="width:100%; border-radius:8px; object-fit:cover; margin-top: auto; aspect-ratio: 4/3; background: #f8f9fa;" alt="${safeTitle} Preview">
+            <img src="${previewUrl}" loading="lazy" style="width:100%; height:220px; border-radius:8px; object-fit:cover; margin-top: auto; background: #f8f9fa; border: 1px solid rgba(0,0,0,0.05);" alt="${safeTitle} Preview">
           `;
 
           // Wiring the Lightbox Modal trigger securely without layout shift!
