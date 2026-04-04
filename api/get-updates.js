@@ -16,10 +16,10 @@ module.exports = async (req, res) => {
   }
 
   try {
-    // Search the exact folder where the Admin will be uploading new media
-    // Adjust the `folder:home/mqlc/updates` path to precisely match where they will save it.
+    // Search the exact folder, but actively filter out any PDFs or items tagged as 'bulletin'
+    // This fixes the issue where Cloudinary presets force all uploads into a single directory.
     const result = await cloudinary.search
-      .expression('folder:home/mqlc/updates')
+      .expression('folder:home/mqlc/updates AND NOT tags:bulletin AND NOT format:pdf')
       .sort_by('created_at', 'desc')
       .max_results(30)
       .execute();

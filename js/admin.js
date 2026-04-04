@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Create two strict instances ahead of time so Cloudinary isolates the folders!
       // This also totally eliminates iframe loading latency when the admin clicks the UI.
       const widgetUpdates = cloudinary.createUploadWidget(
-        { ...configBase, folder: 'home/mqlc/updates' },
+        { ...configBase, folder: 'home/mqlc/updates', tags: ['updates'] },
         (error, result) => {
           if (!error && result && result.event === "success") {
             setTimeout(() => alert('Upload Successful! The new media is now live on the Updates slider.'), 500);
@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
       );
 
       const widgetBulletin = cloudinary.createUploadWidget(
-        { ...configBase, folder: 'home/mqlc/bulletin' },
+        { ...configBase, folder: 'home/mqlc/bulletin', tags: ['bulletin'] },
         (error, result) => {
           if (!error && result && result.event === "success") {
             setTimeout(() => alert('Upload Successful! The file is now live on the Bulletin Board.'), 500);
