@@ -42,73 +42,70 @@ document.addEventListener('DOMContentLoaded', () => {
   // ─── 2. CLOUDINARY MEDIA WIDGET ───────────────────────────────
   const cardUploadUpdates = document.getElementById('card-upload-updates');
   const cardUploadBulletin = document.getElementById('card-upload-bulletin');
+  const statusUpdates = document.getElementById('status-updates');
+  const statusBulletin = document.getElementById('status-bulletin');
 
   if (typeof cloudinary !== 'undefined') {
-    function openCloudinaryWidget(targetFolder, successMsg) {
-      if (CLOUDINARY_UPLOAD_PRESET === 'YOUR_UNSIGNED_PRESET_NAME') {
-        alert("Action Required: Please add your Cloudinary Upload Preset to js/admin.js first!");
-        return;
-      }
+    if (CLOUDINARY_UPLOAD_PRESET === 'YOUR_UNSIGNED_PRESET_NAME') {
+      console.warn("Action Required: Please add your Cloudinary Upload Preset to js/admin.js first!");
+    } else {
       
-      cloudinary.createUploadWidget(
-        {
-          cloudName: CLOUDINARY_CLOUD_NAME,
-          uploadPreset: CLOUDINARY_UPLOAD_PRESET,
-          folder: targetFolder,
-          sources: ['local', 'url'],
-          multiple: true,
-          maxFiles: 10,
-          showAdvancedOptions: false,
-          cropping: false, // Cropping should be off for PDFs to securely upload!
-          styles: {
-            palette: {
-              window: "#FFFFFF",
-              windowBorder: "#E2E8F0",
-              tabIcon: "#2D6A4F",
-              menuIcons: "#1E293B",
-              textDark: "#1E293B",
-              textLight: "#FFFFFF",
-              link: "#2D6A4F",
-              action: "#D4A017",
-              inactiveTabIcon: "#64748B",
-              error: "#EF4444",
-              inProgress: "#2D6A4F",
-              complete: "#31C48D",
-              sourceBg: "#F5F7FA"
-            }
+      const configBase = {
+        cloudName: CLOUDINARY_CLOUD_NAME,
+        uploadPreset: CLOUDINARY_UPLOAD_PRESET,
+        sources: ['local', 'url'],
+        multiple: true,
+        maxFiles: 10,
+        showAdvancedOptions: false,
+        cropping: false, 
+        styles: {
+          palette: {
+            window: "#FFFFFF", windowBorder: "#E2E8F0", tabIcon: "#2D6A4F", menuIcons: "#1E293B", textDark: "#1E293B", textLight: "#FFFFFF", link: "#2D6A4F", action: "#D4A017", inactiveTabIcon: "#64748B", error: "#EF4444", inProgress: "#2D6A4F", complete: "#31C48D", sourceBg: "#F5F7FA"
           }
-        },
+        }
+      };
+
+      // Create two strict instances ahead of time so Cloudinary isolates the folders!
+      // This also totally eliminates iframe loading latency when the admin clicks the UI.
+      const widgetUpdates = cloudinary.createUploadWidget(
+        { ...configBase, folder: 'home/mqlc/updates' },
         (error, result) => {
           if (!error && result && result.event === "success") {
-            console.log('Upload success: ', result.info);
-            alert(successMsg);
+            setTimeout(() => alert('Upload Successful! The new media is now live on the Updates slider.'), 500);
+          }
+          if (result && (result.event === 'abort' || result.event === 'close' || result.event === 'success')) {
+            if (statusUpdates) statusUpdates.innerHTML = 'Open Uploader &rarr;';
           }
         }
-      ).open();
-    }
+      );
 
-    if (cardUploadUpdates) {
-      cardUploadUpdates.addEventListener("click", () => {
-        openCloudinaryWidget('home/mqlc/updates', 'Upload Successful! The new media is now live on the Updates slider.');
-      });
-      cardUploadUpdates.addEventListener("keydown", (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          openCloudinaryWidget('home/mqlc/updates', 'Upload Successful! The new media is now live on the Updates slider.');
+      const widgetBulletin = cloudinary.createUploadWidget(
+        { ...configBase, folder: 'home/mqlc/bulletin' },
+        (error, result) => {
+          if (!error && result && result.event === "success") {
+            setTimeout(() => alert('Upload Successful! The file is now live on the Bulletin Board.'), 500);
+          }
+          if (result && (result.event === 'abort' || result.event === 'close' || result.event === 'success')) {
+            if (statusBulletin) statusBulletin.innerHTML = 'Open Uploader &rarr;';
+          }
         }
-      });
-    }
+      );
 
-    if (cardUploadBulletin) {
-      cardUploadBulletin.addEventListener("click", () => {
-        openCloudinaryWidget('home/mqlc/bulletin', 'Upload Successful! The file is now live on the Bulletin Board.');
-      });
-      cardUploadBulletin.addEventListener("keydown", (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          openCloudinaryWidget('home/mqlc/bulletin', 'Upload Successful! The file is now live on the Bulletin Board.');
-        }
-      });
+      function hookWidget(cardEl, widget, statusEl) {
+        if (!cardEl) return;
+        const trigger = (e) => {
+          if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
+          if (e.type === 'keydown') e.preventDefault();
+          
+          if (statusEl) statusEl.innerHTML = 'Loading Uploader...';
+          widget.open();
+        };
+        cardEl.addEventListener("click", trigger);
+        cardEl.addEventListener("keydown", trigger);
+      }
+
+      hookWidget(cardUploadUpdates, widgetUpdates, statusUpdates);
+      hookWidget(cardUploadBulletin, widgetBulletin, statusBulletin);
     }
   }
 
