@@ -633,9 +633,8 @@
       </div>
 
       <div class="donate-panels reveal">
-
-        <!-- QR Code Left Pane -->
-        <div class="donate-card qr-card" style="align-items: center; justify-content: center;">
+        <!-- QR Code Left Pane (DUMMY) -->
+        <div class="donate-card qr-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
           <h3 data-en="Scan & Contribute" data-mr="स्कॅन करा आणि योगदान द्या" data-ur="اسکین کریں اور تعاون کریں"
             data-hi="स्कैन करें और योगदान दें">Scan & Contribute</h3>
           <p class="text-muted" data-en="Use any UPI app (GPay, PhonePe, Paytm)"
@@ -645,10 +644,81 @@
             (GPay, PhonePe, Paytm)</p>
 
           <div class="qr-wrapper"
-            style="background: white; padding: 1rem; border-radius: 1rem; border: 1px solid rgba(212,160,23,0.3); display: inline-block;">
+            style="background: white; padding: 1rem; border-radius: 1rem; border: 1px solid rgba(212,160,23,0.3); display: flex; align-items: center; justify-content: center;">
+            <img
+              src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=upi%3A%2F%2Fpay%3Fpa%3Ddummy%40upi%26pn%3DMQLC%2520Trust&margin=0"
+              alt="MQLC Dummy QR Code" class="qr-image" style="width: 100%; height: 100%; object-fit: contain; display: block;">
+          </div>
+
+          <div style="margin-top: 1.5rem; text-align: center;">
+            <div style="font-weight: 600; color: var(--midnight); font-size: 1.1rem; margin-bottom: 0.25rem;">Account Name</div>
+            <div
+              style="color: var(--text-mid); font-family: monospace; font-size: 1rem; background: var(--cream); padding: 0.4rem 0.8rem; border-radius: 2rem; display: inline-block; border: 1px dashed rgba(212,160,23,0.4);">
+              trust@upi
+            </div>
+          </div>
+        </div>
+
+        <!-- Bank Details Right Pane (DUMMY) -->
+        <div class="donate-card bank-card">
+          <div class="bank-icon">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="10" width="18" height="10" rx="2" ry="2"></rect>
+              <path d="M2 22h20"></path>
+              <path d="M7 10V6a2 2 0 012-2h6a2 2 0 012 2v4"></path>
+            </svg>
+          </div>
+          <h3 data-en="Bank Transfer" data-mr="बँक ट्रान्सफर" data-ur="بینک ٹرانسفر" data-hi="बैंक ट्रांसफर">Bank
+            Transfer</h3>
+          <p class="text-muted text-center" style="margin-bottom: 2rem;" data-en="Direct NEFT / RTGS transfers"
+            data-mr="थेट NEFT / RTGS ट्रान्सफर" data-ur="براہ راست NEFT / RTGS ٹرانسفر"
+            data-hi="सीधे NEFT / RTGS ट्रांसफर">Direct NEFT / RTGS transfers</p>
+
+          <ul class="bank-list">
+            <li>
+              <span>Account Name</span>
+              <strong>MQLC TRUST (TBD)</strong>
+            </li>
+            <li>
+              <span>Account Number</span>
+              <strong>XXXXXXXXXXXXX</strong>
+            </li>
+            <li>
+              <span>IFSC Code</span>
+              <strong>BANK000XXXX</strong>
+            </li>
+            <li>
+              <span>Bank Name</span>
+              <strong>Demo Bank Name</strong>
+            </li>
+            <li>
+              <span>Account Type</span>
+              <strong>Current Account</strong>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- =========================================================
+           TEMPORARILY COMMENTED OUT ORIGINAL DONATION DETAILS
+           Uncomment and swap with the dummy panels when ready!
+      ==========================================================
+      <div class="donate-panels reveal">
+
+        <div class="donate-card qr-card" style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+          <h3 data-en="Scan & Contribute" data-mr="स्कॅन करा आणि योगदान द्या" data-ur="اسکین کریں اور تعاون کریں"
+            data-hi="स्कैन करें और योगदान दें">Scan & Contribute</h3>
+          <p class="text-muted" data-en="Use any UPI app (GPay, PhonePe, Paytm)"
+            data-mr="कोणतेही UPI ॲप वापरा (GPay, PhonePe, Paytm)"
+            data-ur="کوئی بھی UPI ایپ استعمال کریں (GPay, PhonePe, Paytm)"
+            data-hi="किसी भी UPI ऐप का उपयोग करें (GPay, PhonePe, Paytm)" style="margin-bottom: 1.5rem;">Use any UPI app
+            (GPay, PhonePe, Paytm)</p>
+
+          <div class="qr-wrapper"
+            style="background: white; padding: 1rem; border-radius: 1rem; border: 1px solid rgba(212,160,23,0.3); display: flex; align-items: center; justify-content: center;">
             <img
               src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=upi%3A%2F%2Fpay%3Fpa%3Dimanriyaj%40pingpay%26pn%3DAyman%2520Riyaz%2520Shaikh&margin=0"
-              alt="MQLC Donation QR Code" class="qr-image" style="width: 200px; height: 200px; display: block;">
+              alt="MQLC Donation QR Code" class="qr-image" style="width: 100%; height: 100%; object-fit: contain; display: block;">
           </div>
 
           <div style="margin-top: 1.5rem; text-align: center;">
@@ -661,7 +731,6 @@
           </div>
         </div>
 
-        <!-- Bank Details Right Pane -->
         <div class="donate-card bank-card">
           <div class="bank-icon">
             <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
@@ -700,6 +769,7 @@
           </ul>
         </div>
       </div>
+      ========================================================== -->
     </div>
   </section>
 
