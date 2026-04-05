@@ -2,37 +2,39 @@
 
 /* ─── CSS Variables ─────────────────────────────────────────── */
 :root {
-  --green:        #2D6A4F;
-  --green-dark:   #1B4332;
-  --green-light:  #52B788;
-  --gold:         #D4A017;
-  --gold-light:   #F0C040;
-  --gold-pale:    #FDF3DC;
-  --cream:        #F5ECD7;
-  --cream-dark:   #EAD9BC;
-  --brown:        #8B4513;
-  --brown-light:  #A0522D;
-  --midnight:     #1A1A2E;
-  --midnight-soft:#16213E;
-  --white:        #FFFFFF;
-  --text-dark:    #1C1C1C;
-  --text-mid:     #4A4A4A;
-  --text-muted:   #7A7A7A;
+  --green: #2D6A4F;
+  --green-dark: #1B4332;
+  --green-light: #52B788;
+  --gold: #D4A017;
+  --gold-light: #F0C040;
+  --gold-pale: #FDF3DC;
+  --cream: #F5ECD7;
+  --cream-dark: #EAD9BC;
+  --brown: #8B4513;
+  --brown-light: #A0522D;
+  --midnight: #1A1A2E;
+  --midnight-soft: #16213E;
+  --white: #FFFFFF;
+  --text-dark: #1C1C1C;
+  --text-mid: #4A4A4A;
+  --text-muted: #7A7A7A;
 
   --font-display: 'Playfair Display', Georgia, serif;
-  --font-body:    'Inter', system-ui, sans-serif;
-  --font-urdu:    'Noto Nastaliq Urdu', serif;
-  --font-hindi:   'Noto Sans Devanagari', sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-urdu: 'Noto Nastaliq Urdu', serif;
+  --font-hindi: 'Noto Sans Devanagari', sans-serif;
 
-  --section-pad:  5rem 2rem;
-  --max-width:    1200px;
-  --radius:       12px;
-  --radius-sm:    6px;
-  --transition:   0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  --section-pad: 5rem 2rem;
+  --max-width: 1200px;
+  --radius: 12px;
+  --radius-sm: 6px;
+  --transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ─── Reset ─────────────────────────────────────────────────── */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -62,7 +64,8 @@ a {
   color: inherit;
 }
 
-ul, ol {
+ul,
+ol {
   list-style: none;
 }
 
@@ -74,18 +77,40 @@ button {
 }
 
 /* ─── Typography ────────────────────────────────────────────── */
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
   font-family: var(--font-display);
   line-height: 1.25;
   color: var(--text-dark);
 }
 
-h1 { font-size: clamp(2.4rem, 5vw, 4rem);   font-weight: 600; }
-h2 { font-size: clamp(1.8rem, 3.5vw, 2.8rem); font-weight: 500; }
-h3 { font-size: clamp(1.2rem, 2.5vw, 1.6rem); font-weight: 500; }
-h4 { font-size: 1.1rem; font-weight: 500; }
+h1 {
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  font-weight: 600;
+}
 
-p  { font-size: 1rem; line-height: 1.8; color: var(--text-mid); }
+h2 {
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  font-weight: 500;
+}
+
+h3 {
+  font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+  font-weight: 500;
+}
+
+h4 {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+p {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--text-mid);
+}
 
 .section-label {
   font-family: var(--font-body);
@@ -179,11 +204,11 @@ p  { font-size: 1rem; line-height: 1.8; color: var(--text-mid); }
 .btn-outline {
   background: transparent;
   color: var(--white);
-  border-color: rgba(255,255,255,0.6);
+  border-color: rgba(255, 255, 255, 0.6);
 }
 
 .btn-outline:hover {
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
   border-color: var(--white);
 }
 
@@ -210,14 +235,14 @@ p  { font-size: 1rem; line-height: 1.8; color: var(--text-mid); }
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 20px rgba(37,211,102,0.4);
+  box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
   z-index: 9999;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .whatsapp-float:hover {
   transform: scale(1.1);
-  box-shadow: 0 6px 28px rgba(37,211,102,0.5);
+  box-shadow: 0 6px 28px rgba(37, 211, 102, 0.5);
 }
 
 .whatsapp-float svg {

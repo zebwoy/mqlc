@@ -365,7 +365,7 @@
 .marquee-content {
   display: flex;
   white-space: nowrap;
-  animation: scrollMarquee 45s linear infinite;
+  animation: scrollMarquee 25s linear infinite;
   min-width: 200%;
 }
 
@@ -539,9 +539,19 @@
 
 /* ─── Bulletin Board ───────────────────────────────────────────── */
 .bulletin-section {
-  background: var(--cream-dark);
+  background: var(--white);
   padding: var(--section-pad);
   text-align: center;
+  position: relative;
+}
+
+/* Optional subtle top border to separate tightly */
+.bulletin-section::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212, 160, 23, 0.2), transparent);
 }
 
 .bulletin-header {
@@ -564,14 +574,32 @@
 }
 
 .bulletin-board {
-  width: 75%;
-  max-width: 900px;
   margin: 0 auto;
-  background: transparent;
-  padding: 0;
+  /* Recessed depth effect */
+  background: #EEEBE3;
+  border-radius: 24px;
+  box-shadow: 
+    inset 0 10px 25px rgba(0, 0, 0, 0.08), 
+    inset 0 2px 10px rgba(0, 0, 0, 0.04), 
+    inset 0 -4px 12px rgba(255, 255, 255, 0.6),
+    0 1px 2px rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  padding: 1.5rem 0.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle cork-like texture overlay for the board */
+.bulletin-board::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
 }
 
 .bulletin-carousel {
@@ -579,8 +607,10 @@
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
-  gap: 2rem;
-  padding: 1rem 0 2rem 0;
+  gap: 2.5rem;
+  padding: 2.5rem 1.5rem 4rem 1.5rem;
+  position: relative;
+  z-index: 1;
 }
 
 /* Custom Scrollbar for Carousel */
@@ -604,17 +634,41 @@
 
 .bulletin-card {
   flex: 0 0 85%;
+  max-width: 40rem;
   scroll-snap-align: center;
   background: var(--white);
   border-radius: 20px;
   padding: 3rem 2.5rem;
-  box-shadow: 0 15px 35px rgba(26, 26, 46, 0.06);
-  border: 1px solid rgba(212, 160, 23, 0.2);
+  /* Lift the card significantly off the board */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 3px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(212, 160, 23, 0.15);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   min-width: 0;
+  position: relative;
+  z-index: 2;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
   /* Prevents overflow pushing flex bounds */
+}
+
+/* Layered Post-It Natural Rotation */
+.bulletin-card:nth-child(odd) {
+  transform: rotate(-1.5deg);
+}
+
+.bulletin-card:nth-child(even) {
+  transform: rotate(1deg) translateY(4px);
+}
+
+.bulletin-card:nth-child(3n) {
+  transform: rotate(0.5deg) translateY(-2px);
+}
+
+.bulletin-card:hover {
+  transform: translateY(-8px) rotate(0deg) scale(1.01) !important;
+  box-shadow: 0 25px 45px rgba(0, 0, 0, 0.15), 0 10px 20px rgba(212, 160, 23, 0.08);
+  z-index: 10;
 }
 
 .bulletin-title {
@@ -628,6 +682,11 @@
   color: var(--text-mid);
   font-size: 1rem;
   margin: 0;
+}
+
+.bulletin-card .gold-divider {
+  width: 100% !important;
+  max-width: none !important;
 }
 
 .bulletin-divider {
@@ -658,8 +717,15 @@
 }
 
 @keyframes modalFadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .lightbox-modal .modal-content {
@@ -680,7 +746,7 @@
   top: 1rem;
   right: 1rem;
   border: none;
-  background: rgba(0,0,0,0.05);
+  background: rgba(0, 0, 0, 0.05);
   border-radius: 50%;
   width: 36px;
   height: 36px;
@@ -692,7 +758,7 @@
 }
 
 .lightbox-modal .modal-close:hover {
-  background: rgba(0,0,0,0.1);
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .lightbox-modal img {
@@ -710,13 +776,6 @@
 /* Make expandable cards clickable */
 .bulletin-card.expandable {
   cursor: pointer;
-  position: relative;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.bulletin-card.expandable:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 20px 40px rgba(26, 26, 46, 0.1);
 }
 
 .bulletin-card.expandable::after {
@@ -768,18 +827,22 @@
   }
 
   .bulletin-board {
-    width: 95%; /* Reclaim screen real estate */
+    width: 95%;
+    /* Reclaim screen real estate */
   }
 
   .bulletin-carousel {
     gap: 1rem;
     padding: 0.5rem 0 1.5rem 0;
-    -webkit-overflow-scrolling: touch; /* Momentum swiping on iOS */
+    -webkit-overflow-scrolling: touch;
+    /* Momentum swiping on iOS */
   }
 
   .bulletin-card {
-    flex: 0 0 90%; /* Expand card to 90% allowing a perfect 10% peek */
-    padding: 1.5rem 1rem; /* Compress internal padding to fit content safely */
+    flex: 0 0 90%;
+    /* Expand card to 90% allowing a perfect 10% peek */
+    padding: 1.5rem 1rem;
+    /* Compress internal padding to fit content safely */
   }
 
   .bulletin-title {
@@ -1248,8 +1311,10 @@
   .jamat-grid {
     grid-template-columns: repeat(3, 1fr);
   }
+
   .jamat-card {
-    padding: 1rem 0.5rem; /* Tighter padding for tablets/mobiles */
+    padding: 1rem 0.5rem;
+    /* Tighter padding for tablets/mobiles */
   }
 }
 
@@ -1258,9 +1323,9 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 0.5rem;
   }
-  
+
   /* Orphan card handler: Center the 5th item naturally */
   .jamat-card:last-child:nth-child(odd) {
-    grid-column: 1 / -1; 
+    grid-column: 1 / -1;
   }
 }

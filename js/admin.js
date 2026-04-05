@@ -42,8 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // ─── 2. CLOUDINARY MEDIA WIDGET ───────────────────────────────
   const cardUploadUpdates = document.getElementById('card-upload-updates');
   const cardUploadBulletin = document.getElementById('card-upload-bulletin');
+  const cardUploadQuiz = document.getElementById('card-upload-quiz');
   const statusUpdates = document.getElementById('status-updates');
   const statusBulletin = document.getElementById('status-bulletin');
+  const statusQuiz = document.getElementById('status-quiz');
 
   if (typeof cloudinary !== 'undefined') {
     if (CLOUDINARY_UPLOAD_PRESET === 'YOUR_UNSIGNED_PRESET_NAME') {
@@ -91,6 +93,18 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       );
 
+      const widgetQuiz = cloudinary.createUploadWidget(
+        { ...configBase, folder: 'home/mqlc/bulletin', tags: ['bulletin', 'quiz'] },
+        (error, result) => {
+          if (!error && result && result.event === "success") {
+            setTimeout(() => alert('Quiz Upload Successful! The new interactive quiz has been published to your bulletin board.'), 500);
+          }
+          if (result && (result.event === 'abort' || result.event === 'close' || result.event === 'success')) {
+            if (statusQuiz) statusQuiz.innerHTML = 'Upload JSON &rarr;';
+          }
+        }
+      );
+
       function hookWidget(cardEl, widget, statusEl) {
         if (!cardEl) return;
         const trigger = (e) => {
@@ -106,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       hookWidget(cardUploadUpdates, widgetUpdates, statusUpdates);
       hookWidget(cardUploadBulletin, widgetBulletin, statusBulletin);
+      hookWidget(cardUploadQuiz, widgetQuiz, statusQuiz);
     }
   }
 

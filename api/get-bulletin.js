@@ -19,7 +19,7 @@ module.exports = async (req, res) => {
     // Specifically search the bulletin folder, OR pull any PDFs / tagged items 
     // that might have been accidentally forced into the updates root by Cloudinary Presets
     const result = await cloudinary.search
-      .expression('folder:home/mqlc/bulletin OR tags:bulletin OR (folder:home/mqlc/updates AND format:pdf)')
+      .expression('folder:home/mqlc/bulletin OR tags:bulletin OR (folder:home/mqlc/updates AND (format:pdf OR format:json))')
       .sort_by('created_at', 'desc')
       .max_results(20)
       .execute();

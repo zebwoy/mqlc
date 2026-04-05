@@ -1,0 +1,30 @@
+{
+  "quiz_no": "5",
+  "topic": "Seerat-un-Nabi: The Early Days",
+  "lecture_date": "05 April 2026",
+  "submission_deadline": "08 April 2026",
+  "questions": [
+    {
+      "numb": 1,
+      "question": "What building did Qusay build?",
+      "answer": "Dar Al Nadwa",
+      "options": [
+        "Kaaba",
+        "Masjid al-Haram",
+        "Dar Al Nadwa",
+        "Dar Al Arqam"
+      ]
+    },
+    {
+      "numb": 2,
+      "question": "Among the sons of Qusay, to which son is the Prophet related?",
+      "answer": "Abd Manaaf",
+      "options": [
+        "Harith",
+        "Abd al-Dar",
+        "Abd Manaaf",
+        "Abd Shams"
+      ]
+    }
+  ]
+}

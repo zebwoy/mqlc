@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1A1A2E" />
+  <title>MQLC Interactive Quiz</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/quiz.css" />
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body class="quiz-body">
+
+  <div class="stars" id="stars" aria-hidden="true"></div>
+
+  <main class="quiz-container">
+
+    <!-- HEADER -->
+    <header class="quiz-header">
+      <div class="logo-area">
+        <h1>MQLC <span class="gold-text">Quiz</span></h1>
+      </div>
+    </header>
+
+    <!-- STAGE 1: LOADING & INSTRUCTIONS -->
+    <section id="stage-start" class="quiz-stage active">
+      <div id="loader" class="loader">Fetching Lecture Data...</div>
+
+      <div id="instruction-panel" style="display: none;">
+        <h2 id="inst-topic" class="q-topic">Topic Loading...</h2>
+        <div class="q-meta">
+          <span id="inst-date">Date Loading...</span> • <span id="inst-no">#</span>
+        </div>
+
+        <div class="gold-divider center"></div>
+
+        <div class="q-rules">
+          <h3>Ground Rules</h3>
+          <ul>
+            <li>You have <span class="gold-text bold">20 seconds</span> per question.</li>
+            <li>If the timer runs out, the question locks automatically.</li>
+            <li>Answers are dynamically shuffled. Read carefully!</li>
+            <li>At the end, submit your score to the live leaderboard.</li>
+          </ul>
+        </div>
+
+        <button id="btn-begin" class="btn-primary full-width">Begin Quiz &rarr;</button>
+      </div>
+    </section>
+
+    <!-- STAGE 2: ACTIVE QUIZ -->
+    <section id="stage-active" class="quiz-stage">
+      <div class="timer-bar-container">
+        <div id="timer-bar" class="timer-bar"></div>
+      </div>
+
+      <div class="q-status-row">
+        <div id="q-counter">Question 1 of X</div>
+        <div id="q-timer" class="gold-text bold">30s</div>
+      </div>
+
+      <div id="q-text" class="question-text">
+        Question text loading...
+      </div>
+
+      <div id="q-options" class="options-grid">
+        <!-- Buttons injected by JS -->
+      </div>
+
+      <!-- Hidden until answered or timeout -->
+      <div id="action-row" class="action-row" style="display: none;">
+        <button id="btn-skip" class="btn-secondary"
+          style="border: 1px solid var(--gold); color: var(--gold); background: transparent; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; transition: all 0.2s;">Skip
+          Question</button>
+        <button id="btn-next" class="btn-primary" style="padding: 0.6rem 1.2rem; border-radius: 6px;">Next
+          Question</button>
+      </div>
+    </section>
+
+    <!-- STAGE 3: RESULTS & DEMOGRAPHICS -->
+    <section id="stage-result" class="quiz-stage">
+      <div class="result-header">
+        <h2>Quiz Complete!</h2>
+        <div id="final-score-text" class="score-display">You scored X / Y</div>
+        <div id="feedback-text" class="feedback-msg"></div>
+      </div>
+
+      <div class="gold-divider center"></div>
+
+      <div class="demographics-panel">
+        <h3>Join the Leaderboard</h3>
+        <p class="text-muted" style="font-size:0.9rem; margin-bottom: 1.5rem;">Submit your score to secure your rank
+          among the community.</p>
+
+        <form id="leaderboard-form" class="multi-grid-form">
+          <div class="input-group">
+            <label>Full Name</label>
+            <input type="text" id="demo-name" required placeholder="Enter your name">
+          </div>
+
+          <div class="grid-2">
+            <div class="input-group">
+              <label>Age</label>
+              <input type="number" id="demo-age" required min="5" max="100" placeholder="e.g. 24">
+            </div>
+            <div class="input-group">
+              <label>Gender</label>
+              <div class="days-selector gender-selector" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.25rem;">
+                <label class="day-pill">
+                  <input type="radio" name="demo-gender" value="Male" required>
+                  <span>Male</span>
+                </label>
+                <label class="day-pill">
+                  <input type="radio" name="demo-gender" value="Female">
+                  <span>Female</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>Building Name</label>
+            <input type="text" id="demo-building" required placeholder="Sayyed Manzil, Bismillah Apt, Millat Apt, etc.">
+          </div>
+
+          <div class="input-group full-width">
+            <label>Residential Area</label>
+            <div class="days-selector area-selector">
+              <label class="day-pill"><input type="radio" name="demo-area" value="Faridbaug"
+                  required><span>Faridbaug</span></label>
+              <label class="day-pill"><input type="radio" name="demo-area"
+                  value="Aminabaug"><span>Aminabaug</span></label>
+              <label class="day-pill"><input type="radio" name="demo-area" value="Millat Nagar"><span>Millat
+                  Nagar</span></label>
+              <label class="day-pill"><input type="radio" name="demo-area" value="Ansar Mohalla"><span>Ansar
+                  Mohalla</span></label>
+              <label class="day-pill"><input type="radio" name="demo-area"
+                  value="Nizampura"><span>Nizampura</span></label>
+              <label class="day-pill"><input type="radio" name="demo-area" value="Others"><span>Others</span></label>
+            </div>
+          </div>
+
+          <div id="submit-status" class="status-msg" style="margin-top: 1rem;"></div>
+
+          <button type="submit" id="btn-submit-score" class="btn-primary full-width" style="margin-top:1rem;">
+            Submit & Exit
+          </button>
+        </form>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="js/supabase-config.js"></script>
+  <script src="js/quiz.js"></script>
+</body>
+
+</html>
