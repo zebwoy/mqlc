@@ -124,148 +124,204 @@
     <main class="main-content">
 
       <!-- ──────────────────────────────────────────────────────────
-           TAB: REGISTRATIONS
+           TAB: STUDENT MANAGEMENT
       ─────────────────────────────────────────────────────────── -->
       <section id="tab-registrations" class="tab-pane active">
-        <header class="content-header">
+        <header class="content-header" style="flex-direction: column; align-items: flex-start; gap: 1rem;">
           <div>
-            <h2>Evening makhtab Registration</h2>
-            <p>Enter new student records. Data is synced to Supabase securely.</p>
+            <h2>Student Management</h2>
+            <p>Generate parent registration access codes and review pending applications.</p>
+          </div>
+          
+          <!-- Horizontal Floating Nav Bar -->
+          <div class="horizontal-nav" style="display: flex; gap: 0.5rem; background: var(--admin-white); padding: 0.4rem; border-radius: 50px; box-shadow: var(--shadow-sm); border: 1px solid var(--admin-border);">
+            <button class="pill-nav active" data-sub="sub-registration" style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: var(--admin-accent); color: white; font-weight: 600; cursor: pointer;">Registration</button>
+            <button class="pill-nav" data-sub="sub-manual" style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: transparent; color: var(--admin-text); font-weight: 500; cursor: pointer;">Manual Entry</button>
+            <button class="pill-nav" data-sub="sub-dashboard" style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: transparent; color: var(--admin-text); font-weight: 500; cursor: pointer;">Dashboard</button>
+            <button class="pill-nav" data-sub="sub-analytics" style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: transparent; color: var(--admin-text); font-weight: 500; cursor: pointer;">Analytics</button>
           </div>
         </header>
 
-        <div class="card">
-          <form id="registration-form" class="multi-grid-form">
-
-            <div class="form-section">
-              <h4>1. Application Details</h4>
-              <div class="grid-2">
-                <div class="input-group">
-                  <label>Date of Joining (DOJ)</label>
-                  <input type="date" name="doj" required>
-                </div>
-                <div class="input-group">
-                  <label>Form Number</label>
-                  <input type="text" name="form_no" required>
-                </div>
-                <div class="input-group full-width">
-                  <label>Applying For Course</label>
-                  <select name="course_applying" required>
-                    <option value="" disabled selected>Select a course...</option>
-                    <option value="Noorani Qaida">Noorani Qaida</option>
-                    <option value="Qur'an Reading (Nazra)">Qur'an Reading (Nazra)</option>
-                    <option value="Qur'an Memorization (Hifz)">Qur'an Memorization (Hifz)</option>
-                  </select>
-                </div>
-              </div>
+        <!-- Sub-View: Registration -->
+        <div id="sub-registration" class="sub-pane active">
+          
+          <!-- Generating Parent PIN -->
+          <div class="card" style="margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <h3 style="margin-top: 0; margin-bottom: 0.5rem;">Parent Entry Gateway</h3>
+              <p style="margin: 0; color: var(--admin-muted); font-size: 0.95rem;">Generate a unique 6-digit PIN to allow a parent to securely fill the digital registration form.</p>
             </div>
-
-            <div class="form-section">
-              <h4>2. Student Identity</h4>
-              <div class="grid-2">
-                <div class="input-group full-width">
-                  <label>Student Full Name</label>
-                  <input type="text" name="student_name" required>
-                </div>
-                <div class="input-group full-width">
-                  <label>Father's Name</label>
-                  <input type="text" name="father_name" required>
-                </div>
-                <div class="input-group">
-                  <label>Gender</label>
-                  <select name="gender" required>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                  </select>
-                </div>
-                <div class="input-group">
-                  <label>Date of Birth</label>
-                  <input type="date" name="dob" required>
-                </div>
-                <div class="input-group full-width">
-                  <label>Aadhar Number</label>
-                  <input type="text" name="aadhar_no" placeholder="xxxx-xxxx-xxxx" required>
-                </div>
-                <div class="input-group full-width">
-                  <label>Residential Address</label>
-                  <textarea name="address" rows="2" required></textarea>
-                </div>
-                <div class="input-group">
-                  <label>Father's Contact No.</label>
-                  <input type="tel" name="contact_father" required>
-                </div>
-                <div class="input-group">
-                  <label>Mother's Contact No.</label>
-                  <input type="tel" name="contact_mother" required>
-                </div>
-              </div>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+              <div id="otp-display" style="font-size: 1.5rem; font-weight: 700; letter-spacing: 2px; color: var(--admin-accent); background: rgba(45, 106, 79, 0.1); padding: 0.5rem 1rem; border-radius: 8px; min-width: 120px; text-align: center;">------</div>
+              <button id="btn-generate-otp" class="btn-primary">Generate PIN</button>
             </div>
+          </div>
 
-            <div class="form-section">
-              <h4>3. Educational Background</h4>
-              <div class="grid-2">
-                <div class="input-group">
-                  <label>Currently studying in Class</label>
-                  <select name="current_class" required>
-                    <option value="">Select class...</option>
-                    <option value="Nursery/KG">Nursery/KG</option>
-                    <option value="Class 1">Class 1</option>
-                    <option value="Class 2">Class 2</option>
-                    <option value="Class 3">Class 3</option>
-                    <option value="Class 4">Class 4</option>
-                    <option value="Class 5">Class 5</option>
-                    <option value="Class 6">Class 6</option>
-                    <option value="Class 7">Class 7</option>
-                    <option value="Class 8">Class 8</option>
-                    <option value="Class 9">Class 9</option>
-                    <option value="Class 10">Class 10</option>
-                    <option value="Class 11">Class 11</option>
-                    <option value="Class 12">Class 12</option>
-                  </select>
-                </div>
-                <div class="input-group">
-                  <label>Name of School / College</label>
-                  <input type="text" name="school_name" required>
-                </div>
-                <div class="input-group full-width">
-                  <label>School Days</label>
-                  <div class="days-selector">
-                    <label class="day-pill"><input type="checkbox" name="school_days_arr"
-                        value="Mon"><span>Mon</span></label>
-                    <label class="day-pill"><input type="checkbox" name="school_days_arr"
-                        value="Tue"><span>Tue</span></label>
-                    <label class="day-pill"><input type="checkbox" name="school_days_arr"
-                        value="Wed"><span>Wed</span></label>
-                    <label class="day-pill"><input type="checkbox" name="school_days_arr"
-                        value="Thu"><span>Thu</span></label>
-                    <label class="day-pill"><input type="checkbox" name="school_days_arr"
-                        value="Fri"><span>Fri</span></label>
-                    <label class="day-pill"><input type="checkbox" name="school_days_arr"
-                        value="Sat"><span>Sat</span></label>
-                    <label class="day-pill"><input type="checkbox" name="school_days_arr"
-                        value="Sun"><span>Sun</span></label>
+          <!-- Pending Approval Queue -->
+          <div class="card">
+            <h3 style="margin-top: 0; margin-bottom: 1rem;">Pending Approvals</h3>
+            <div class="table-responsive">
+              <table class="admin-table" id="table-pending-approvals" style="width: 100%; border-collapse: collapse;">
+                <thead style="background: var(--admin-bg); text-align: left;">
+                  <tr>
+                    <th style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--admin-border); color: var(--admin-muted); font-weight: 500;">Form No.</th>
+                    <th style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--admin-border); color: var(--admin-muted); font-weight: 500;">Student Name</th>
+                    <th style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--admin-border); color: var(--admin-muted); font-weight: 500;">Course</th>
+                    <th style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--admin-border); color: var(--admin-muted); font-weight: 500;">Date</th>
+                    <th style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--admin-border); color: var(--admin-muted); font-weight: 500;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-pending">
+                  <!-- Row populated via JS -->
+                  <tr>
+                    <td colspan="5" style="text-align: center; color: var(--admin-muted); padding: 2rem;">Loading applications...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sub-View: Manual Entry (Legacy) -->
+        <div id="sub-manual" class="sub-pane" style="display: none;">
+          <div class="card">
+            <h3 style="margin-top: 0; margin-bottom: 1rem;">Manual Student Entry</h3>
+            <p style="color: var(--admin-muted); margin-bottom: 2rem;">Use this form for backdated entries, edge cases, or exception handling where OTP registration is not feasible.</p>
+
+            <form id="registration-form" class="multi-grid-form">
+              <div class="form-section">
+                <h4>1. Application Details</h4>
+                <div class="grid-2">
+                  <div class="input-group">
+                    <label>Date of Joining (DOJ)</label>
+                    <input type="date" name="doj" required>
                   </div>
-                </div>
-                <div class="input-group full-width">
-                  <label>School Timings</label>
-                  <div class="time-range">
-                    <input type="time" name="school_time_from" required>
-                    <span class="text-muted">to</span>
-                    <input type="time" name="school_time_to" required>
+                  <div class="input-group">
+                    <label>Form Number</label>
+                    <input type="text" name="form_no" required>
+                  </div>
+                  <div class="input-group full-width">
+                    <label>Applying For Course</label>
+                    <select name="course_applying" required>
+                      <option value="" disabled selected>Select a course...</option>
+                      <option value="Noorani Qaida">Noorani Qaida</option>
+                      <option value="Qur'an Reading (Nazra)">Qur'an Reading (Nazra)</option>
+                      <option value="Qur'an Memorization (Hifz)">Qur'an Memorization (Hifz)</option>
+                    </select>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div id="reg-status" class="status-msg"></div>
+              <div class="form-section">
+                <h4>2. Student Identity</h4>
+                <div class="grid-2">
+                  <div class="input-group full-width">
+                    <label>Student Full Name</label>
+                    <input type="text" name="student_name" required>
+                  </div>
+                  <div class="input-group full-width">
+                    <label>Father's Name</label>
+                    <input type="text" name="father_name" required>
+                  </div>
+                  <div class="input-group">
+                    <label>Gender</label>
+                    <select name="gender" required>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
+                  </div>
+                  <div class="input-group">
+                    <label>Date of Birth</label>
+                    <input type="date" name="dob" required>
+                  </div>
+                  <div class="input-group full-width">
+                    <label>Aadhar Number</label>
+                    <input type="text" name="aadhar_no" placeholder="xxxx-xxxx-xxxx" required>
+                  </div>
+                  <div class="input-group full-width">
+                    <label>Residential Address</label>
+                    <textarea name="address" rows="2" required></textarea>
+                  </div>
+                  <div class="input-group">
+                    <label>Father's Contact No.</label>
+                    <input type="tel" name="contact_father" required>
+                  </div>
+                  <div class="input-group">
+                    <label>Mother's Contact No.</label>
+                    <input type="tel" name="contact_mother" required>
+                  </div>
+                </div>
+              </div>
 
-            <div class="form-actions">
-              <button type="submit" id="btn-submit-reg" class="btn-primary">
-                Submit Registration
-              </button>
-              <button type="reset" class="btn-secondary">Clear Form</button>
-            </div>
-          </form>
+              <div class="form-section">
+                <h4>3. Educational Background</h4>
+                <div class="grid-2">
+                  <div class="input-group">
+                    <label>Currently studying in Class</label>
+                    <select name="current_class" required>
+                      <option value="">Select class...</option>
+                      <option value="Nursery/KG">Nursery/KG</option>
+                      <option value="Class 1">Class 1</option>
+                      <option value="Class 2">Class 2</option>
+                      <option value="Class 3">Class 3</option>
+                      <option value="Class 4">Class 4</option>
+                      <option value="Class 5">Class 5</option>
+                      <option value="Class 6">Class 6</option>
+                      <option value="Class 7">Class 7</option>
+                      <option value="Class 8">Class 8</option>
+                      <option value="Class 9">Class 9</option>
+                      <option value="Class 10">Class 10</option>
+                      <option value="Class 11">Class 11</option>
+                      <option value="Class 12">Class 12</option>
+                    </select>
+                  </div>
+                  <div class="input-group">
+                    <label>Name of School / College</label>
+                    <input type="text" name="school_name" required>
+                  </div>
+                  <div class="input-group full-width">
+                    <label>School Days</label>
+                    <div class="days-selector">
+                      <label class="day-pill"><input type="checkbox" name="school_days_arr" value="Mon"><span>Mon</span></label>
+                      <label class="day-pill"><input type="checkbox" name="school_days_arr" value="Tue"><span>Tue</span></label>
+                      <label class="day-pill"><input type="checkbox" name="school_days_arr" value="Wed"><span>Wed</span></label>
+                      <label class="day-pill"><input type="checkbox" name="school_days_arr" value="Thu"><span>Thu</span></label>
+                      <label class="day-pill"><input type="checkbox" name="school_days_arr" value="Fri"><span>Fri</span></label>
+                      <label class="day-pill"><input type="checkbox" name="school_days_arr" value="Sat"><span>Sat</span></label>
+                      <label class="day-pill"><input type="checkbox" name="school_days_arr" value="Sun"><span>Sun</span></label>
+                    </div>
+                  </div>
+                  <div class="input-group full-width">
+                    <label>School Timings</label>
+                    <div class="time-range">
+                      <input type="time" name="school_time_from" required>
+                      <span class="text-muted">to</span>
+                      <input type="time" name="school_time_to" required>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="reg-status" class="status-msg"></div>
+
+              <div class="form-actions">
+                <button type="submit" id="btn-submit-reg" class="btn-primary">
+                  Submit Registration
+                </button>
+                <button type="reset" class="btn-secondary">Clear Form</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Sub-View: Dashboard Future -->
+        <div id="sub-dashboard" class="sub-pane" style="display: none;">
+          <div class="card"><p>Student Dashboard Data (In Development)</p></div>
+        </div>
+
+        <!-- Sub-View: Analytics Future -->
+        <div id="sub-analytics" class="sub-pane" style="display: none;">
+          <div class="card"><p>Registration Analytics (In Development)</p></div>
         </div>
       </section>
 
@@ -428,8 +484,46 @@
 
   <!-- Application Logic -->
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/auth.js"></script>
   <script src="js/admin.js"></script>
+
+  <!-- Decision Modal Lightbox -->
+  <dialog id="modal-decision" style="border: none; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); padding: 2rem; max-width: 600px; width: 90vw; outline: none; background: var(--admin-white);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h3 id="modal-student-name" style="margin: 0; color: var(--admin-text);">Review Application</h3>
+      <button onclick="document.getElementById('modal-decision').close()" style="background: none; border: none; cursor: pointer; font-size: 1.25rem;">✕</button>
+    </div>
+    
+    <div id="modal-student-details" style="background: var(--admin-bg); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; max-height: 40vh; overflow-y: auto; color: var(--admin-text); line-height: 1.6;">
+      <!-- Details populated by JS dynamically -->
+    </div>
+
+    <!-- Approval Prompt -->
+    <div id="modal-prompt-approve" style="display: none; margin-bottom: 1rem;">
+      <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--admin-accent);">Monthly Fee Assignment</label>
+      <input type="number" id="input-assign-fee" placeholder="e.g. 500" style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); font-size: 1rem;">
+    </div>
+
+    <!-- Rejection Prompt -->
+    <div id="modal-prompt-reject" style="display: none; margin-bottom: 1rem;">
+      <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--admin-danger);">Reason for Rejection</label>
+      <textarea id="input-reject-reason" rows="2" placeholder="e.g. Needs to provide Aadhar card" style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); font-size: 1rem;"></textarea>
+    </div>
+
+    <div id="modal-feedback" class="status-msg"></div>
+
+    <div id="modal-trigger-group" style="display: flex; gap: 1rem; margin-top: 1rem;">
+      <input type="hidden" id="modal-hidden-id">
+      <button id="btn-modal-trigger-approve" class="btn-primary" style="flex: 1; background: var(--admin-accent); color: white;">Approve</button>
+      <button id="btn-modal-trigger-reject" class="btn-primary" style="flex: 1; background: transparent; border: 1px solid var(--admin-danger); color: var(--admin-danger);">Reject</button>
+    </div>
+
+    <div id="modal-final-actions" style="display: none; gap: 1rem; margin-top: 1rem;">
+      <button id="btn-modal-confirm" class="btn-primary" style="flex: 1;">Confirm Action</button>
+      <button id="btn-modal-cancel" class="btn-secondary" style="flex: 1; border: 1px solid var(--admin-border);">Cancel</button>
+    </div>
+  </dialog>
 </body>
 
 </html>

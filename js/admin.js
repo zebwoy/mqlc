@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (CLOUDINARY_UPLOAD_PRESET === 'YOUR_UNSIGNED_PRESET_NAME') {
       console.warn("Action Required: Please add your Cloudinary Upload Preset to js/admin.js first!");
     } else {
-      
+
       const configBase = {
         cloudName: CLOUDINARY_CLOUD_NAME,
         uploadPreset: CLOUDINARY_UPLOAD_PRESET,
@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
         multiple: true,
         maxFiles: 10,
         showAdvancedOptions: false,
-        cropping: false, 
+        cropping: false,
         styles: {
           palette: {
             window: "#FFFFFF", windowBorder: "#E2E8F0", tabIcon: "#2D6A4F", menuIcons: "#1E293B", textDark: "#1E293B", textLight: "#FFFFFF", link: "#2D6A4F", action: "#D4A017", inactiveTabIcon: "#64748B", error: "#EF4444", inProgress: "#2D6A4F", complete: "#31C48D", sourceBg: "#F5F7FA"
@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const trigger = (e) => {
           if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
           if (e.type === 'keydown') e.preventDefault();
-          
+
           if (statusEl) statusEl.innerHTML = 'Loading Uploader...';
           widget.open();
         };
@@ -124,21 +124,263 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // ─── 3. SUPABASE FORM SUBMISSION ──────────────────────────────
-  const form = document.getElementById('registration-form');
-  const statusMsg = document.getElementById('reg-status');
+  // ─── 3. STUDENT MANAGEMENT / OTP & VERIFICATION FLOW ────────
 
-  if (form) {
-    form.addEventListener('submit', async (e) => {
+  // 3a. Horizontal Nav Switching
+  const pillNavs = document.querySelectorAll('.pill-nav');
+  const subPanes = document.querySelectorAll('.sub-pane');
+
+  pillNavs.forEach(pill => {
+    pill.addEventListener('click', () => {
+      // Remove active classes
+      pillNavs.forEach(p => {
+        p.classList.remove('active');
+        p.style.background = 'transparent';
+        p.style.color = 'var(--admin-text)';
+      });
+      subPanes.forEach(s => s.style.display = 'none');
+
+      // Add active state to clicked pill
+      pill.classList.add('active');
+      pill.style.background = 'var(--admin-accent)';
+      pill.style.color = 'white';
+
+      // Show Target Sub View
+      const targetSub = document.getElementById(pill.getAttribute('data-sub'));
+      if (targetSub) targetSub.style.display = 'block';
+    });
+  });
+
+  // 3b. Generate OTP PIN Logic
+  const btnGenerateOtp = document.getElementById('btn-generate-otp');
+  const otpDisplay = document.getElementById('otp-display');
+
+  if (btnGenerateOtp) {
+    btnGenerateOtp.addEventListener('click', async () => {
+      if (!window._supabase) {
+        alert("Supabase not initialized.");
+        return;
+      }
+      btnGenerateOtp.disabled = true;
+      btnGenerateOtp.textContent = "Generating...";
+
+      // Generate 6 digit random pin
+      const pin = Math.floor(100000 + Math.random() * 900000).toString();
+
+      try {
+        const { error } = await window._supabase.from('otp_pins').insert([{ pin: pin }]);
+        if (error) throw error;
+
+        otpDisplay.textContent = pin;
+        otpDisplay.style.color = 'var(--admin-accent)';
+      } catch (err) {
+        console.error("OTP Gen Error:", err);
+        alert("Failed to generate PIN: " + err.message);
+      } finally {
+        btnGenerateOtp.disabled = false;
+        btnGenerateOtp.textContent = "Generate New PIN";
+      }
+    });
+  }
+
+  // 3c. Load & Render Pending Approvals
+  const tbodyPending = document.getElementById('tbody-pending');
+  let pendingApplications = [];
+
+  async function loadPendingApprovals() {
+    if (!tbodyPending || !window._supabase) return;
+    try {
+      // Fetch pendings
+      const { data, error } = await window._supabase
+        .from('student_registrations')
+        .select('*')
+        .eq('status', 'pending')
+        .order('id', { ascending: false });
+
+      if (error) throw error;
+
+      pendingApplications = data || [];
+      tbodyPending.innerHTML = '';
+
+      if (pendingApplications.length === 0) {
+        tbodyPending.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--admin-muted); padding: 2rem;">No pending approvals found.</td></tr>';
+        return;
+      }
+
+      pendingApplications.forEach(app => {
+        const tr = document.createElement('tr');
+
+        tr.innerHTML = `
+          <td style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--admin-border);">${app.form_no || 'N/A'}</td>
+          <td style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--admin-border); font-weight: 500;">${app.student_name}</td>
+          <td style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--admin-border);">${app.course_applying}</td>
+          <td style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--admin-border);"><span style="background: rgba(212, 160, 23, 0.2); color: #B08200; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">${app.status.toUpperCase()}</span></td>
+          <td style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--admin-border);"><button class="btn-review" data-id="${app.id}" style="background: var(--admin-bg); border: 1px solid var(--admin-border); padding: 0.5rem 1rem; border-radius: 6px; cursor:pointer; font-weight: 600;">Review</button></td>
+        `;
+        tbodyPending.appendChild(tr);
+      });
+
+      // Hook up Review buttons
+      document.querySelectorAll('.btn-review').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = e.currentTarget.getAttribute('data-id');
+          openDecisionModal(id);
+        });
+      });
+
+    } catch (err) {
+      console.error('Error fetching pendings:', err);
+      tbodyPending.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--admin-danger); padding: 2rem;">Failed to load data.</td></tr>`;
+    }
+  }
+
+  // Initial Fetch logic
+  if (tbodyPending) {
+    loadPendingApprovals();
+  }
+
+  // 3d. The Decision Modal Flow
+  const modalDecision = document.getElementById('modal-decision');
+  const modalStudentDetails = document.getElementById('modal-student-details');
+  const modalHiddenId = document.getElementById('modal-hidden-id');
+  const btnTriggerApprove = document.getElementById('btn-modal-trigger-approve');
+  const btnTriggerReject = document.getElementById('btn-modal-trigger-reject');
+  const promptApprove = document.getElementById('modal-prompt-approve');
+  const promptReject = document.getElementById('modal-prompt-reject');
+  const divFinalActions = document.getElementById('modal-final-actions');
+  const triggerGroup = document.getElementById('modal-trigger-group');
+  const btnConfirmDec = document.getElementById('btn-modal-confirm');
+  const btnCancelDec = document.getElementById('btn-modal-cancel');
+  let currentDecisionType = null;
+
+  function resetModalState() {
+    promptApprove.style.display = 'none';
+    promptReject.style.display = 'none';
+    divFinalActions.style.display = 'none';
+    triggerGroup.style.display = 'flex';
+    document.getElementById('modal-feedback').textContent = '';
+    currentDecisionType = null;
+  }
+
+  function openDecisionModal(id) {
+    if (!modalDecision || !pendingApplications) return;
+    const app = pendingApplications.find(a => a.id.toString() === id.toString());
+    if (!app) return;
+
+    resetModalState();
+    modalHiddenId.value = app.id;
+    document.getElementById('modal-student-name').textContent = "Review: " + app.student_name;
+
+    // Inject all metadata natively
+    modalStudentDetails.innerHTML = `
+      <strong>Form Info:</strong> ${app.form_no || 'N/A'} | ${app.course_applying || 'N/A'}<br>
+      <strong>Father:</strong> ${app.father_name} (${app.contact_father})<br>
+      <strong>Mother:</strong> ${app.contact_mother || 'N/A'}<br>
+      <strong>DOB:</strong> ${app.dob} | <strong>Gender:</strong> ${app.gender}<br>
+      <strong>Address:</strong> ${app.address}<br>
+      <hr style="border:0; border-top: 1px solid var(--admin-border); margin: 0.5rem 0;">
+      <strong>School:</strong> ${app.school_name} (Class ${app.current_class || 'N/A'})<br>
+      <strong>School Days:</strong> ${app.school_days || 'N/A'}<br>
+      <strong>School Time:</strong> ${app.school_time || 'N/A'}<br>
+    `;
+
+    modalDecision.showModal();
+  }
+
+  if (btnTriggerApprove && btnTriggerReject) {
+    btnTriggerApprove.addEventListener('click', () => {
+      triggerGroup.style.display = 'none';
+      promptApprove.style.display = 'block';
+      divFinalActions.style.display = 'flex';
+      currentDecisionType = 'approve';
+      btnConfirmDec.style.background = 'var(--admin-accent)';
+      btnConfirmDec.textContent = "Confirm Approval";
+    });
+
+    btnTriggerReject.addEventListener('click', () => {
+      triggerGroup.style.display = 'none';
+      promptReject.style.display = 'block';
+      divFinalActions.style.display = 'flex';
+      currentDecisionType = 'reject';
+      btnConfirmDec.style.background = 'var(--admin-danger)';
+      btnConfirmDec.textContent = "Confirm Rejection";
+    });
+
+    btnCancelDec.addEventListener('click', () => {
+      resetModalState();
+    });
+
+    btnConfirmDec.addEventListener('click', async () => {
+      const id = modalHiddenId.value;
+      const feedback = document.getElementById('modal-feedback');
+      feedback.textContent = 'Processing request...';
+      feedback.className = 'status-msg';
+
+      if (currentDecisionType === 'approve') {
+        const fee = document.getElementById('input-assign-fee').value;
+        if (!fee) {
+          feedback.textContent = 'Please enter a valid monthly fee.';
+          feedback.classList.add('error');
+          return;
+        }
+
+        try {
+          const { error } = await window._supabase
+            .from('student_registrations')
+            .update({ status: 'approved', monthly_fee: fee })
+            .eq('id', id);
+          if (error) throw error;
+
+          modalDecision.close();
+          loadPendingApprovals();
+        } catch (err) {
+          feedback.textContent = "Failed to approve: " + err.message;
+          feedback.classList.add('error');
+        }
+
+      } else if (currentDecisionType === 'reject') {
+        const reason = document.getElementById('input-reject-reason').value;
+        if (!reason) {
+          feedback.textContent = 'Please provide a valid rejection reason.';
+          feedback.classList.add('error');
+          return;
+        }
+
+        try {
+          const { error } = await window._supabase
+            .from('student_registrations')
+            .update({ status: 'rejected', rejection_reason: reason })
+            .eq('id', id);
+          if (error) throw error;
+
+          modalDecision.close();
+          loadPendingApprovals();
+        } catch (err) {
+          feedback.textContent = "Failed to reject: " + err.message;
+          feedback.classList.add('error');
+        }
+      }
+    });
+  }
+
+  // ─── 3e. Manual Form Submission Logic (Legacy Override) ────────
+  const manualForm = document.getElementById('registration-form');
+  const manualStatusMsg = document.getElementById('reg-status');
+
+  if (manualForm) {
+    manualForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       if (!window._supabase) {
-        showStatus('Error: Supabase client is not initialized.', 'error');
+        if (manualStatusMsg) {
+          manualStatusMsg.textContent = 'Error: Supabase client is not initialized.';
+          manualStatusMsg.className = 'status-msg error';
+        }
         return;
       }
 
       // Collect Data
-      const fd = new FormData(form);
+      const fd = new FormData(manualForm);
       const payload = {
         doj: fd.get('doj'),
         form_no: fd.get('form_no'),
@@ -153,14 +395,13 @@ document.addEventListener('DOMContentLoaded', () => {
         contact_mother: fd.get('contact_mother'),
         current_class: fd.get('current_class'),
         school_name: fd.get('school_name'),
-        school_days: Array.from(form.querySelectorAll('input[name="school_days_arr"]:checked')).map(cb => cb.value).join(', '),
-        school_time: `${fd.get('school_time_from')} - ${fd.get('school_time_to')}`
+        school_days: Array.from(manualForm.querySelectorAll('input[name="school_days_arr"]:checked')).map(cb => cb.value).join(', '),
+        school_time: `${fd.get('school_time_from')} - ${fd.get('school_time_to')}`,
+        status: 'approved' // explicitly bypass queue and auto-approve manual entries
       };
 
       try {
-        // Change button state
         const btn = document.getElementById('btn-submit-reg');
-        const origText = btn.textContent;
         btn.textContent = 'Saving Record...';
         btn.disabled = true;
 
@@ -170,12 +411,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (error) throw error;
 
-        // Success
-        form.reset();
-        showStatus('Student registration saved securely to Supabase!', 'success');
+        manualForm.reset();
+        manualStatusMsg.textContent = 'Student manually registered';
+        manualStatusMsg.className = 'status-msg success';
+        manualStatusMsg.style.display = 'block';
       } catch (err) {
         console.error(err);
-        showStatus(`Failed to save: ${err.message}`, 'error');
+        manualStatusMsg.textContent = `Failed to save: ${err.message}`;
+        manualStatusMsg.className = 'status-msg error';
+        manualStatusMsg.style.display = 'block';
       } finally {
         const btn = document.getElementById('btn-submit-reg');
         btn.textContent = 'Submit Registration';
@@ -199,13 +443,13 @@ document.addEventListener('DOMContentLoaded', () => {
           data.forEach(item => {
             if (item.setting_key === 'monthly_fee') document.getElementById('cfg-fee').value = item.setting_value;
             if (item.setting_key === 'active_programs') document.getElementById('cfg-programs').value = item.setting_value;
-            
+
             // Jamat fields
-            if (item.setting_key === 'namaz_fajr') { const e = document.getElementById('cfg-fajr'); if(e) e.value = item.setting_value; }
-            if (item.setting_key === 'namaz_zuhr') { const e = document.getElementById('cfg-zuhr'); if(e) e.value = item.setting_value; }
-            if (item.setting_key === 'namaz_asr') { const e = document.getElementById('cfg-asr'); if(e) e.value = item.setting_value; }
-            if (item.setting_key === 'namaz_maghrib') { const e = document.getElementById('cfg-maghrib'); if(e) e.value = item.setting_value; }
-            if (item.setting_key === 'namaz_isha') { const e = document.getElementById('cfg-isha'); if(e) e.value = item.setting_value; }
+            if (item.setting_key === 'namaz_fajr') { const e = document.getElementById('cfg-fajr'); if (e) e.value = item.setting_value; }
+            if (item.setting_key === 'namaz_zuhr') { const e = document.getElementById('cfg-zuhr'); if (e) e.value = item.setting_value; }
+            if (item.setting_key === 'namaz_asr') { const e = document.getElementById('cfg-asr'); if (e) e.value = item.setting_value; }
+            if (item.setting_key === 'namaz_maghrib') { const e = document.getElementById('cfg-maghrib'); if (e) e.value = item.setting_value; }
+            if (item.setting_key === 'namaz_isha') { const e = document.getElementById('cfg-isha'); if (e) e.value = item.setting_value; }
           });
         }
       } catch (err) {
@@ -216,7 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Call load when either Settings or Jamat tab is clicked
     const settingsTabBtn = document.querySelector('[data-target="tab-settings"]');
     if (settingsTabBtn) settingsTabBtn.addEventListener('click', loadSettings);
-    
+
     const jamatTabBtn = document.querySelector('[data-target="tab-jamat"]');
     if (jamatTabBtn) jamatTabBtn.addEventListener('click', loadSettings);
 
@@ -261,13 +505,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (jamatForm) {
     jamatForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      
+
       // Enforce native HTML5 requirements (blocks blank fields)
       if (!jamatForm.checkValidity()) {
         jamatForm.reportValidity();
         return;
       }
-      
+
       if (!window._supabase) return;
 
       const btn = document.getElementById('btn-submit-jamat');
