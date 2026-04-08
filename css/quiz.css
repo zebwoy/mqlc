@@ -812,7 +812,7 @@ h2, h3 {
     font-size: 3rem;
   }
   .days-selector.area-selector {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 

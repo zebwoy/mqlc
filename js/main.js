@@ -2,6 +2,24 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
+  /* ── Numeral localization helper ──────────────────────────── */
+  const NUMERAL_MAP = {
+    ur: ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'],
+    hi: ['०','१','२','३','४','५','६','७','८','९'],
+    mr: ['०','१','२','३','४','५','६','७','८','९']
+  };
+  function localizeNum(n, lang) {
+    const map = NUMERAL_MAP[lang];
+    if (!map) return String(n);
+    return String(n).replace(/[0-9]/g, d => map[+d]);
+  }
+
+  /* ── Suffix translations ─────────────────────────────────── */
+  const SUFFIX_MAP = {
+    mos: { en: ' mos', mr: ' महिने', ur: ' ماہ', hi: ' महीने' },
+    yrs: { en: ' yrs', mr: ' वर्षे', ur: ' سال', hi: ' साल' }
+  };
+
   /* ── Navbar scroll behaviour ──────────────────────────────── */
   const navbar = document.querySelector('.navbar');
   const scrollTopBtn = document.querySelector('.scroll-top');
@@ -92,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (yrEl) {
       if (monthsRunning < 12) {
         yrEl.dataset.count = Math.max(1, monthsRunning).toString();
-        yrEl.dataset.suffix = ' mos';
+        yrEl.dataset.suffixKey = 'mos';
 
         // Dynamically update the label below to "Months"
         const labelEl = yrEl.nextElementSibling;
@@ -108,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         const yearsRunning = Math.floor(monthsRunning / 12);
         yrEl.dataset.count = Math.max(1, yearsRunning).toString();
-        yrEl.dataset.suffix = ' yrs';
+        yrEl.dataset.suffixKey = 'yrs';
       }
     }
 
@@ -156,7 +174,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Hardcode the suffix based on the exact prayer
                 const suffix = namePart === 'fajr' ? 'AM' : 'PM';
-                timeEl.textContent = `${h}:${m} ${suffix}`;
+                // Store raw values for re-rendering on language switch
+                timeEl.dataset.rawH = h;
+                timeEl.dataset.rawM = m;
+                timeEl.dataset.rawSuffix = suffix;
+                const lang = localStorage.getItem('mqlc_lang') || 'en';
+                timeEl.textContent = `${localizeNum(h, lang)}:${localizeNum(m, lang)}\u00a0${suffix}`;
               }
             }
           });
@@ -185,7 +208,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function animateCounter(el) {
     const target = parseInt(el.dataset.count, 10) || 0;
-    const suffix = el.dataset.suffix || '';
+    const suffixKey = el.dataset.suffixKey || '';
+    const lang = localStorage.getItem('mqlc_lang') || 'en';
+    const suffix = suffixKey ? (SUFFIX_MAP[suffixKey]?.[lang] || SUFFIX_MAP[suffixKey]?.en || '') : (el.dataset.suffix || '');
     const duration = 2000;
     const start = performance.now();
 
@@ -193,12 +218,34 @@ document.addEventListener('DOMContentLoaded', () => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      el.textContent = Math.floor(eased * target) + suffix;
+      const num = Math.floor(eased * target);
+      el.textContent = localizeNum(num, lang) + suffix;
       if (progress < 1) requestAnimationFrame(update);
     }
 
     requestAnimationFrame(update);
   }
+
+  /* ── Re-render dynamic content on language switch ─────────── */
+  window.addEventListener('onLanguageChange', (e) => {
+    const lang = e.detail.lang;
+
+    // Re-render namaz times with localized numerals
+    document.querySelectorAll('.jamat-time[data-raw-h]').forEach(el => {
+      const h = el.dataset.rawH;
+      const m = el.dataset.rawM;
+      const suffix = el.dataset.rawSuffix;
+      el.textContent = `${localizeNum(h, lang)}:${localizeNum(m, lang)}\u00a0${suffix}`;
+    });
+
+    // Re-render stat counters with localized suffix
+    document.querySelectorAll('[data-count]').forEach(el => {
+      const val = parseInt(el.dataset.count, 10) || 0;
+      const suffixKey = el.dataset.suffixKey || '';
+      const suffix = suffixKey ? (SUFFIX_MAP[suffixKey]?.[lang] || SUFFIX_MAP[suffixKey]?.en || '') : (el.dataset.suffix || '');
+      el.textContent = localizeNum(val, lang) + suffix;
+    });
+  });
 
   /* ── Cloudinary Bulletin Board ─────────────────────────────── */
   const bulletinCarousel = document.querySelector('.bulletin-carousel');
@@ -258,11 +305,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (quizData.lecture_date && !quizData.submission_deadline) {
                   deadline.setDate(deadline.getDate() + 3);
                 }
-                // End of the day
                 deadline.setHours(23, 59, 59, 999);
                 if (new Date() > deadline) {
-                  // Skip rendering because it is expired
-                  continue;
+                  continue; // Skip expired quizzes
                 }
               }
 
@@ -273,26 +318,23 @@ document.addEventListener('DOMContentLoaded', () => {
               // RENDER MERGED QUIZ TILE
               card.innerHTML = `
                 <!-- Outer Static Multilingual Section -->
-                <h4 data-en="Test Your Knowledge" data-mr="तुमचे ज्ञान तपासा" data-ur="اپنے علم کو جانچیں" data-hi="अपने ज्ञान का परीक्षण करें" class="bulletin-title" style="margin: 0; margin-bottom: 1rem;">
+                <h4 data-en="Test Your Knowledge" data-mr="तुमचे ज्ञान तपासा" data-ur="اپنے علم کو جانچیں" data-hi="अपने ज्ञान का परीक्षण करें" class="bulletin-title" style="margin: 0; margin-bottom: 0.5rem;">
                   Test Your Knowledge
                 </h4>
-                <div class="gold-divider" style="margin: 0.75rem 0;"></div>
-                <p class="bulletin-desc" style="margin-bottom: 1.5rem;" data-en="Want to test your Islamic knowledge? Take our interactive assessment to see where you stand and improve your understanding!" data-mr="तुमची इस्लामिक माहिती तपासायची आहे का? तुमची पातळी तपासण्यासाठी आमची संवादात्मक चाचणी घ्या!" data-ur="کیا آپ اپنی اسلامی معلومات جانچنا چاہتے ہیں؟ اپنی سمجھ کا اندازہ لگانے کے لیے ہمارا انٹرایکٹو ٹیسٹ لیں!" data-hi="क्या आप अपने इस्लामी ज्ञान का परीक्षण करना चाहते हैं? अपने स्तर को जानने के लिए हमारा इंटरैक्टिव टेस्ट लें!">
+                <div class="gold-divider" style="margin: 0.5rem 0;"></div>
+                <p class="bulletin-desc" style="margin-bottom: 1rem;" data-en="Want to test your Islamic knowledge? Take our interactive assessment to see where you stand and improve your understanding!" data-mr="तुमची इस्लामिक माहिती तपासायची आहे का? तुमची पातळी तपासण्यासाठी आमची संवादात्मक चाचणी घ्या!" data-ur="کیا آپ اپنی اسلامی معلومات جانچنا چاہتے ہیں؟ اپنی سمجھ کا اندازہ لگانے کے لیے ہمارا انٹرایکٹو ٹیسٹ لیں!" data-hi="क्या आप अपने इस्लामी ज्ञान का परीक्षण करना चाहते हैं? अपने स्तर को जानने के लिए हमारा इंटरैक्टिव टेस्ट लें!">
                   Want to test your Islamic knowledge? Take our interactive assessment to see where you stand and improve your understanding!
                 </p>
 
                 <!-- Inner Dynamic JSON-Driven Section -->
-                <div style="flex:1; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; background:var(--cream); border:1px solid rgba(212,160,23,0.3); border-left:4px solid var(--gold); border-radius:8px; padding: 1.5rem; height: auto; min-height: 190px; box-sizing: border-box; position: relative;">
-                  <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-bottom: 0.5rem; gap: 0.5rem;">
-                      <!-- Dynamic Topic mapping rendering smoothly using embedded data properties -->
-                      <span style="color:var(--midnight); font-weight:600; font-size: 1.15rem; line-height: 1.3;" data-en="${tEn}" data-mr="${tMr}" data-ur="${tUr}" data-hi="${tHi}">${tEn}</span>
-                      <span style="background: var(--gold); color: white; padding: 4px 10px; border-radius: 16px; font-size: 0.7rem; font-weight: bold; white-space: nowrap;"><span data-en="Quiz" data-mr="चाचणी" data-ur="کوئز" data-hi="क्विज़">Quiz</span> <bdi>${qNo}</bdi></span>
-                  </div>
-                  <div style="display:flex; flex-direction:column; gap:0.3rem; font-size: 0.9rem; color:var(--text-mid); margin-bottom: 1rem;">
+                <div class="quiz-info-panel">
+                  <span class="quiz-badge-pill"><span data-en="Quiz" data-mr="चाचणी" data-ur="کوئز" data-hi="क्विज़">Quiz</span> <bdi>${qNo}</bdi></span>
+                  <span class="quiz-topic-title" data-en="${tEn}" data-mr="${tMr}" data-ur="${tUr}" data-hi="${tHi}">${tEn}</span>
+                  <div class="quiz-meta-dates">
                       <span><strong style="color:var(--gold);"><span data-en="Lecture" data-mr="व्याख्यान" data-ur="لیکچر" data-hi="व्याख्यान">Lecture</span>:</strong> <bdi>${qDate}</bdi></span>
                       <span><strong style="color:var(--gold);"><span data-en="Closes" data-mr="बंद" data-ur="بند" data-hi="बंद">Closes</span>:</strong> <bdi>${closesDate}</bdi></span>
                   </div>
-                  <a href="/quiz.html?src=${encodeURIComponent(item.secure_url)}" target="_blank" class="btn-primary" style="display:inline-block; margin-top: auto; padding: 0.6rem 1.2rem; font-size: 0.9rem; z-index: 10; text-decoration: none; border-radius: 8px;">
+                  <a href="/quiz.html?src=${encodeURIComponent(item.secure_url)}" target="_blank" class="btn-primary quiz-begin-btn">
                       <span data-en="Begin Quiz &rarr;" data-mr="प्रश्नमंजुषा सुरू करा &rarr;" data-ur="کوئز شروع کریں &larr;" data-hi="प्रश्नोत्तरी शुरू करें &rarr;">Begin Quiz &rarr;</span>
                   </a>
                 </div>

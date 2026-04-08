@@ -639,7 +639,7 @@
   max-width: 40rem;
   scroll-snap-align: center;
   background: var(--white);
-  border-radius: 20px;
+  border-radius: 16px;
   padding: 3rem 2.5rem;
   /* Lift the card significantly off the board */
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 3px 8px rgba(0, 0, 0, 0.05);
@@ -835,30 +835,99 @@
 
   .bulletin-board {
     width: 95%;
-    /* Reclaim screen real estate */
+    padding: 1rem 0.25rem;
   }
 
   .bulletin-carousel {
-    gap: 1rem;
-    padding: 0.5rem 0 1.5rem 0;
+    gap: 0.75rem;
+    padding: 0.75rem 0.5rem 1.5rem 0.5rem;
     -webkit-overflow-scrolling: touch;
-    /* Momentum swiping on iOS */
   }
 
   .bulletin-card {
-    flex: 0 0 90%;
-    /* Expand card to 90% allowing a perfect 10% peek */
-    padding: 1.5rem 1rem;
-    /* Compress internal padding to fit content safely */
+    flex: 0 0 88%;
+    padding: 1.5rem 1.25rem;
+    border-radius: 14px;
+  }
+
+  /* Kill rotation on mobile — it wastes space */
+  .bulletin-card:nth-child(odd),
+  .bulletin-card:nth-child(even),
+  .bulletin-card:nth-child(3n) {
+    transform: none;
   }
 
   .bulletin-title {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
   }
 
   .bulletin-desc {
-    font-size: 0.95rem;
+    font-size: 0.88rem;
+    line-height: 1.5;
   }
+}
+
+/* ─── Quiz Bulletin Card (class-based, no inline styles) ──── */
+.quiz-info-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--cream);
+  border: 1px solid rgba(212,160,23,0.3);
+  border-left: 4px solid var(--gold);
+  border-radius: 10px;
+  padding: 1.25rem;
+  gap: 0.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.quiz-badge-pill {
+  align-self: flex-start;
+  background: var(--gold);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.quiz-topic-title {
+  color: var(--midnight);
+  font-weight: 600;
+  font-size: 1.15rem;
+  line-height: 1.3;
+}
+
+.quiz-meta-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.88rem;
+  color: var(--text-mid);
+}
+
+.quiz-begin-btn {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  text-decoration: none;
+  border-radius: 8px;
+  align-self: flex-start;
+}
+
+/* RTL adjustments for quiz card */
+[dir="rtl"] .quiz-info-panel {
+  border-left: 1px solid rgba(212,160,23,0.3);
+  border-right: 4px solid var(--gold);
+}
+[dir="rtl"] .quiz-badge-pill {
+  align-self: flex-end;
+}
+[dir="rtl"] .quiz-begin-btn {
+  align-self: flex-end;
 }
 
 /* ─── Sprint 3: Features Grid ────────────────────────────────── */
@@ -1009,6 +1078,12 @@
 }
 
 /* ─── Sprint 5: Impact Parallax ──────────────────────────────── */
+/* Fix #9: Impact section mobile padding */
+@media (max-width: 768px) {
+  .impact-section {
+    padding: 4rem 1.25rem;
+  }
+}
 .impact-section {
   position: relative;
   padding: 8rem 2rem;
@@ -1089,12 +1164,13 @@
 .donate-card {
   background: var(--white);
   padding: 3rem 2rem;
-  border-radius: 1rem;
+  border-radius: 16px;
   box-shadow: 0 15px 35px rgba(26, 26, 46, 0.05);
   border: 1px solid rgba(212, 160, 23, 0.15);
   display: flex;
   flex-direction: column;
   align-items: center;
+  text-align: center;
   position: relative;
   overflow: hidden;
 }
@@ -1179,6 +1255,21 @@
   }
 }
 
+/* Fix #2: Bank list items stack vertically on narrow screens */
+@media (max-width: 480px) {
+  .bank-list li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  .bank-list strong {
+    text-align: left;
+  }
+  .donate-card {
+    padding: 2rem 1.25rem;
+  }
+}
+
 /* ─── Sprint 7: Main Footer ──────────────────────────────────── */
 .site-footer {
   background: var(--midnight);
@@ -1235,10 +1326,64 @@
   margin-bottom: 1rem;
 }
 
+/* Fix #7: Phone number alignment */
+.footer-phone-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.footer-phone-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0.8;
+  line-height: 1.6;
+  margin-bottom: 0.25rem;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.95rem;
+}
+.footer-phone-list li svg {
+  flex-shrink: 0;
+}
+.footer-phone-list li:not(:first-child) svg {
+  visibility: hidden;
+}
+
+/* Phone numbers always display LTR even in RTL mode */
+.footer-phone-list li {
+  direction: ltr;
+  unicode-bidi: embed;
+}
+
+/* Email icon margin fix */
+.footer-contact .text-muted svg {
+  vertical-align: middle;
+  margin-inline-end: 8px;
+  margin-right: 0;
+}
+
+/* Fix #1: Footer bottom bar */
+.footer-bottom-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 1.5rem;
+}
+
 @media (max-width: 900px) {
   .footer-grid {
     grid-template-columns: 1fr;
     gap: 2.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-bottom-inner {
+    flex-direction: column;
+    text-align: center;
   }
 }
 
@@ -1331,8 +1476,66 @@
     gap: 0.5rem;
   }
 
-  /* Orphan card handler: Center the 5th item naturally */
+  /* Fix #12: Orphan card — center and constrain width */
   .jamat-card:last-child:nth-child(odd) {
     grid-column: 1 / -1;
+    max-width: 50%;
+    justify-self: center;
   }
+}
+
+/* ─── Fix #11: RTL Styles for Main Page ──────────────────────── */
+[dir="rtl"] .program-number {
+  right: auto;
+  left: 1.5rem;
+}
+
+[dir="rtl"] .bank-list li {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .bank-list strong {
+  text-align: left;
+}
+
+[dir="rtl"] .bank-list span {
+  text-align: right;
+}
+
+[dir="rtl"] .footer-phone-list li {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .bulletin-card.expandable::after {
+  right: auto;
+  left: 1rem;
+}
+
+/* RTL footer specific fixes */
+[dir="rtl"] .footer-phone-list {
+  text-align: right;
+}
+[dir="rtl"] .footer-phone-list li {
+  flex-direction: row;
+  justify-content: flex-end;
+}
+[dir="rtl"] .footer-contact .text-muted {
+  text-align: right;
+  direction: rtl;
+}
+[dir="rtl"] .footer-contact .text-muted svg {
+  margin-inline-end: 0;
+  margin-inline-start: 8px;
+}
+
+/* Fix #4: Bulletin CTA button */
+.bulletin-cta {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: 1.05rem;
+  padding: 0.85rem;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: all 0.3s ease;
 }
