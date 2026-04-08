@@ -7,19 +7,19 @@ const newMarquee = `  <div class="accreditation-bar" id="contact">
     <div class="marquee-wrapper">
       <div class="marquee-content">
         <span>
-          A project under the guidance of <a href="https://www.ahlehadeesmumbai.com/" target="_blank" rel="noopener noreferrer" class="accreditation-link">Subai Jamiat Ahle Hadees</a> Mumbai 
+          A project under the guidance of <a href="https://www.ahlehadeesbhiwandi.com/" target="_blank" rel="noopener noreferrer" class="accreditation-link">Subai Jamiat Ahle Hadees</a> Mumbai 
           &nbsp;&nbsp;&nbsp;&nbsp;◈&nbsp;&nbsp;&nbsp;&nbsp;
-          A project under the guidance of <a href="https://www.ahlehadeesmumbai.com/" target="_blank" rel="noopener noreferrer" class="accreditation-link">Subai Jamiat Ahle Hadees</a> Mumbai 
+          A project under the guidance of <a href="https://www.ahlehadeesbhiwandi.com/" target="_blank" rel="noopener noreferrer" class="accreditation-link">Subai Jamiat Ahle Hadees</a> Mumbai 
           &nbsp;&nbsp;&nbsp;&nbsp;◈&nbsp;&nbsp;&nbsp;&nbsp;
-          A project under the guidance of <a href="https://www.ahlehadeesmumbai.com/" target="_blank" rel="noopener noreferrer" class="accreditation-link">Subai Jamiat Ahle Hadees</a> Mumbai 
+          A project under the guidance of <a href="https://www.ahlehadeesbhiwandi.com/" target="_blank" rel="noopener noreferrer" class="accreditation-link">Subai Jamiat Ahle Hadees</a> Mumbai 
           &nbsp;&nbsp;&nbsp;&nbsp;◈&nbsp;&nbsp;&nbsp;&nbsp;
         </span>
         <span aria-hidden="true">
-          A project under the guidance of <a href="https://www.ahlehadeesmumbai.com/" target="_blank" rel="noopener noreferrer" class="accreditation-link">Subai Jamiat Ahle Hadees</a> Mumbai 
+          A project under the guidance of <a href="https://www.ahlehadeesbhiwandi.com/" target="_blank" rel="noopener noreferrer" class="accreditation-link">Subai Jamiat Ahle Hadees</a> Mumbai 
           &nbsp;&nbsp;&nbsp;&nbsp;◈&nbsp;&nbsp;&nbsp;&nbsp;
-          A project under the guidance of <a href="https://www.ahlehadeesmumbai.com/" target="_blank" rel="noopener noreferrer" class="accreditation-link">Subai Jamiat Ahle Hadees</a> Mumbai 
+          A project under the guidance of <a href="https://www.ahlehadeesbhiwandi.com/" target="_blank" rel="noopener noreferrer" class="accreditation-link">Subai Jamiat Ahle Hadees</a> Mumbai 
           &nbsp;&nbsp;&nbsp;&nbsp;◈&nbsp;&nbsp;&nbsp;&nbsp;
-          A project under the guidance of <a href="https://www.ahlehadeesmumbai.com/" target="_blank" rel="noopener noreferrer" class="accreditation-link">Subai Jamiat Ahle Hadees</a> Mumbai 
+          A project under the guidance of <a href="https://www.ahlehadeesbhiwandi.com/" target="_blank" rel="noopener noreferrer" class="accreditation-link">Subai Jamiat Ahle Hadees</a> Mumbai 
           &nbsp;&nbsp;&nbsp;&nbsp;◈&nbsp;&nbsp;&nbsp;&nbsp;
         </span>
       </div>

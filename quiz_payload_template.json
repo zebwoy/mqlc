@@ -1,30 +1,45 @@
 {
-  "quiz_no": "5",
-  "topic": "Seerat-un-Nabi: The Early Days",
+  "quiz_no": "6",
+  "topic": {
+    "en": "Seerat-un-Nabi: The Early Days",
+    "mr": "सीरत-उन-नबी: सुरुवातीचे दिवस",
+    "ur": "سیرت النبی: ابتدائی ایام",
+    "hi": "सीरत-उन-नबी: शुरुआती दिन"
+  },
   "lecture_date": "05 April 2026",
   "submission_deadline": "08 April 2026",
   "questions": [
     {
       "numb": 1,
-      "question": "What building did Qusay build?",
-      "answer": "Dar Al Nadwa",
-      "options": [
-        "Kaaba",
-        "Masjid al-Haram",
-        "Dar Al Nadwa",
-        "Dar Al Arqam"
-      ]
+      "question": {
+        "en": "What building did Qusay build?",
+        "mr": "कुशयने कोणती इमारत बांधली?",
+        "ur": "قصی نے کون سی عمارت بنائی؟",
+        "hi": "कुसय ने कौन सी इमारत बनवाई?"
+      },
+      "answer_index": 2,
+      "options": {
+        "en": ["Kaaba", "Masjid al-Haram", "Dar Al Nadwa", "Dar Al Arqam"],
+        "mr": ["काबा", "मस्जिद-अल-हरम", "दार अल नदवा", "दार अल अरकम"],
+        "ur": ["کعبہ", "مسجد الحرام", "دارالندوہ", "دار الارقم"],
+        "hi": ["काबा", "मस्जिद अल-हरम", "दार अल नदवा", "दार अल अरक़म"]
+      }
     },
     {
       "numb": 2,
-      "question": "Among the sons of Qusay, to which son is the Prophet related?",
-      "answer": "Abd Manaaf",
-      "options": [
-        "Harith",
-        "Abd al-Dar",
-        "Abd Manaaf",
-        "Abd Shams"
-      ]
+      "question": {
+        "en": "Among the sons of Qusay, to which son is the Prophet related?",
+        "mr": "कुशयच्या मुलांपैकी प्रेषित कोणाशी संबंधित आहेत?",
+        "ur": "قصی کے بیٹوں میں سے نبی کریم ﷺ کا تعلق کس بیٹے سے ہے؟",
+        "hi": "कुसय के पुत्रों में से पैगंबर किससे संबंधित हैं?"
+      },
+      "answer_index": 2,
+      "options": {
+        "en": ["Harith", "Abd al-Dar", "Abd Manaaf", "Abd Shams"],
+        "mr": ["हरीथ", "अब्द अल-दार", "अब्द मनाफ", "अब्द शम्स"],
+        "ur": ["حارث", "عبد الدار", "عبد مناف", "عبد شمس"],
+        "hi": ["हारिथ", "अब्द अल-दार", "अब्द मनाफ", "अब्द शम्स"]
+      }
     }
   ]
 }

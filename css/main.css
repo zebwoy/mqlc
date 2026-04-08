@@ -310,4 +310,23 @@ p {
   .container {
     padding: 0 1.25rem;
   }
+
+  .whatsapp-float {
+    bottom: 1.5rem;
+    right: 1.25rem;
+    width: 48px;
+    height: 48px;
+  }
+  
+  .whatsapp-float svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .scroll-top {
+    bottom: 5.25rem;
+    right: 1.25rem;
+    width: 38px;
+    height: 38px;
+  }
 }

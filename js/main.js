@@ -46,25 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  /* ── Language switcher ────────────────────────────────────── */
-  const langBtns = document.querySelectorAll('.lang-btn');
-  langBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      langBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const lang = btn.dataset.lang;
-      setLanguage(lang);
-    });
-  });
-
-  function setLanguage(lang) {
-    document.querySelectorAll('[data-en]').forEach(el => {
-      const text = el.dataset[lang] || el.dataset.en;
-      if (text) el.textContent = text;
-    });
-    document.documentElement.lang = lang;
-  }
-
   /* ── Parallax ─────────────────────────────────────────────── */
   const parallaxEls = document.querySelectorAll('[data-parallax]');
 
@@ -121,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
           labelEl.dataset.ur = "مہینے سے جاری";
           labelEl.dataset.hi = "महीने से चल रहे";
 
-          const currentLang = localStorage.getItem('site_lang') || 'en';
+          const currentLang = localStorage.getItem('mqlc_lang') || 'en';
           labelEl.textContent = labelEl.dataset[currentLang];
         }
       } else {
@@ -251,8 +232,23 @@ document.addEventListener('DOMContentLoaded', () => {
               const quizRes = await fetch(item.secure_url);
               const quizData = await quizRes.json();
 
-              const qTopic = quizData.topic || safeTitle;
-              const qDate = quizData.lecture_date || "Current Lecture";
+              // Build object-based native translation bindings for the injected topic
+              const topicObj = (typeof quizData.topic === 'object') ? quizData.topic : { en: quizData.topic || safeTitle };
+              const tEn = topicObj.en || safeTitle;
+              const tMr = topicObj.mr || tEn;
+              const tUr = topicObj.ur || tEn;
+              const tHi = topicObj.hi || tEn;
+
+              // Ensure safe language resolution
+              const currentLang = document.documentElement.lang || 'en';
+              const resolveLang = (field, fallback) => {
+                if (!field) return fallback;
+                if (typeof field === 'string') return field;
+                return field[currentLang] || field.en || fallback;
+              };
+
+              const qDate = resolveLang(quizData.lecture_date, "Current Lecture");
+              const closesDate = quizData.submission_deadline || '3 Days after Lecture';
               const qNo = quizData.quiz_no ? `#${quizData.quiz_no}` : "Live";
 
               // Check expiration (3 days after lecture_date or explicitly submission_deadline)
@@ -270,30 +266,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
               }
 
-              // Generate physical card safely without expandable
+              // Generate physical visually-merged card safely
               const card = document.createElement('div');
               card.className = 'bulletin-card';
 
-              // RENDER QUIZ TILE
+              // RENDER MERGED QUIZ TILE
               card.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h4 class="bulletin-title" style="text-transform: capitalize; margin: 0; padding-right: 10px;">${qTopic}</h4>
-                    <span style="background: var(--gold); color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.65rem; font-weight: bold; white-space: nowrap;">Quiz ${qNo}</span>
-                </div>
+                <!-- Outer Static Multilingual Section -->
+                <h4 data-en="Test Your Knowledge" data-mr="तुमचे ज्ञान तपासा" data-ur="اپنے علم کو جانچیں" data-hi="अपने ज्ञान का परीक्षण करें" class="bulletin-title" style="margin: 0; margin-bottom: 1rem;">
+                  Test Your Knowledge
+                </h4>
                 <div class="gold-divider" style="margin: 0.75rem 0;"></div>
-                <div style="flex:1; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; background:var(--cream); border:1px solid rgba(212,160,23,0.3); border-left:4px solid var(--gold); border-radius:8px; margin-top: 1rem; padding: 1.5rem; height: auto; min-height: 190px; box-sizing: border-box; position: relative;">
-                  <span style="color:var(--midnight); font-weight:700; font-size: 1.2rem; line-height: 1.2; margin-bottom: 0.5rem;">Interactive Live Quiz</span>
-                  <div style="display:flex; flex-direction:column; gap:0.2rem; font-size: 0.85rem; color:var(--text-mid);">
-                      <span><strong style="color:var(--gold);">Lecture:</strong> ${qDate}</span>
-                      <span><strong style="color:var(--gold);">Closes:</strong> ${quizData.submission_deadline || '3 Days after Lecture'}</span>
+                <p class="bulletin-desc" style="margin-bottom: 1.5rem;" data-en="Want to test your Islamic knowledge? Take our interactive assessment to see where you stand and improve your understanding!" data-mr="तुमची इस्लामिक माहिती तपासायची आहे का? तुमची पातळी तपासण्यासाठी आमची संवादात्मक चाचणी घ्या!" data-ur="کیا آپ اپنی اسلامی معلومات جانچنا چاہتے ہیں؟ اپنی سمجھ کا اندازہ لگانے کے لیے ہمارا انٹرایکٹو ٹیسٹ لیں!" data-hi="क्या आप अपने इस्लामी ज्ञान का परीक्षण करना चाहते हैं? अपने स्तर को जानने के लिए हमारा इंटरैक्टिव टेस्ट लें!">
+                  Want to test your Islamic knowledge? Take our interactive assessment to see where you stand and improve your understanding!
+                </p>
+
+                <!-- Inner Dynamic JSON-Driven Section -->
+                <div style="flex:1; display:flex; flex-direction:column; align-items:flex-start; justify-content:center; background:var(--cream); border:1px solid rgba(212,160,23,0.3); border-left:4px solid var(--gold); border-radius:8px; padding: 1.5rem; height: auto; min-height: 190px; box-sizing: border-box; position: relative;">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; margin-bottom: 0.5rem; gap: 0.5rem;">
+                      <!-- Dynamic Topic mapping rendering smoothly using embedded data properties -->
+                      <span style="color:var(--midnight); font-weight:600; font-size: 1.15rem; line-height: 1.3;" data-en="${tEn}" data-mr="${tMr}" data-ur="${tUr}" data-hi="${tHi}">${tEn}</span>
+                      <span style="background: var(--gold); color: white; padding: 4px 10px; border-radius: 16px; font-size: 0.7rem; font-weight: bold; white-space: nowrap;"><span data-en="Quiz" data-mr="चाचणी" data-ur="کوئز" data-hi="क्विज़">Quiz</span> <bdi>${qNo}</bdi></span>
                   </div>
-                  <a href="/quiz.html?src=${encodeURIComponent(item.secure_url)}" target="_blank" class="btn-primary" style="display:inline-block; margin-top: 1.2rem; padding: 0.5rem 1.2rem; font-size: 0.85rem; z-index: 10; text-decoration: none; border-radius: 55%">
-                      Begin Quiz &rarr;
+                  <div style="display:flex; flex-direction:column; gap:0.3rem; font-size: 0.9rem; color:var(--text-mid); margin-bottom: 1rem;">
+                      <span><strong style="color:var(--gold);"><span data-en="Lecture" data-mr="व्याख्यान" data-ur="لیکچر" data-hi="व्याख्यान">Lecture</span>:</strong> <bdi>${qDate}</bdi></span>
+                      <span><strong style="color:var(--gold);"><span data-en="Closes" data-mr="बंद" data-ur="بند" data-hi="बंद">Closes</span>:</strong> <bdi>${closesDate}</bdi></span>
+                  </div>
+                  <a href="/quiz.html?src=${encodeURIComponent(item.secure_url)}" target="_blank" class="btn-primary" style="display:inline-block; margin-top: auto; padding: 0.6rem 1.2rem; font-size: 0.9rem; z-index: 10; text-decoration: none; border-radius: 8px;">
+                      <span data-en="Begin Quiz &rarr;" data-mr="प्रश्नमंजुषा सुरू करा &rarr;" data-ur="کوئز شروع کریں &larr;" data-hi="प्रश्नोत्तरी शुरू करें &rarr;">Begin Quiz &rarr;</span>
                   </a>
                 </div>
               `;
 
               bulletinCarousel.appendChild(card);
+              
+              // Force language pass on the freshly injected innerHTML
+              setLanguage(currentLang);
             } catch (e) {
               console.error("Failed to parse quiz JSON for bulletin board.", e);
             }

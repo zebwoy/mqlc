@@ -241,11 +241,11 @@ const footerHTML = `
   <div class="accreditation-bar" id="contact">
     <div class="marquee-wrapper">
       <div class="marquee-content">
-        <span>A project under the guidance of <a href="https://www.ahlehadeesmumbai.com/" target="_blank"
+        <span>A project under the guidance of <a href="https://www.ahlehadeesbhiwandi.com/" target="_blank"
             rel="noopener noreferrer" class="accreditation-link">Subai Jamiat Ahle Hadees</a> Mumbai
           &nbsp;&nbsp;◈&nbsp;&nbsp; Email: mqlcinfo@gmail.com &nbsp;&nbsp;◈&nbsp;&nbsp; Phone: +91 92223 15006 | +91 99206 96189
           &nbsp;&nbsp;◈&nbsp;&nbsp; Location: Mumbai, India &nbsp;&nbsp;◈&nbsp;&nbsp;</span>
-        <span aria-hidden="true">A project under the guidance of <a href="https://www.ahlehadeesmumbai.com/" target="_blank"
+        <span aria-hidden="true">A project under the guidance of <a href="https://www.ahlehadeesbhiwandi.com/" target="_blank"
             rel="noopener noreferrer" class="accreditation-link">Subai Jamiat Ahle Hadees</a> Mumbai
           &nbsp;&nbsp;◈&nbsp;&nbsp; Email: mqlcinfo@gmail.com &nbsp;&nbsp;◈&nbsp;&nbsp; Phone: +91 77739 05451
           &nbsp;&nbsp;◈&nbsp;&nbsp; Location: Mumbai, India &nbsp;&nbsp;◈&nbsp;&nbsp;</span>

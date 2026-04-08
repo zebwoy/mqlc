@@ -30,8 +30,19 @@
 
     <!-- HEADER -->
     <header class="quiz-header">
+      <!-- Quiz Language Switcher -->
+      <div class="lang-switcher" role="group" aria-label="Language selector">
+        <span class="lang-switcher-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10A15.3 15.3 0 0 1 12 2z"/></svg>
+        </span>
+        <button class="lang-btn active" data-lang="en" aria-pressed="true">EN</button>
+        <button class="lang-btn" data-lang="mr" aria-pressed="false">मर</button>
+        <button class="lang-btn" data-lang="ur" aria-pressed="false">اردو</button>
+        <button class="lang-btn" data-lang="hi" aria-pressed="false">हि</button>
+      </div>
+
       <div class="logo-area">
-        <h1>MQLC <span class="gold-text">Quiz</span></h1>
+        <h1 data-en="MQLC <span class='gold-text'>Quiz</span>" data-mr="एमक्यूएलसी <span class='gold-text'>क्विझ</span>" data-ur="ایم کیو ایل سی <span class='gold-text'>کوئز</span>" data-hi="एमक्यूएलसी <span class='gold-text'>क्विज़</span>">MQLC <span class="gold-text">Quiz</span></h1>
       </div>
     </header>
 
@@ -48,16 +59,16 @@
         <div class="gold-divider center"></div>
 
         <div class="q-rules">
-          <h3>Ground Rules</h3>
+          <h3 data-en="Ground Rules" data-mr="नियम" data-ur="اصول" data-hi="नियम">Ground Rules</h3>
           <ul>
-            <li>You have <span class="gold-text bold">20 seconds</span> per question.</li>
-            <li>If the timer runs out, the question locks automatically.</li>
-            <li>Answers are dynamically shuffled. Read carefully!</li>
-            <li>At the end, submit your score to the live leaderboard.</li>
+            <li data-en="You have <span class='gold-text bold'>20 seconds</span> per question." data-mr="प्रत्येक प्रश्नासाठी <span class='gold-text bold'>२० सेकंद</span>." data-ur="ہر سوال کے لیے <span class='gold-text bold'>20 سیکنڈز</span>" data-hi="प्रत्येक प्रश्न के लिए <span class='gold-text bold'>20 सेकंड</span>">You have <span class="gold-text bold">20 seconds</span> per question.</li>
+            <li data-en="If the timer runs out, the question locks automatically." data-mr="वेळ संपल्यास प्रश्न लॉक होतो." data-ur="وقت ختم ہونے پر سوال لاک ہو جائے گا۔" data-hi="समय समाप्त होने पर प्रश्न लॉक हो जाता है।">If the timer runs out, the question locks automatically.</li>
+            <li data-en="Answers are dynamically shuffled. Read carefully!" data-mr="उत्तरे बदलली जातात. काळजीपूर्वक वाचा!" data-ur="جوابات کو شفل کیا جاتا ہے۔ غور سے پڑھیں!" data-hi="उत्तर बदल दी जाते हैं। ध्यान से पढ़ें!">Answers are dynamically shuffled. Read carefully!</li>
+            <li data-en="At the end, submit your score to the live leaderboard." data-mr="सरतेशेवटी, तुमचा स्कोअर लीडरबोर्डवर सबमिट करा." data-ur="آخر میں، اپنے سکور کو لیڈر بورڈ پر جمع کرائیں۔" data-hi="अंत में, अपना स्कोर लीडरबोर्ड पर सबमिट करें।">At the end, submit your score to the live leaderboard.</li>
           </ul>
         </div>
 
-        <button id="btn-begin" class="btn-primary full-width">Begin Quiz &rarr;</button>
+        <button id="btn-begin" class="btn-primary full-width" data-en="Begin Quiz &rarr;" data-mr="क्विझ सुरू करा &rarr;" data-ur="کوئز شروع کریں &larr;" data-hi="क्विज़ शुरू करें &rarr;">Begin Quiz &rarr;</button>
       </div>
     </section>
 
@@ -83,9 +94,9 @@
       <!-- Hidden until answered or timeout -->
       <div id="action-row" class="action-row" style="display: none;">
         <button id="btn-skip" class="btn-secondary"
-          style="border: 1px solid var(--gold); color: var(--gold); background: transparent; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; transition: all 0.2s;">Skip
+          style="border: 1px solid var(--gold); color: var(--gold); background: transparent; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; transition: all 0.2s;" data-en="Skip Question" data-mr="प्रश्न वगळा" data-ur="سوال چھوڑیں" data-hi="प्रश्न छोड़ें">Skip
           Question</button>
-        <button id="btn-next" class="btn-primary" style="padding: 0.6rem 1.2rem; border-radius: 6px;">Next
+        <button id="btn-next" class="btn-primary" style="padding: 0.6rem 1.2rem; border-radius: 6px;" data-en="Next Question" data-mr="पुढील प्रश्न" data-ur="اگلا سوال" data-hi="अगला प्रश्न">Next
           Question</button>
       </div>
     </section>
@@ -93,51 +104,55 @@
     <!-- STAGE 3: RESULTS & DEMOGRAPHICS -->
     <section id="stage-result" class="quiz-stage">
       <div class="result-header">
-        <h2>Quiz Complete!</h2>
-        <div id="final-score-text" class="score-display">You scored X / Y</div>
+        <h2 data-en="Quiz Complete!" data-mr="क्विझ पूर्ण!" data-ur="کوئز مکمل!" data-hi="क्विज़ पूर्ण!">Quiz Complete!</h2>
+        <div class="score-wrapper">
+          <span class="score-display" data-en="You scored" data-mr="तुमचा स्कोअर" data-ur="آپ کا سکور" data-hi="आपका स्कोर">You scored</span>
+          <span id="final-score-num" class="score-num">X</span>
+          <span id="final-score-den" class="score-den">out of Y correct</span>
+        </div>
         <div id="feedback-text" class="feedback-msg"></div>
       </div>
 
       <div class="gold-divider center"></div>
 
       <div class="demographics-panel">
-        <h3>Join the Leaderboard</h3>
-        <p class="text-muted" style="font-size:0.9rem; margin-bottom: 1.5rem;">Submit your score to secure your rank
+        <h3 data-en="Join the Leaderboard" data-mr="लीडरबोर्डमध्ये सामील व्हा" data-ur="لیڈر بورڈ میں شامل ہوں" data-hi="लीडरबोर्ड में शामिल हों">Join the Leaderboard</h3>
+        <p class="text-muted" style="font-size:0.9rem; margin-bottom: 1.5rem;" data-en="Submit your score to secure your rank among the community." data-mr="समुदायामध्ये तुमचे रँक सुरक्षित करण्यासाठी तुमचा स्कोअर सबमिट करा." data-ur="کمیونٹی میں اپنا رینک محفوظ کرنے کے لیے اپنا سکور جمع کرائیں۔" data-hi="समुदाय में अपनी रैंक सुरक्षित करने के लिए अपना स्कोर सबमिट करें।">Submit your score to secure your rank
           among the community.</p>
 
         <form id="leaderboard-form" class="multi-grid-form">
           <div class="input-group">
-            <label>Full Name</label>
-            <input type="text" id="demo-name" required placeholder="Enter your name">
+            <label data-en="Full Name" data-mr="पूर्ण नाव" data-ur="پورا نام" data-hi="पूरा नाम">Full Name</label>
+            <input type="text" id="demo-name" required data-placeholder-en="Enter your name" data-placeholder-mr="तुमचे नाव प्रविष्ट करा" data-placeholder-ur="اپنا نام درج کریں" data-placeholder-hi="अपना नाम दर्ज करें" placeholder="Enter your name">
           </div>
 
           <div class="grid-2">
             <div class="input-group">
-              <label>Age</label>
-              <input type="number" id="demo-age" required min="5" max="100" placeholder="e.g. 24">
+              <label data-en="Age" data-mr="वय" data-ur="عمر" data-hi="उम्र">Age</label>
+              <input type="number" id="demo-age" required min="5" max="100" data-placeholder-en="e.g. 24" data-placeholder-ur="مثال 24" placeholder="e.g. 24">
             </div>
             <div class="input-group">
-              <label>Gender</label>
+              <label data-en="Gender" data-mr="लिंग" data-ur="صنف" data-hi="लिंग">Gender</label>
               <div class="days-selector gender-selector" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.25rem;">
                 <label class="day-pill">
                   <input type="radio" name="demo-gender" value="Male" required>
-                  <span>Male</span>
+                  <span data-en="Male" data-mr="पुरुष" data-ur="مرد" data-hi="पुरुष">Male</span>
                 </label>
                 <label class="day-pill">
                   <input type="radio" name="demo-gender" value="Female">
-                  <span>Female</span>
+                  <span data-en="Female" data-mr="स्त्री" data-ur="خاتون" data-hi="महिला">Female</span>
                 </label>
               </div>
             </div>
           </div>
 
           <div class="input-group">
-            <label>Building Name</label>
-            <input type="text" id="demo-building" required placeholder="Sayyed Manzil, Bismillah Apt, Millat Apt, etc.">
+            <label data-en="Building Name" data-mr="इमारतीचे नाव" data-ur="عمارت کا نام" data-hi="इमारत का नाम">Building Name</label>
+            <input type="text" id="demo-building" required data-placeholder-en="Sayyed Manzil, Bismillah Apt, etc." data-placeholder-ur="سید منزل، بسم اللہ اپارٹمنٹ، وغیرہ" placeholder="Sayyed Manzil, Bismillah Apt, Millat Apt, etc.">
           </div>
 
           <div class="input-group full-width">
-            <label>Residential Area</label>
+            <label data-en="Residential Area" data-mr="निवासी क्षेत्र" data-ur="رہائشی علاقہ" data-hi="आवासीय क्षेत्र">Residential Area</label>
             <div class="days-selector area-selector">
               <label class="day-pill"><input type="radio" name="demo-area" value="Faridbaug"
                   required><span>Faridbaug</span></label>
@@ -149,23 +164,53 @@
                   Mohalla</span></label>
               <label class="day-pill"><input type="radio" name="demo-area"
                   value="Nizampura"><span>Nizampura</span></label>
-              <label class="day-pill"><input type="radio" name="demo-area" value="Others"><span>Others</span></label>
+              <label class="day-pill"><input type="radio" name="demo-area" value="Others"><span data-en="Others" data-ur="دیگر">Others</span></label>
             </div>
           </div>
 
           <div id="submit-status" class="status-msg" style="margin-top: 1rem;"></div>
 
-          <button type="submit" id="btn-submit-score" class="btn-primary full-width" style="margin-top:1rem;">
+          <button type="submit" id="btn-submit-score" class="btn-primary full-width" style="margin-top:1rem;" data-en="Submit & Exit" data-mr="सबमिट करा" data-ur="جمع کرائیں" data-hi="सबमिट करें">
             Submit & Exit
           </button>
         </form>
+      </div>
+
+      <!-- LEADERBOARD PANEL (Hidden initially) -->
+      <div id="leaderboard-panel" class="leaderboard-panel" style="display: none;">
+        <div id="leaderboard-capture-area" class="leaderboard-panel-share-wrap">
+          <div class="leaderboard-header">
+            <h3>Leaderboard</h3>
+            <p id="lb-quiz-title">Quiz Topic</p>
+          </div>
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th data-en="Rank" data-mr="रँक" data-ur="رینک" data-hi="रैंक">Rank</th>
+                <th data-en="Player" data-mr="खेळाडू" data-ur="کھلاڑی" data-hi="खिलाड़ी">Player</th>
+                <th data-en="Score" data-mr="स्कोअर" data-ur="سکور" data-hi="स्कोर">Score</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-tbody">
+              <!-- JS injected -->
+            </tbody>
+          </table>
+        </div>
+        <div style="padding: 1.5rem; border-top: 1px solid var(--quiz-border);">
+          <button id="btn-share" class="btn-share">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+            Share Leaderboard
+          </button>
+        </div>
       </div>
 
     </section>
 
   </main>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="js/supabase-config.js"></script>
+  <script src="js/lang.js"></script>
   <script src="js/quiz.js"></script>
 </body>
 
