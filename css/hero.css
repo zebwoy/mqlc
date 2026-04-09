@@ -1,13 +1,13 @@
-/* ─── Hero ──────────────────────────────────────────────────── */
 .hero {
   position: relative;
-  height: 100vh;
-  min-height: 600px;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   text-align: center;
+  padding-top: 130px;
+  padding-bottom: 110px;
 }
 
 /* Parallax background */
@@ -111,17 +111,18 @@
 
 .hero-title span {
   color: var(--gold);
-  font-style: italic;
 }
 
 .hero-subtitle {
   font-size: clamp(0.95rem, 2vw, 1.15rem);
   color: rgba(255, 255, 255, 0.78);
   font-weight: 300;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1.5rem;
+  /* Increased buffer */
   opacity: 0;
   animation: heroFadeUp 0.8s 0.75s forwards;
-  line-height: 1.7;
+  line-height: var(--lh-body);
+  /* Bind to dynamic variables */
 }
 
 .hero-ar {
@@ -146,6 +147,7 @@
   transition: transform 0.3s ease, text-shadow 0.3s ease, color 0.3s ease;
   padding: 0.5rem 1rem;
   border-radius: 50px;
+  font-family: var(--font-arabic);
 }
 
 .hero-ar.ayah-playable:hover {

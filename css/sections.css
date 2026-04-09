@@ -364,9 +364,15 @@
 
 .marquee-content {
   display: flex;
+  flex: 0 0 auto;
   white-space: nowrap;
-  animation: scrollMarquee 25s linear infinite;
-  min-width: 200%;
+  animation: scrollMarquee 30s linear infinite;
+}
+
+@media (max-width: 768px) {
+  .marquee-content {
+    animation: scrollMarquee 15s linear infinite; /* Speed up on mobile */
+  }
 }
 
 .accreditation-bar:hover .marquee-content {
@@ -398,7 +404,7 @@
   }
 
   100% {
-    transform: translateX(-50%);
+    transform: translateX(-100%);
   }
 }
 
@@ -1324,6 +1330,11 @@
   opacity: 0.8;
   line-height: 1.6;
   margin-bottom: 1rem;
+}
+
+/* Fix #6: Contrast */
+.site-footer .text-muted {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* Fix #7: Phone number alignment */

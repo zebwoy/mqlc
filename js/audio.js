@@ -3,7 +3,8 @@
 
 (function () {
 
-  const AUDIO_SRC = 'https://server8.mp3quran.net/maher/096.mp3';
+  // Robust EveryAyah CDN for Surah Al-Alaq Verse 1 (Iqra) - Maher Al Muaiqly
+  const AUDIO_SRC = 'https://everyayah.com/data/MaherAlMuaiqly128kbps/096001.mp3';
   const VOLUME    = 0.28;
 
   let audio     = null;
@@ -50,12 +51,36 @@
 
     if (!initiated) {
       initAudio();
+      
+      // On first launch, visually animate immediately, but wait for physical chunk to buffer
+      setPlaying(true);
+      
+      const onCanPlay = () => {
+        audio.play().catch((err) => {
+          console.warn('MQLC audio play rejected during initial buffer:', err);
+          setPlaying(false);
+        });
+      };
+      
+      audio.addEventListener('canplay', onCanPlay, { once: true });
+      
+      // Failsafe in case the MP3 totally 404s
+      audio.addEventListener('error', () => {
+         setPlaying(false);
+      }, { once: true });
+      
+      return;
     }
 
-    if (!audio) return;
+    if (!audio) return; // Should not happen
 
+    // For subsequent toggles, the audio is already buffered
     if (audio.paused) {
-      audio.play().then(() => setPlaying(true)).catch(() => {});
+      setPlaying(true);
+      audio.play().catch((err) => {
+        console.warn('MQLC audio play rejected natively by browser:', err);
+        setPlaying(false);
+      });
     } else {
       audio.pause();
       setPlaying(false);

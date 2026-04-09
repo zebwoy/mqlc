@@ -1,0 +1,315 @@
+/* ── MQLC Registration Form Premium Styles ── */
+
+/* ── Wizard Progress Bar ── */
+.wizard-progress-container {
+  width: 100%;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  margin-bottom: 2rem;
+  overflow: hidden;
+  position: relative;
+  display: none; /* hidden on step 1 (auth) */
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.08); /* Soft inner shadow for depth */
+}
+
+.wizard-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--gold);
+  border-radius: 4px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 10px rgba(212, 160, 23, 0.5);
+}
+
+/* ── Wizard Stages ── */
+.wizard-stage {
+  display: none;
+  animation: fadeInStep 0.4s ease forwards;
+}
+.wizard-stage.active {
+  display: block;
+}
+
+@keyframes fadeInStep {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Form Groups & Glassmorphism ── */
+.reg-title {
+  color: var(--navy, #111827);
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: var(--mb-title); /* Dynamic spacing */
+}
+
+.reg-form-group {
+  margin-bottom: var(--mb-form-group); /* Dynamic spacing */
+  /* Remove hardcoded text-align: left so RTL can cascade properly */
+}
+.reg-form-group label.group-label {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--navy, #1F2937); /* Darker for light mode */
+  letter-spacing: 0.02em;
+}
+
+[dir="rtl"] .reg-title,
+[dir="rtl"] .group-label {
+  text-align: right;
+}
+
+/* Glassmorphic Inputs */
+/* Light Theme Premium Inputs */
+.premium-input {
+  width: 100%;
+  padding: 0.9rem 1.25rem;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.15); /* Clean light outline */
+  background: #ffffff; /* Crisp white, never grey disabled look */
+  color: #111827; /* Dark readable text */
+  font-weight: 500;
+  font-family: inherit;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+.premium-input::placeholder {
+  color: rgba(0, 0, 0, 0.35); /* Visible but subtle placeholder */
+  font-weight: 400;
+}
+.premium-input:focus, .premium-input:focus-visible {
+  outline: none;
+  border-color: var(--gold);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(212, 160, 23, 0.2);
+}
+
+/* Light mode fix for select dropdown options */
+select.premium-input option {
+  background: #ffffff;
+  color: #111827;
+}
+
+/* Time inputs wrapper */
+.time-split {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+.time-split span {
+  color: var(--navy, #1F2937);
+  font-weight: 500;
+}
+
+/* ── Accessible Radio / Checkbox Pills ── */
+.days-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.pill-container {
+  flex: 1;
+  min-width: 80px;
+  position: relative;
+}
+
+/* Vertically stacked cards for Course Selection */
+.cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.cards-grid .pill-container {
+  width: 100%;
+}
+
+/* Visually hide the native input but keep it for screen-readers and keyboard tabbing */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.day-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem 0.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+  background: #ffffff; /* pure white, not grey/disabled */
+  color: #111827; /* Dark readable text */
+  cursor: pointer;
+  transition: all 0.25s ease;
+  user-select: none;
+  font-weight: 500;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+/* Focus Ring for Keyboard Access */
+.visually-hidden:focus-visible + .day-pill {
+  box-shadow: 0 0 0 4px rgba(212, 160, 23, 0.3);
+  border-color: var(--gold);
+}
+
+.visually-hidden:checked + .day-pill {
+  background: var(--gold);
+  color: #000;
+  border-color: var(--gold);
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(212, 160, 23, 0.3);
+  transform: translateY(-1px);
+}
+
+.visually-hidden:active + .day-pill {
+  transform: scale(0.97);
+}
+
+/* ── Layout Grid ── */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+.full-width {
+  grid-column: 1 / -1;
+}
+@media (max-width: 600px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  .full-width {
+    grid-column: 1; /* Reset */
+  }
+}
+
+/* ── Wizard Controls ── */
+.wizard-controls {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px dashed rgba(212,160,23,0.2);
+}
+
+.btn-prev {
+  background: #ffffff;
+  color: var(--navy, #1F2937);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  padding: 1.15rem 1.5rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+.btn-prev:hover {
+  background: #f9fafa;
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+/* ── Success Animation ── */
+.success-checkmark {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 2rem;
+}
+.check-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  stroke-width: 3;
+  stroke: var(--gold);
+  fill: none;
+  animation: strokeCircle 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+.check-path {
+  transform-origin: 50% 50%;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  stroke-width: 3;
+  stroke: var(--gold);
+  fill: none;
+  animation: strokePath 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.6s forwards;
+}
+
+@keyframes strokeCircle {
+  100% { stroke-dashoffset: 0; }
+}
+@keyframes strokePath {
+  100% { stroke-dashoffset: 0; }
+}
+
+/* ── Upgrading Button Paddings ── */
+.btn-next,
+#btn-verify-pin,
+#btn-submit {
+  padding: 1.15rem 2rem !important; /* Increased for unsqueezed look */
+  font-size: 1.05rem !important;
+  font-weight: 600;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(212, 160, 23, 0.25);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-next:active,
+#btn-verify-pin:active,
+#btn-submit:active {
+  transform: scale(0.98);
+}
+
+.btn-prev {
+  padding: 1.15rem 1.5rem;
+  font-size: 1.05rem;
+  border-radius: 10px;
+}
+
+/* ── Calendar / Datepicker Icon Fix ── */
+.premium-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6; /* Let the default dark icon show naturally in light mode */
+}
+.premium-input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* ── Validation Messages ── */
+.premium-input.input-error {
+  border-color: #ff4d4d;
+  box-shadow: 0 0 8px rgba(255, 77, 77, 0.2);
+  background: rgba(255, 77, 77, 0.02);
+}
+.validation-msg {
+  display: block;
+  color: #ff4d4d;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  font-weight: 500;
+  animation: fadeInStep 0.2s ease forwards;
+}
+
+/* ── Aadhar Group ── */
+.aadhar-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.aadhar-sep {
+  color: rgba(0, 0, 0, 0.3);
+  font-weight: 600;
+}

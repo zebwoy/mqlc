@@ -20,15 +20,32 @@
   --text-muted: #666666;
 
   --font-display: 'Playfair Display', Georgia, serif;
-  --font-body: 'Inter', system-ui, sans-serif;
+  --font-body: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
   --font-urdu: 'Noto Nastaliq Urdu', serif;
   --font-hindi: 'Noto Sans Devanagari', sans-serif;
+  --font-arabic: 'Amiri', serif;
 
   --section-pad: 5rem 2rem;
   --max-width: 1200px;
   --radius: 12px;
   --radius-sm: 6px;
   --transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Dynamic Layout Variables */
+  --lh-body: 1.7;
+  --lh-heading: 1.25;
+  --lh-urdu: 2.15;
+  /* Adjusted bound for nastaliq balancing */
+  --mb-form-group: 1.5rem;
+  --mb-title: 2rem;
+}
+
+/* Urdu Base Dynamic Override */
+[lang="ur"] {
+  --mb-form-group: 0.8rem;
+  /* Contract margin to account for nastaliq height */
+  --mb-title: 1.0rem;
+  /* Contract margin to account for nastaliq height */
 }
 
 /* ─── Reset ─────────────────────────────────────────────────── */
@@ -82,7 +99,7 @@ h2,
 h3,
 h4 {
   font-family: var(--font-display);
-  line-height: 1.25;
+  line-height: var(--lh-heading);
   color: var(--text-dark);
 }
 
@@ -108,7 +125,7 @@ h4 {
 
 p {
   font-size: 1rem;
-  line-height: 1.8;
+  line-height: var(--lh-body);
   color: var(--text-mid);
 }
 
@@ -131,6 +148,77 @@ p {
 
 .hindi {
   font-family: var(--font-hindi);
+}
+
+/* ─── Global Language Typography Overrides ──────────────────── */
+/* Urdu (Nastaliq Script) */
+[lang="ur"],
+[lang="ur"] body,
+[lang="ur"] button,
+[lang="ur"] input,
+[lang="ur"] select,
+[lang="ur"] textarea,
+[lang="ur"] p,
+[lang="ur"] a,
+[lang="ur"] span,
+[lang="ur"] blockquote,
+[lang="ur"] cite,
+[lang="ur"] li,
+[lang="ur"] div {
+  font-family: var(--font-urdu) !important;
+  /* Force override */
+  /* line-height: var(--lh-urdu); Nastaliq balanced bound */
+}
+
+[lang="ur"] h1,
+[lang="ur"] h2,
+[lang="ur"] h3,
+[lang="ur"] h4,
+[lang="ur"] .reg-title {
+  font-family: var(--font-urdu) !important;
+  line-height: 1.85;
+  /* Refined bounds to prevent severe gaps */
+}
+
+/* Explicit Exception for Arabic Calligraphy Blocks */
+[lang="ur"] .hero-ar,
+[lang="ur"] .ayah-playable {
+  font-family: var(--font-arabic) !important;
+}
+
+/* Hindi / Marathi (Devanagari Script) */
+[lang="hi"],
+[lang="mr"],
+[lang="hi"] body,
+[lang="mr"] body,
+[lang="hi"] button,
+[lang="mr"] button,
+[lang="hi"] input,
+[lang="mr"] input,
+[lang="hi"] select,
+[lang="mr"] select,
+[lang="hi"] textarea,
+[lang="mr"] textarea,
+[lang="hi"] p,
+[lang="mr"] p,
+[lang="hi"] a,
+[lang="mr"] a,
+[lang="hi"] span,
+[lang="mr"] span {
+  font-family: var(--font-hindi) !important;
+}
+
+[lang="hi"] h1,
+[lang="mr"] h1,
+[lang="hi"] h2,
+[lang="mr"] h2,
+[lang="hi"] h3,
+[lang="mr"] h3,
+[lang="hi"] h4,
+[lang="mr"] h4,
+[lang="hi"] .reg-title,
+[lang="mr"] .reg-title {
+  font-family: var(--font-hindi) !important;
 }
 
 /* ─── Layout Utilities ──────────────────────────────────────── */
@@ -317,7 +405,7 @@ p {
     width: 48px;
     height: 48px;
   }
-  
+
   .whatsapp-float svg {
     width: 24px;
     height: 24px;

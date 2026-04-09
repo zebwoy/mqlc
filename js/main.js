@@ -20,6 +20,16 @@ document.addEventListener('DOMContentLoaded', () => {
     yrs: { en: ' yrs', mr: ' वर्षे', ur: ' سال', hi: ' साल' }
   };
 
+  /* ── Temporal Namaz translations ─────────────────────────── */
+  const TEMPORAL_MAP = {
+    fajr: { en: 'AM', ur: 'صبح', hi: 'सुबह', mr: 'सकाळ' },
+    zuhr: { en: 'PM', ur: 'دوپہر', hi: 'दोपहर', mr: 'दुपार' },
+    asr: { en: 'PM', ur: 'شام', hi: 'शाम', mr: 'संध्याकाळ' },
+    maghrib: { en: 'PM', ur: 'شام', hi: 'शाम', mr: 'संध्याकाळ' },
+    isha: { en: 'PM', ur: 'رات', hi: 'रात', mr: 'रात्र' },
+    jummah: { en: 'PM', ur: 'دوپہر', hi: 'दोपहर', mr: 'दुपार' }
+  };
+
   /* ── Navbar scroll behaviour ──────────────────────────────── */
   const navbar = document.querySelector('.navbar');
   const scrollTopBtn = document.querySelector('.scroll-top');
@@ -172,13 +182,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 h = parseInt(h, 10);
                 h = h % 12 || 12;
 
-                // Hardcode the suffix based on the exact prayer
-                const suffix = namePart === 'fajr' ? 'AM' : 'PM';
+                // Map the suffix based on the temporal logic
+                const baseKey = namePart.toLowerCase();
+                const tempMap = TEMPORAL_MAP[baseKey] || { en: 'PM', ur: 'دوپہر', hi: 'दोपहर', mr: 'दुपार' };
+                const lang = localStorage.getItem('mqlc_lang') || 'en';
+                const suffix = tempMap[lang] || tempMap.en;
+                
                 // Store raw values for re-rendering on language switch
                 timeEl.dataset.rawH = h;
                 timeEl.dataset.rawM = m;
-                timeEl.dataset.rawSuffix = suffix;
-                const lang = localStorage.getItem('mqlc_lang') || 'en';
+                timeEl.dataset.rawNamePart = baseKey;
                 timeEl.textContent = `${localizeNum(h, lang)}:${localizeNum(m, lang)}\u00a0${suffix}`;
               }
             }
@@ -219,7 +232,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const progress = Math.min(elapsed / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
       const num = Math.floor(eased * target);
-      el.textContent = localizeNum(num, lang) + suffix;
+      const prefix = el.dataset.prefix || '';
+      el.textContent = prefix + localizeNum(num, lang) + suffix;
       if (progress < 1) requestAnimationFrame(update);
     }
 
@@ -230,20 +244,23 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('onLanguageChange', (e) => {
     const lang = e.detail.lang;
 
-    // Re-render namaz times with localized numerals
+    // Re-render namaz times with localized numerals and temporal bounds
     document.querySelectorAll('.jamat-time[data-raw-h]').forEach(el => {
       const h = el.dataset.rawH;
       const m = el.dataset.rawM;
-      const suffix = el.dataset.rawSuffix;
+      const namePart = el.dataset.rawNamePart || 'zuhr';
+      const tempMap = TEMPORAL_MAP[namePart] || TEMPORAL_MAP.zuhr;
+      const suffix = tempMap[lang] || tempMap.en;
       el.textContent = `${localizeNum(h, lang)}:${localizeNum(m, lang)}\u00a0${suffix}`;
     });
 
-    // Re-render stat counters with localized suffix
+    // Re-render stat counters with localized suffix and prefix
     document.querySelectorAll('[data-count]').forEach(el => {
       const val = parseInt(el.dataset.count, 10) || 0;
       const suffixKey = el.dataset.suffixKey || '';
       const suffix = suffixKey ? (SUFFIX_MAP[suffixKey]?.[lang] || SUFFIX_MAP[suffixKey]?.en || '') : (el.dataset.suffix || '');
-      el.textContent = localizeNum(val, lang) + suffix;
+      const prefix = el.dataset.prefix || '';
+      el.textContent = prefix + localizeNum(val, lang) + suffix;
     });
   });
 
@@ -343,7 +360,9 @@ document.addEventListener('DOMContentLoaded', () => {
               bulletinCarousel.appendChild(card);
               
               // Force language pass on the freshly injected innerHTML
-              setLanguage(currentLang);
+              if (typeof window.triggerTranslation === 'function') {
+                window.triggerTranslation();
+              }
             } catch (e) {
               console.error("Failed to parse quiz JSON for bulletin board.", e);
             }

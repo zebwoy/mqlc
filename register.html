@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1A1A2E" />
+  <title>MQLC Student Registration</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/quiz.css" />
+  <link rel="stylesheet" href="css/register.css" />
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Flatpickr (Premium Calendar) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</head>
+
+<body class="quiz-body">
+
+  <div class="stars" id="stars" aria-hidden="true"></div>
+
+  <!-- Removed Old Absolute Header Switcher -->
+
+  <main class="quiz-container" style="max-width: 800px; position: relative;">
+
+    <!-- HEADER -->
+    <header class="quiz-header">
+      <!-- Standard Language Switcher Component -->
+      <div class="lang-switcher" role="group" aria-label="Language selector">
+        <span class="lang-switcher-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10A15.3 15.3 0 0 1 12 2z"/></svg>
+        </span>
+        <button class="lang-btn active" data-lang="en" aria-pressed="true">EN</button>
+        <button class="lang-btn" data-lang="mr" aria-pressed="false">मर</button>
+        <button class="lang-btn" data-lang="ur" aria-pressed="false">اردو</button>
+        <button class="lang-btn" data-lang="hi" aria-pressed="false">हि</button>
+      </div>
+
+      <div class="logo-area">
+        <h1>
+          <span data-en="Student " data-mr="विद्यार्थी " data-ur="طالب علم " data-hi="छात्र ">Student </span>
+          <span class="gold-text" data-en="Admission" data-mr="प्रवेश" data-ur="داخلہ" data-hi="प्रवेश">Admission</span>
+        </h1>
+      </div>
+    </header>
+
+    <!-- WIZARD PROGRESS BAR -->
+    <div class="wizard-progress-container" id="wizard-progress-container">
+      <div class="wizard-progress-bar" id="wizard-progress-bar"></div>
+    </div>
+
+    <!-- STAGE 1: PIN AUTHENTICATION -->
+    <section id="stage-auth" class="wizard-stage active">
+      <div class="q-rules">
+        <h3 style="text-align: center;" data-en="Enter Registration OTP" data-mr="नोंदणी OTP प्रविष्ट करा"
+          data-ur="رجسٹریشن OTP درج کریں" data-hi="पंजीकरण OTP दर्ज करें">
+          Enter Registration OTP
+        </h3>
+        <p style="text-align: center; color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem;"
+          data-en="To register your child, please enter the one-time 6-digit Registration OTP provided to you by the Maktab Administrator."
+          data-mr="तुमच्या पाल्याची नोंदणी करण्यासाठी, मकतब प्रशासकाने दिलेला वन-टाइम 6-अंकी नोंदणी OTP प्रविष्ट करा."
+          data-ur="اپنے بچے کو رجسٹر کرنے کے لیے، براہ کرم مکتب ایڈمنسٹریٹر کی طرف سے فراہم کردہ ایک بار کا 6 ہندسوں کا رجسٹریشن OTP درج کریں۔"
+          data-hi="अपने बच्चे को पंजीकृत करने के लिए, कृपया मकतब प्रशासक द्वारा प्रदान किया गया वन-टाइम 6 अंकीय पंजीकरण OTP दर्ज करें।">
+          To register your child, please enter the one-time 6-digit Registration OTP provided to you by the Maktab
+          Administrator.
+        </p>
+
+        <div style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem;" dir="ltr">
+          <input type="text" id="input-pin" maxlength="6" placeholder="------"
+            style="font-size: 2rem; font-weight: 700; letter-spacing: 10px; text-align: center; padding: 1rem; border-radius: 12px; border: 2px solid var(--gold); color: var(--gold); width: 250px;">
+        </div>
+
+        <div id="auth-status" style="color: red; text-align: center; margin-bottom: 1rem; min-height: 24px;">
+        </div>
+
+        <button id="btn-verify-pin" class="btn-primary full-width">
+          <span data-en="Establish Connection &rarr;" data-mr="कनेक्शन स्थापित करा &rarr;"
+            data-ur="کنکشن قائم کریں &larr;" data-hi="कनेक्शन स्थापित करें &rarr;">Establish Connection &rarr;</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- FORM WRAPPER -->
+    <form id="parent-registration-form">
+
+      <!-- STAGE 2: COURSE -->
+      <section id="step-course" class="wizard-stage">
+        <h3 class="reg-title" data-en="1. Course Selection" data-mr="१. अभ्यासक्रम निवड" data-ur="۱. کورس کا انتخاب"
+          data-hi="१. पाठ्यक्रम चयन">1. Course Selection</h3>
+
+        <div class="reg-form-group">
+          <label class="group-label" data-en="Course applying for" data-mr="अर्ज करत असलेला अभ्यासक्रम"
+            data-ur="کورس جس کے لیے درخواست دے رہے ہیں" data-hi="पाठ्यक्रम जिसके लिए आवेदन कर रहे हैं">Course applying
+            for</label>
+          <div class="days-grid cards-grid">
+            <div class="pill-container">
+              <input type="radio" id="crs-qaida" name="course_applying" value="Noorani Qaida" class="visually-hidden"
+                required>
+              <label class="day-pill" for="crs-qaida" data-en="Noorani Qaida" data-mr="नूरानी कायदा"
+                data-ur="نورانی قاعدہ" data-hi="नूरानी कायदा">Noorani Qaida</label>
+            </div>
+            <div class="pill-container">
+              <input type="radio" id="crs-nazra" name="course_applying" value="Qur'an Reading (Nazra)"
+                class="visually-hidden">
+              <label class="day-pill" for="crs-nazra" data-en="Qur'an Reading (Nazra)" data-mr="कुराण वाचन (नाझरा)"
+                data-ur="قرآن خوانی (ناظرہ)" data-hi="कुरान पढ़ना (नाज़रा)">Qur'an Reading (Nazra)</label>
+            </div>
+            <div class="pill-container">
+              <input type="radio" id="crs-hifz" name="course_applying" value="Qur'an Memorization (Hifz)"
+                class="visually-hidden">
+              <label class="day-pill" for="crs-hifz" data-en="Qur'an Memorization (Hifz)"
+                data-mr="कुराण पाठांतर (हिफ्झ)" data-ur="حفظ قرآن (حفظ)" data-hi="कुरान हिफ्ज़ (हिफ्ज़)">Qur'an
+                Memorization (Hifz)</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="wizard-controls">
+          <div></div> <!-- Spacing -->
+          <button type="button" class="btn-primary btn-next">
+            <span data-en="Next Step &rarr;" data-mr="पुढील पायरी &rarr;" data-ur="اگلا مرحلہ &larr;"
+              data-hi="अगला कदम &rarr;">Next Step &rarr;</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- STAGE 3: STUDENT IDENTITY -->
+      <section id="step-identity" class="wizard-stage">
+        <h3 class="reg-title" data-en="2. Student Identity" data-mr="२. विद्यार्थ्याची ओळख"
+          data-ur="۲. طالب علم کی شناخت" data-hi="२. छात्र की पहचान">2. Student Identity</h3>
+        <div class="form-grid">
+          <div class="reg-form-group full-width">
+            <label class="group-label" data-en="Student Full Name" data-mr="विद्यार्थ्याचे पूर्ण नाव"
+              data-ur="طالب علم کا پورا نام" data-hi="छात्र का पूरा नाम">Student Full Name</label>
+            <input type="text" class="premium-input" name="student_name" data-placeholder-en="e.g. Asad Kazi"
+              data-placeholder-mr="उदा. असद काझी" data-placeholder-ur="مثلاً اسد قاضی"
+              data-placeholder-hi="उदा. असद काज़ी" required>
+          </div>
+
+          <div class="reg-form-group full-width">
+            <label class="group-label" data-en="Father's Full Name" data-mr="वडिलांचे पूर्ण नाव"
+              data-ur="والد کا پورا نام" data-hi="पिता का पूरा नाम">Father's Full Name</label>
+            <input type="text" class="premium-input" name="father_name" data-placeholder-en="e.g. Imran Kazi"
+              data-placeholder-mr="उदा. इम्रान काझी" data-placeholder-ur="مثلاً عمران قاضی"
+              data-placeholder-hi="उदा. इमरान काज़ी" required>
+          </div>
+
+          <div class="reg-form-group full-width">
+            <label class="group-label" data-en="Gender" data-mr="लिंग" data-ur="صنف" data-hi="लिंग">Gender</label>
+            <div class="days-grid">
+              <div class="pill-container">
+                <input type="radio" id="gen-m" name="gender" value="Male" class="visually-hidden" required>
+                <label class="day-pill" for="gen-m" data-en="Male" data-mr="पुरुष" data-ur="مرد"
+                  data-hi="पुरुष">Male</label>
+              </div>
+              <div class="pill-container">
+                <input type="radio" id="gen-f" name="gender" value="Female" class="visually-hidden">
+                <label class="day-pill" for="gen-f" data-en="Female" data-mr="महिला" data-ur="عورت"
+                  data-hi="महिला">Female</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="reg-form-group">
+            <label class="group-label" data-en="Date of Birth" data-mr="जन्मतारीख" data-ur="تاریخ پیدائش"
+              data-hi="जन्म तिथि">Date of Birth</label>
+            <input type="date" class="premium-input" name="dob" required>
+          </div>
+
+          <div class="reg-form-group">
+            <label class="group-label" data-en="Aadhar Number (Optional)" data-mr="आधार क्रमांक (पर्यायी)"
+              data-ur="آدھار نمبر (اختیاری)" data-hi="आधार नंबर (वैकल्पिक)">Aadhar Number (Optional)</label>
+            <div class="aadhar-group" dir="ltr">
+              <input type="text" class="premium-input aadhar-part" id="aadhar1" maxlength="4" placeholder="1234"
+                pattern="\d*">
+              <span class="aadhar-sep">-</span>
+              <input type="text" class="premium-input aadhar-part" id="aadhar2" maxlength="4" placeholder="5678"
+                pattern="\d*">
+              <span class="aadhar-sep">-</span>
+              <input type="text" class="premium-input aadhar-part" id="aadhar3" maxlength="4" placeholder="9012"
+                pattern="\d*">
+            </div>
+            <input type="hidden" name="aadhar_no" id="aadhar_hidden">
+          </div>
+
+          <div class="reg-form-group full-width">
+            <label class="group-label" data-en="Detailed Residential Address" data-mr="सविस्तर रहिवासी पत्ता"
+              data-ur="تفصیلی رہائشی پتہ" data-hi="विस्तृत आवासीय पता">Detailed Residential Address</label>
+            <textarea class="premium-input" name="address" rows="3" data-placeholder-en="Flat No, Building, Area"
+              data-placeholder-mr="फ्लॅट नंबर, इमारत, परिसर" data-placeholder-ur="فلیٹ نمبر، عمارت، علاقہ"
+              data-placeholder-hi="फ्लैट नंबर, बिल्डिंग, क्षेत्र" required></textarea>
+          </div>
+
+          <div class="reg-form-group">
+            <label class="group-label" data-en="Father's Contact No." data-mr="वडिलांचा संपर्क क्रमांक"
+              data-ur="والد کا رابطہ نمبر" data-hi="पिता का संपर्क नंबर">Father's Contact No.</label>
+            <input type="tel" class="premium-input" name="contact_father" data-placeholder-en="10-digit number"
+              data-placeholder-mr="10-अंकी क्रमांक" data-placeholder-ur="10 ہندسوں کا نمبر"
+              data-placeholder-hi="10-अंकीय नंबर" pattern="[0-9]{10}" maxlength="10" required>
+          </div>
+
+          <div class="reg-form-group">
+            <label class="group-label" data-en="Mother's Contact No. (Optional)" data-mr="आईचा संपर्क क्रमांक (पर्यायी)"
+              data-ur="والدہ کا رابطہ نمبر (اختیاری)" data-hi="माता का संपर्क नंबर (वैकल्पिक)">Mother's Contact No.
+              (Optional)</label>
+            <input type="tel" class="premium-input" name="contact_mother" data-placeholder-en="10-digit number"
+              data-placeholder-mr="10-अंकी क्रमांक" data-placeholder-ur="10 ہندسوں کا نمبر"
+              data-placeholder-hi="10-अंकीय नंबर" pattern="[0-9]{10}" maxlength="10">
+          </div>
+        </div>
+
+        <div class="wizard-controls">
+          <button type="button" class="btn-prev">
+            <span data-en="&larr; Back" data-mr="&larr; मागे" data-ur="&rarr; پیچھے" data-hi="&larr; पीछे">&larr;
+              Back</span>
+          </button>
+          <button type="button" class="btn-primary btn-next">
+            <span data-en="Next Step &rarr;" data-mr="पुढील पायरी &rarr;" data-ur="اگلا مرحلہ &larr;"
+              data-hi="अगला कदम &rarr;">Next Step &rarr;</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- STAGE 4: BACKGROUND -->
+      <section id="step-edu" class="wizard-stage">
+        <h3 class="reg-title" data-en="3. Educational Background" data-mr="३. शैक्षणिक पार्श्वभूमी"
+          data-ur="۳. تعلیمی پس منظر" data-hi="३. शैक्षिक पृष्ठभूमि">3. Educational Background</h3>
+        <div class="form-grid">
+          <div class="reg-form-group full-width">
+            <label class="group-label" data-en="Currently studying in Class / Standard"
+              data-mr="सध्या कोणती इयत्ता शिकत आहात" data-ur="اس وقت کس کلاس میں پڑھ رہے ہیں"
+              data-hi="वर्तमान में किस कक्षा में अध्ययनरत हैं">Currently studying in Class</label>
+            <select class="premium-input" name="current_class" required>
+              <option value="" disabled selected data-en="Select class..." data-mr="इयत्ता निवडा..."
+                data-ur="کلاس منتخب کریں..." data-hi="कक्षा चुनें...">Select class...</option>
+              <option value="Nursery/KG">Nursery/KG</option>
+              <option value="Class 1">Class 1</option>
+              <option value="Class 2">Class 2</option>
+              <option value="Class 3">Class 3</option>
+              <option value="Class 4">Class 4</option>
+              <option value="Class 5">Class 5</option>
+              <option value="Class 6">Class 6</option>
+              <option value="Class 7">Class 7</option>
+              <option value="Class 8">Class 8</option>
+              <option value="Class 9">Class 9</option>
+              <option value="Class 10">Class 10</option>
+              <option value="Class 11">Class 11</option>
+              <option value="Class 12">Class 12</option>
+            </select>
+          </div>
+
+          <div class="reg-form-group full-width">
+            <label class="group-label" data-en="Name of School / College" data-mr="शाळा / महाविद्यालयाचे नाव"
+              data-ur="اسکول / کالج کا نام" data-hi="स्कूल / कॉलेज का नाम">Name of School / College</label>
+            <input type="text" class="premium-input" name="school_name" data-placeholder-en="e.g. M.H. High School"
+              data-placeholder-mr="उदा. एम.एच. हायस्कूल" data-placeholder-ur="مثلاً ایم ایچ ہائی اسکول"
+              data-placeholder-hi="उदा. एम.एच. हाई स्कूल" required>
+          </div>
+
+          <div class="reg-form-group full-width">
+            <label class="group-label" data-en="School Days" data-mr="शाळेचे दिवस" data-ur="اسکول کے دن"
+              data-hi="स्कूल के दिन">School Days</label>
+            <div class="days-grid">
+              <div class="pill-container"><input type="checkbox" id="d-mo" name="school_days_arr" value="Mon"
+                  class="visually-hidden"><label for="d-mo" class="day-pill" data-en="Mon" data-mr="सोम" data-ur="پیر"
+                  data-hi="सोम">Mon</label></div>
+              <div class="pill-container"><input type="checkbox" id="d-tu" name="school_days_arr" value="Tue"
+                  class="visually-hidden"><label for="d-tu" class="day-pill" data-en="Tue" data-mr="मंगळ" data-ur="منگل"
+                  data-hi="मंगल">Tue</label></div>
+              <div class="pill-container"><input type="checkbox" id="d-we" name="school_days_arr" value="Wed"
+                  class="visually-hidden"><label for="d-we" class="day-pill" data-en="Wed" data-mr="बुध" data-ur="بدھ"
+                  data-hi="बुध">Wed</label></div>
+              <div class="pill-container"><input type="checkbox" id="d-th" name="school_days_arr" value="Thu"
+                  class="visually-hidden"><label for="d-th" class="day-pill" data-en="Thu" data-mr="गुरू"
+                  data-ur="جمعرات" data-hi="गुरु">Thu</label></div>
+              <div class="pill-container"><input type="checkbox" id="d-fr" name="school_days_arr" value="Fri"
+                  class="visually-hidden"><label for="d-fr" class="day-pill" data-en="Fri" data-mr="शुक्र"
+                  data-ur="جمعہ" data-hi="शुक्र">Fri</label></div>
+              <div class="pill-container"><input type="checkbox" id="d-sa" name="school_days_arr" value="Sat"
+                  class="visually-hidden"><label for="d-sa" class="day-pill" data-en="Sat" data-mr="शनि" data-ur="ہفتہ"
+                  data-hi="शनि">Sat</label></div>
+            </div>
+          </div>
+
+          <div class="reg-form-group full-width">
+            <label class="group-label" data-en="School Timings" data-mr="शाळेची वेळ" data-ur="اسکول کا وقت"
+              data-hi="स्कूल का समय">School Timings</label>
+            <div class="time-split" dir="ltr">
+              <input type="time" class="premium-input" name="school_time_from" required>
+              <span data-en="to" data-mr="ते" data-ur="سے" data-hi="से">to</span>
+              <input type="time" class="premium-input" name="school_time_to" required>
+            </div>
+          </div>
+        </div>
+
+        <div id="submit-status" style="text-align: center; margin-top: 1rem; color: var(--gold);"></div>
+
+        <div class="wizard-controls">
+          <button type="button" class="btn-prev">
+            <span data-en="&larr; Back" data-mr="&larr; मागे" data-ur="&rarr; پیچھے" data-hi="&larr; पीछे">&larr;
+              Back</span>
+          </button>
+          <button type="submit" id="btn-submit" class="btn-primary" style="padding: 0.9rem 2rem;">
+            <span data-en="Submit Application &rarr;" data-mr="अर्ज सबमिट करा &rarr;"
+              data-ur="درخواست جمع کرائیں &larr;" data-hi="आवेदन जमा करें &rarr;">Submit Application &rarr;</span>
+          </button>
+        </div>
+      </section>
+
+    </form>
+
+    <!-- STAGE 5: SUCCESS -->
+    <section id="stage-success" class="wizard-stage">
+      <div style="text-align: center; padding: 3rem 0;">
+        <svg class="success-checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+          <circle class="check-circle" cx="26" cy="26" r="25" fill="none" />
+          <path class="check-path" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+        </svg>
+        <h2 style="color: var(--gold); margin-bottom: 1rem;" data-en="Application Submitted" data-mr="अर्ज सबमिट केला"
+          data-ur="درخواست جمع کرائی گئی" data-hi="आवेदन जमा किया गया">Application Submitted</h2>
+        <p style="color: var(--text-light); margin-bottom: 2rem; line-height: 1.6;"
+          data-en="Alhamdulillah! Your registration application has been received and is pending administrative approval. <br>We will contact you shortly on the provided mobile number."
+          data-mr="अल्हमदुलिल्लाह! तुमचा नोंदणी अर्ज प्राप्त झाला आहे आणि प्रशासकीय मंजुरीच्या प्रतीक्षेत आहे. <br>आम्ही दिलेल्या मोबाईल क्रमांकावर लवकरच संपर्क करू."
+          data-ur="الحمدللہ! آپ کی رجسٹریشن کی درخواست موصول ہو گئی ہے اور انتظامی منظوری کے زیر التواء ہے۔ <br>ہم جلد ہی فراہم کردہ موبائل نمبر پر آپ سے رابطہ کریں گے۔"
+          data-hi="अल्हम्दुलिल्लाह! आपका पंजीकरण आवेदन प्राप्त हो गया है और प्रशासनिक स्वीकृति के लिए लंबित है। <br>हम दिए गए मोबाइल नंबर पर जल्द ही आपसे संपर्क करेंगे।">
+          Alhamdulillah! Your registration application has been received and is pending administrative approval. <br>
+          We will contact you shortly on the provided mobile number.
+        </p>
+        <a href="/" class="btn-secondary" style="border-color: rgba(255,255,255,0.2); display: inline-block;">
+          <span data-en="Return to Home" data-mr="होम वर परत जा" data-ur="ہوم پر واپس جائیں"
+            data-hi="होम पर वापस जाएं">Return to Home</span>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="js/register.js"></script>
+</body>
+
+</html>
