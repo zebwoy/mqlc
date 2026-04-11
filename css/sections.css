@@ -225,7 +225,7 @@
 .stats-context blockquote {
   font-family: var(--font-display);
   font-size: clamp(1.1rem, 2.5vw, 1.4rem);
-  font-style: italic;
+  /* font-style: italic; */
   color: var(--cream);
   line-height: 1.65;
   margin: 0;
@@ -334,7 +334,7 @@
 .about-lead {
   font-family: var(--font-display);
   font-size: clamp(1rem, 2vw, 1.2rem);
-  font-style: italic;
+  /* font-style: italic; */
   color: var(--green-dark);
   margin-bottom: 1.25rem;
   line-height: 1.7;
@@ -371,7 +371,8 @@
 
 @media (max-width: 768px) {
   .marquee-content {
-    animation: scrollMarquee 15s linear infinite; /* Speed up on mobile */
+    animation: scrollMarquee 15s linear infinite;
+    /* Speed up on mobile */
   }
 }
 
@@ -820,7 +821,7 @@
     grid-template-columns: 1fr;
     gap: 1.25rem;
   }
-  
+
   .features-grid,
   .programs-grid {
     grid-template-columns: 1fr;
@@ -878,7 +879,7 @@
   display: flex;
   flex-direction: column;
   background: var(--cream);
-  border: 1px solid rgba(212,160,23,0.3);
+  border: 1px solid rgba(212, 160, 23, 0.3);
   border-left: 4px solid var(--gold);
   border-radius: 10px;
   padding: 1.25rem;
@@ -926,12 +927,14 @@
 
 /* RTL adjustments for quiz card */
 [dir="rtl"] .quiz-info-panel {
-  border-left: 1px solid rgba(212,160,23,0.3);
+  border-left: 1px solid rgba(212, 160, 23, 0.3);
   border-right: 4px solid var(--gold);
 }
+
 [dir="rtl"] .quiz-badge-pill {
   align-self: flex-end;
 }
+
 [dir="rtl"] .quiz-begin-btn {
   align-self: flex-end;
 }
@@ -1090,6 +1093,7 @@
     padding: 4rem 1.25rem;
   }
 }
+
 .impact-section {
   position: relative;
   padding: 8rem 2rem;
@@ -1103,9 +1107,11 @@
 
 .impact-bg {
   position: absolute;
-  inset: -20%;
+  inset: 0;
   background: url('https://res.cloudinary.com/dlcowjk3q/image/upload/v1/home/mqlc/impact_bg.jpg') center/cover no-repeat;
-  will-change: transform;
+  background-attachment: fixed;
+  /* Native CSS Parallax */
+  z-index: 0;
 }
 
 .impact-overlay {
@@ -1123,6 +1129,15 @@
 .quote-icon {
   margin-bottom: 1.5rem;
   opacity: 0.8;
+}
+
+.hadith-arabic {
+  font-family: var(--font-arabic);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  color: var(--gold);
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .impact-content h2 {
@@ -1268,9 +1283,11 @@
     align-items: flex-start;
     gap: 0.25rem;
   }
+
   .bank-list strong {
     text-align: left;
   }
+
   .donate-card {
     padding: 2rem 1.25rem;
   }
@@ -1343,6 +1360,7 @@
   padding: 0;
   margin: 0;
 }
+
 .footer-phone-list li {
   display: flex;
   align-items: center;
@@ -1350,12 +1368,14 @@
   opacity: 0.8;
   line-height: 1.6;
   margin-bottom: 0.25rem;
-  color: rgba(255,255,255,0.7);
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.95rem;
 }
+
 .footer-phone-list li svg {
   flex-shrink: 0;
 }
+
 .footer-phone-list li:not(:first-child) svg {
   visibility: hidden;
 }
@@ -1380,7 +1400,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 0.5rem;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding-top: 1.5rem;
 }
 
@@ -1526,14 +1546,17 @@
 [dir="rtl"] .footer-phone-list {
   text-align: right;
 }
+
 [dir="rtl"] .footer-phone-list li {
   flex-direction: row;
   justify-content: flex-end;
 }
+
 [dir="rtl"] .footer-contact .text-muted {
   text-align: right;
   direction: rtl;
 }
+
 [dir="rtl"] .footer-contact .text-muted svg {
   margin-inline-end: 0;
   margin-inline-start: 8px;

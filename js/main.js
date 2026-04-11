@@ -4,9 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* ── Numeral localization helper ──────────────────────────── */
   const NUMERAL_MAP = {
-    ur: ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'],
-    hi: ['०','१','२','३','४','५','६','७','८','९'],
-    mr: ['०','१','२','३','४','५','६','७','८','९']
+    ur: ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'],
+    hi: ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'],
+    mr: ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९']
   };
   function localizeNum(n, lang) {
     const map = NUMERAL_MAP[lang];
@@ -146,7 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Fetch total children (aggregate row count)
         const { count } = await window._supabase
           .from('student_registrations')
-          .select('*', { count: 'exact', head: true });
+          .select('*', { count: 'exact', head: true })
+          .neq('status', 'rejected');
 
         if (count !== null) {
           const chEl = document.getElementById('stat-children');
@@ -187,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tempMap = TEMPORAL_MAP[baseKey] || { en: 'PM', ur: 'دوپہر', hi: 'दोपहर', mr: 'दुपार' };
                 const lang = localStorage.getItem('mqlc_lang') || 'en';
                 const suffix = tempMap[lang] || tempMap.en;
-                
+
                 // Store raw values for re-rendering on language switch
                 timeEl.dataset.rawH = h;
                 timeEl.dataset.rawM = m;
@@ -197,6 +198,34 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           });
         }
+
+        // 2b. Astronomical Override for Maghrib
+        try {
+          // Fetch exact sunset (Maghrib) time strictly via Aladhan API for Bhiwandi
+          const aladhanRes = await fetch('https://api.aladhan.com/v1/timingsByCity?city=Bhiwandi&country=India&method=1');
+          const aladhanData = await aladhanRes.json();
+          if (aladhanData?.data?.timings?.Maghrib) {
+            const timeEl = document.getElementById('time-maghrib');
+            if (timeEl) {
+              let [h, m] = aladhanData.data.timings.Maghrib.split(':');
+              h = parseInt(h, 10);
+              h = h % 12 || 12;
+
+              const baseKey = 'maghrib';
+              const tempMap = TEMPORAL_MAP[baseKey] || { en: 'PM', ur: 'شام', hi: 'शाम', mr: 'संध्याकाळ' };
+              const lang = localStorage.getItem('mqlc_lang') || 'en';
+              const suffix = tempMap[lang] || tempMap.en;
+
+              timeEl.dataset.rawH = h;
+              timeEl.dataset.rawM = m;
+              timeEl.dataset.rawNamePart = baseKey;
+              timeEl.textContent = `${localizeNum(h, lang)}:${localizeNum(m, lang)}\u00a0${suffix}`;
+            }
+          }
+        } catch (err) {
+          console.warn('API fetch for Maghrib failed, falling back to manual config', err);
+        }
+
       } catch (err) {
         console.error('Silent fail on stats fetch:', err);
       }
@@ -342,7 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p class="bulletin-desc" style="margin-bottom: 1rem;" data-en="Want to test your Islamic knowledge? Take our interactive assessment to see where you stand and improve your understanding!" data-mr="तुमची इस्लामिक माहिती तपासायची आहे का? तुमची पातळी तपासण्यासाठी आमची संवादात्मक चाचणी घ्या!" data-ur="کیا آپ اپنی اسلامی معلومات جانچنا چاہتے ہیں؟ اپنی سمجھ کا اندازہ لگانے کے لیے ہمارا انٹرایکٹو ٹیسٹ لیں!" data-hi="क्या आप अपने इस्लामी ज्ञान का परीक्षण करना चाहते हैं? अपने स्तर को जानने के लिए हमारा इंटरैक्टिव टेस्ट लें!">
                   Want to test your Islamic knowledge? Take our interactive assessment to see where you stand and improve your understanding!
                 </p>
-
+                  
                 <!-- Inner Dynamic JSON-Driven Section -->
                 <div class="quiz-info-panel">
                   <span class="quiz-badge-pill"><span data-en="Quiz" data-mr="चाचणी" data-ur="کوئز" data-hi="क्विज़">Quiz</span> <bdi>${qNo}</bdi></span>
@@ -358,7 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
               `;
 
               bulletinCarousel.appendChild(card);
-              
+
               // Force language pass on the freshly injected innerHTML
               if (typeof window.triggerTranslation === 'function') {
                 window.triggerTranslation();

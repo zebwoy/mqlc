@@ -771,6 +771,11 @@ h2, h3 {
     padding: 0.75rem 0.5rem;
     font-size: 0.82rem;
   }
+  .lb-time {
+    display: block;
+    margin-inline-start: 0;
+    margin-top: 2px;
+  }
   .rank-badge {
     width: 24px;
     height: 24px;
@@ -922,6 +927,14 @@ h2, h3 {
   font-weight: 500;
   color: var(--quiz-text);
   font-size: 0.95rem;
+}
+
+.lb-time {
+  font-size: 0.75rem;
+  color: var(--quiz-muted);
+  font-weight: 400;
+  margin-inline-start: 8px;
+  white-space: nowrap;
 }
 
 .leaderboard-table tr:last-child td {

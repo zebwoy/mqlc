@@ -428,6 +428,197 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  let cachedStudents = [];
+
+  function renderStudentMatrix() {
+    const feedContainer = document.getElementById('ds-activity-feed');
+    if (!feedContainer) return;
+
+    const searchTerm = (document.getElementById('ds-filter-search')?.value || '').toLowerCase();
+    const statusFilter = document.getElementById('ds-filter-status')?.value || 'all';
+
+    let filtered = [...(cachedStudents || [])].sort((a, b) => new Date(b.created_at || b.doj) - new Date(a.created_at || a.doj));
+
+    // Handle Category Filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(s => s.status === statusFilter);
+    } else {
+      // Default array visualization (hides rejected unless explicitly requested or searched)
+      if (!searchTerm) {
+        filtered = filtered.filter(s => s.status !== 'rejected');
+      }
+    }
+
+    // Handle Text Filter
+    if (searchTerm) {
+      filtered = filtered.filter(s =>
+        (s.student_name || '').toLowerCase().includes(searchTerm) ||
+        (s.form_no || '').toLowerCase().includes(searchTerm)
+      );
+    }
+
+    feedContainer.innerHTML = '';
+    if (filtered.length === 0) {
+      feedContainer.innerHTML = '<p class="text-muted" style="text-align: center; padding: 2rem;">No students found matching filter criteria.</p>';
+      return;
+    }
+
+    filtered.forEach(app => {
+      let stClass = app.status === 'approved' ? 'approved' : (app.status === 'rejected' ? 'rejected' : 'pending');
+      feedContainer.innerHTML += `
+        <div class="activity-item">
+          <div class="activity-detail">
+            <h4>${app.student_name}</h4>
+            <p>${app.course_applying} | Form: ${app.form_no || 'N/A'}</p>
+          </div>
+          <span class="badge ${stClass}">${app.status}</span>
+        </div>`;
+    });
+  }
+
+  // ─── 3f. Dashboard & Analytics Engine ──────────────────────────
+  async function hydrateDashboardAndAnalytics() {
+    if (!window._supabase) return;
+    try {
+      const { data: students, error } = await window._supabase
+        .from('student_registrations')
+        .select('*');
+      if (error) throw error;
+
+      cachedStudents = students || [];
+
+      const { data: settings } = await window._supabase
+        .from('site_settings')
+        .select('*')
+        .eq('setting_key', 'monthly_fee')
+        .single();
+
+      const { count: pinCount, error: pinError } = await window._supabase
+        .from('otp_pins')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_valid', true);
+
+      const fee = settings ? parseInt(settings.setting_value, 10) : 0;
+
+      // Categorize
+      const approved = cachedStudents.filter(s => s.status === 'approved');
+      const pending = cachedStudents.filter(s => s.status === 'pending');
+
+      // Update DOM
+      const actEl = document.getElementById('ds-active-students');
+      if (actEl) actEl.textContent = approved.length;
+
+      const pendEl = document.getElementById('ds-pending-reviews');
+      if (pendEl) pendEl.textContent = pending.length;
+
+      const revEl = document.getElementById('ds-est-revenue');
+      if (revEl) revEl.textContent = '₹' + (approved.length * fee).toLocaleString();
+
+      const pinEl = document.getElementById('ds-valid-pins');
+      if (pinEl) pinEl.textContent = pinCount || 0;
+
+      renderStudentMatrix();
+      renderCharts(approved);
+
+    } catch (err) {
+      console.error("Dashboard engine failed:", err);
+    }
+  }
+
+  let chartsRendered = false;
+  let chartInstances = {};
+
+  function renderCharts(approvedData) {
+    if (chartsRendered || typeof Chart === 'undefined') return;
+
+    // Aggregation Logic
+    const courseCount = {};
+    const genderCount = { 'Male': 0, 'Female': 0 };
+    const classCount = {};
+    const timelineCount = {};
+
+    approvedData.forEach(s => {
+      if (s.course_applying) courseCount[s.course_applying] = (courseCount[s.course_applying] || 0) + 1;
+      if (s.gender) genderCount[s.gender] = (genderCount[s.gender] || 0) + 1;
+      if (s.current_class) classCount[s.current_class] = (classCount[s.current_class] || 0) + 1;
+      if (s.doj) {
+        const month = s.doj.substring(0, 7);
+        timelineCount[month] = (timelineCount[month] || 0) + 1;
+      }
+    });
+
+    const commonOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } };
+
+    // 1. Chart Growth
+    const months = Object.keys(timelineCount).sort();
+    const tData = months.map(m => timelineCount[m]);
+    const ctxGrowth = document.getElementById('chart-growth');
+    if (ctxGrowth) {
+      chartInstances.growth = new Chart(ctxGrowth, {
+        type: 'line',
+        data: { labels: months.length ? months : ['No Data'], datasets: [{ label: 'New Enrollments', data: tData.length ? tData : [0], borderColor: '#2D6A4F', backgroundColor: 'rgba(45, 106, 79, 0.1)', fill: true, tension: 0.3 }] },
+        options: commonOptions
+      });
+    }
+
+    // 2. Chart Course
+    const ctxCourse = document.getElementById('chart-course');
+    if (ctxCourse) {
+      chartInstances.course = new Chart(ctxCourse, {
+        type: 'doughnut',
+        data: { labels: Object.keys(courseCount).length ? Object.keys(courseCount) : ['None'], datasets: [{ data: Object.keys(courseCount).length ? Object.values(courseCount) : [1], backgroundColor: ['#D4A017', '#2D6A4F', '#1E293B', '#64748B'] }] },
+        options: commonOptions
+      });
+    }
+
+    // 3. Chart Gender
+    const ctxGender = document.getElementById('chart-gender');
+    if (ctxGender) {
+      chartInstances.gender = new Chart(ctxGender, {
+        type: 'pie',
+        data: { labels: ['Male', 'Female'], datasets: [{ data: [genderCount['Male'] || 0, genderCount['Female'] || 0], backgroundColor: ['#3b82f6', '#ec4899'] }] },
+        options: commonOptions
+      });
+    }
+
+    // 4. Chart School Class
+    const ctxSchool = document.getElementById('chart-school');
+    if (ctxSchool) {
+      chartInstances.school = new Chart(ctxSchool, {
+        type: 'bar',
+        data: { labels: Object.keys(classCount).length ? Object.keys(classCount) : ['None'], datasets: [{ label: 'Students', data: Object.keys(classCount).length ? Object.values(classCount) : [0], backgroundColor: '#2D6A4F' }] },
+        options: commonOptions
+      });
+    }
+
+    chartsRendered = true;
+  }
+
+  // Hook Dashboard rendering to pill clicks
+  const dsPill = document.querySelector('[data-sub="sub-dashboard"]');
+  const anPill = document.querySelector('[data-sub="sub-analytics"]');
+  if (dsPill) dsPill.addEventListener('click', hydrateDashboardAndAnalytics);
+  if (anPill) anPill.addEventListener('click', hydrateDashboardAndAnalytics);
+
+  const dsBtnRef = document.getElementById('btn-ds-refresh');
+  if (dsBtnRef) {
+    dsBtnRef.addEventListener('click', () => {
+      chartsRendered = false;
+      Object.values(chartInstances).forEach(c => c.destroy());
+      chartInstances = {};
+      hydrateDashboardAndAnalytics();
+    });
+  }
+
+  // Wire real-time cohesive filter events
+  const filterInput = document.getElementById('ds-filter-search');
+  const filterDropdown = document.getElementById('ds-filter-status');
+  if (filterInput) filterInput.addEventListener('input', renderStudentMatrix);
+  if (filterDropdown) filterDropdown.addEventListener('change', renderStudentMatrix);
+
+  // Auto trigger once to cache states quietly
+  setTimeout(hydrateDashboardAndAnalytics, 1000);
+
   // ─── 4. GLOBAL SETTINGS BINDING ───────────────────────────────
   const settingsForm = document.getElementById('settings-form');
   const cfgStatus = document.getElementById('cfg-status');

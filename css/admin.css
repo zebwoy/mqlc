@@ -326,6 +326,103 @@ a {
   margin-top: 2rem;
 }
 
+/* ─── Dashboard & Analytics ────────────────────────────────────── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+
+.kpi-card {
+  background: var(--admin-white);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.kpi-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--admin-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.kpi-value {
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.2;
+}
+
+.kpi-trend {
+  font-size: 0.85rem;
+  color: var(--admin-muted);
+}
+
+.text-accent { color: var(--admin-accent); }
+.text-gold { color: var(--admin-gold); }
+.text-primary { color: #2B5AA6; }
+
+.activity-feed {
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.activity-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 6px;
+  background: #f8fafc;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--admin-border);
+}
+
+.activity-item:last-child {
+  margin-bottom: 0;
+}
+
+.activity-detail h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.95rem;
+}
+
+.activity-detail p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--admin-muted);
+}
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge.pending { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.badge.approved { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+.badge.rejected { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+.chart-card {
+  display: flex;
+  flex-direction: column;
+}
+
 /* ─── Media Empty State ──────────────────────────────────────── */
 .empty-state {
   display: flex;
@@ -513,5 +610,13 @@ a {
 
   .grid-2 {
     grid-template-columns: 1fr;
+  }
+
+  .chart-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .chart-card[style*="grid-column: span 2"] {
+    grid-column: span 1 !important;
   }
 }

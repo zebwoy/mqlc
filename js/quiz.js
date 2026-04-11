@@ -397,7 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const lTimeTaken = row.time_taken ? localizeNum(row.time_taken, currentLang) : '';
         const sLabel = currentLang === 'ur' ? ' سیکنڈ' : 's';
-        const tt = row.time_taken ? `<span style="font-size:0.75rem; color: var(--quiz-muted); margin-inline-start: 8px;">(${lTimeTaken}${sLabel})</span>` : '';
+        const tt = row.time_taken ? `<span class="lb-time">(${lTimeTaken}${sLabel})</span>` : '';
         tr.innerHTML = `
           <td><span class="rank-badge">${lRank}</span></td>
           <td dir="auto">${displayName}</td>
