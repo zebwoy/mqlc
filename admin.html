@@ -223,7 +223,7 @@
                   </div>
                   <div class="input-group">
                     <label>Form Number</label>
-                    <input type="text" name="form_no" required>
+                    <input type="text" name="form_no" readonly style="background: var(--admin-bg); cursor: not-allowed; font-weight: 600;">
                   </div>
                   <div class="input-group full-width">
                     <label>Applying For Course</label>
@@ -261,7 +261,7 @@
                   </div>
                   <div class="input-group full-width">
                     <label>Aadhar Number</label>
-                    <input type="text" name="aadhar_no" placeholder="xxxx-xxxx-xxxx" required>
+                    <input type="text" name="aadhar_no" placeholder="xxxx-xxxx-xxxx" maxlength="14" required>
                   </div>
                   <div class="input-group full-width">
                     <label>Residential Address</label>
@@ -269,11 +269,11 @@
                   </div>
                   <div class="input-group">
                     <label>Father's Contact No.</label>
-                    <input type="tel" name="contact_father" required>
+                    <input type="tel" name="contact_father">
                   </div>
                   <div class="input-group">
                     <label>Mother's Contact No.</label>
-                    <input type="tel" name="contact_mother" required>
+                    <input type="tel" name="contact_mother">
                   </div>
                 </div>
               </div>
@@ -307,6 +307,7 @@
                   <div class="input-group full-width">
                     <label>School Days</label>
                     <div class="days-selector">
+                      <label class="day-pill highlight-pill"><input type="checkbox" id="sd-everyday"><span>Everyday</span></label>
                       <label class="day-pill"><input type="checkbox" name="school_days_arr"
                           value="Mon"><span>Mon</span></label>
                       <label class="day-pill"><input type="checkbox" name="school_days_arr"

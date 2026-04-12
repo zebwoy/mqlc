@@ -148,6 +148,11 @@ document.addEventListener('DOMContentLoaded', () => {
       // Show Target Sub View
       const targetSub = document.getElementById(pill.getAttribute('data-sub'));
       if (targetSub) targetSub.style.display = 'block';
+
+      // 1. If Manual Entry is activated, auto-generate the next Form Number
+      if (pill.getAttribute('data-sub') === 'sub-manual') {
+        initManualFormNumber();
+      }
     });
   });
 
@@ -379,8 +384,19 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Collect Data
+      // 1. Validation Logic: At least one contact number
       const fd = new FormData(manualForm);
+      const contactFather = fd.get('contact_father');
+      const contactMother = fd.get('contact_mother');
+
+      if (!contactFather && !contactMother) {
+        manualStatusMsg.textContent = 'Validation Error: Please provide at least one contact number (Father or Mother).';
+        manualStatusMsg.className = 'status-msg error';
+        manualStatusMsg.style.display = 'block';
+        return;
+      }
+
+      // Collect Data
       const payload = {
         doj: fd.get('doj'),
         form_no: fd.get('form_no'),
@@ -415,6 +431,12 @@ document.addEventListener('DOMContentLoaded', () => {
         manualStatusMsg.textContent = 'Student manually registered';
         manualStatusMsg.className = 'status-msg success';
         manualStatusMsg.style.display = 'block';
+
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+          manualStatusMsg.style.display = 'none';
+          manualStatusMsg.textContent = '';
+        }, 3000);
       } catch (err) {
         console.error(err);
         manualStatusMsg.textContent = `Failed to save: ${err.message}`;
@@ -426,6 +448,75 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = false;
       }
     });
+
+    // Everyday Shortcut Logic
+    const everydayCheckbox = document.getElementById('sd-everyday');
+    if (everydayCheckbox) {
+      everydayCheckbox.addEventListener('change', (e) => {
+        const checkboxes = manualForm.querySelectorAll('input[name="school_days_arr"]');
+        checkboxes.forEach(cb => {
+          if (cb.value !== 'Sun') {
+            cb.checked = e.target.checked;
+          } else {
+            // Uncheck Sunday if "Everyday" (Mon-Sat) is toggled
+            if (e.target.checked) cb.checked = false;
+          }
+        });
+      });
+    }
+
+    // Aadhar Card Auto-Formatter (XXXX-XXXX-XXXX)
+    const aadharInput = manualForm.querySelector('input[name="aadhar_no"]');
+    if (aadharInput) {
+      aadharInput.addEventListener('input', (e) => {
+        let val = e.target.value.replace(/\D/g, ''); // Remove all non-numerics
+        if (val.length > 12) val = val.slice(0, 12); // Limit to 12 digits
+
+        let formatted = '';
+        for (let i = 0; i < val.length; i++) {
+          if (i > 0 && i % 4 === 0) formatted += '-';
+          formatted += val[i];
+        }
+        e.target.value = formatted;
+      });
+    }
+
+    // Auto-generate Form Number (MQLC-YYYY-XXXX)
+    async function initManualFormNumber() {
+      const formNoInput = manualForm.querySelector('input[name="form_no"]');
+      if (!formNoInput || !window._supabase) return;
+
+      formNoInput.value = "Generating...";
+      const currentYear = new Date().getFullYear();
+      const prefix = `MQLC-${currentYear}-`;
+
+      try {
+        // Find the highest sequence number for the current year
+        const { data, error } = await window._supabase
+          .from('student_registrations')
+          .select('form_no')
+          .ilike('form_no', `${prefix}%`)
+          .order('form_no', { ascending: false })
+          .limit(1);
+
+        if (error) throw error;
+
+        let nextNum = 1;
+        if (data && data.length > 0) {
+          const lastFormNo = data[0].form_no;
+          const parts = lastFormNo.split('-');
+          const lastSeq = parseInt(parts[parts.length - 1]);
+          if (!isNaN(lastSeq)) {
+            nextNum = lastSeq + 1;
+          }
+        }
+
+        formNoInput.value = `${prefix}${nextNum.toString().padStart(4, '0')}`;
+      } catch (err) {
+        console.error("Form No Gen Failure:", err);
+        formNoInput.value = `${prefix}0001`; // Fallback to start
+      }
+    }
   }
 
   let cachedStudents = [];

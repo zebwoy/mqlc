@@ -517,6 +517,18 @@ a {
   border-color: var(--admin-accent);
 }
 
+.highlight-pill span {
+  border: 1px dashed var(--admin-accent);
+  background: white;
+  color: var(--admin-accent);
+}
+
+.highlight-pill input:checked~span {
+  background: var(--admin-accent);
+  color: white;
+  border-style: solid;
+}
+
 /* ─── Upload Action Cards ────────────────────────────────────── */
 .upload-grid {
   display: grid;
