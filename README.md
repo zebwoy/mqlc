@@ -1,81 +1,98 @@
 <div align="center">
-  <h1>Millat Qur'an Learning Center (MQLC) Platform</h1>
-  <p>A high-performance, multi-lingual, serverless platform for Madrasa operations.</p>
+  <img src="assets/logo.png" alt="MQLC Logo" width="100" />
+  <h1>Millat Qur'an Learning Center (MQLC)</h1>
+  <p><i>Digitizing traditional education with modern engineering.</i></p>
   
   [![Tech Stack: Vanilla JS](https://img.shields.io/badge/JavaScript-Vanilla-yellow.svg)](#)
   [![Database: Supabase](https://img.shields.io/badge/Backend-Supabase-3ECF8E.svg)](#)
-  [![UI: Custom CSS](https://img.shields.io/badge/CSS3-Custom-blue.svg)](#)
-  [![Deployment: Vercel](https://img.shields.io/badge/Deployed_on-Vercel-black.svg)](#)
+  [![UI: Premium CSS](https://img.shields.io/badge/Design-Glassmorphism-emerald.svg)](#)
+  [![Deployment: Vercel](https://img.shields.io/badge/Platform-JAMstack-black.svg)](#)
 </div>
 
-<br />
+---
 
-## 📖 Overview
-The **MQLC Web Platform** is designed to digitize and streamline the operations of the Millat Qur'an Learning Center. It features a stunning public-facing landing page, a real-time multi-step student admission portal, and a secure backend Command Center for administration. 
+## 🚀 The Mission: Why MQLC?
 
-This project was built from the ground up focusing on **zero-latency performance**, **complex typography localization**, and modern **serverless infrastructure**.
+Traditional educational institutions often struggle with **Paper Friction**—manual registers, lost enrollment forms, and zero analytical insight into student demographics. 
+
+**MQLC** was born to solve this. It transitions a Madrasa from offline chaos to a professional **Cloud-Native Platform**. It isn't just a website; it’s a lifecycle management tool that bridges the gap between traditional values and modern administrative efficiency.
 
 ---
 
-## ✨ Key Technical Achievements
+## 💡 The Journey: From Idea to Reality
 
-- **🌍 Zero-Dependency Localization Engine:** Custom-built DOM parsing instantly translates the site between English, Hindi, Marathi, and Urdu. Dynamically handles bi-directional reading rules (LTR/RTL) and strict Nastaliq/Arabic typography scaling without heavy i18n libraries.
-- **⚡ Serverless Backend (Supabase):** Full database integrations (CRUD) running natively over Postgres with Row Level Security (RLS) policies, entirely eliminating the need for a bloated middle-tier node server. 
-- **📈 Real-Time Analytics Dashboard:** Administrative command center featuring dynamic Key Performance Indicators (KPIs) and animated data visualizations powered by `Chart.js`.
-- **☁️ Integrated Media Architecture:** Allows secure administrative uploading of live updates, quiz files, and PDF bulletins directly to a Cloudinary CDN edge bucket.
-- **🕌 Autonomous API Synchronization:** The frontend intercepts manual database configurations to autonomously hot-swap specific geometric sunset parameters (Maghrib prayer timings) dynamically via the global Aladhan REST API.
+### 1. Ideation Phase
+The goal was simple: **Professionalism at first glance.** We wanted a platform that felt as premium as a high-end SaaS but remained accessible to a diverse, multi-lingual community.
 
----
+### 2. Development Phases (The Agile Sprint)
+The project was brought from a blank canvas to a fully operational administrative suite in approximately **30 hours** of focused engineering.
 
-## 🏗️ Architecture & Tech Stack
-
-Instead of defaulting to large abstracted frameworks, MQLC is powered by a hyper-optimized **JAMstack architecture** to achieve maximum speed and extremely lightweight frontend asset loading.
-
-### Frontend
-- **HTML5 & CSS3:** Completely custom styling matrix utilizing advanced CSS Grid, Flexbox, dynamic custom properties (`var()`), and CSS-native Parallax (`background-attachment: fixed`).
-- **Vanilla JavaScript (ES6+):** Pure, native JS engine managing asynchronous fetching, component rendering, and intersection observers for scroll animations.
-- **Chart.js:** Robust client-side rendering for administrative demographic reports.
-
-### Backend & APIs
-- **Supabase (PostgreSQL):** Serverless Backend-as-a-Service handling authentication, student registration payloads, and global configurations natively via the `@supabase/supabase-js` SDK.
-- **Cloudinary Widget API:** Edge-optimized media intake pipeline seamlessly interacting via secure JS.
-- **Aladhan Global API:** Third-party REST endpoint injected to compute dynamic prayer synchronizations contextually tied to geographic zones.
+*   **Phase I: Resonance & Reach** – Building the multi-lingual landing page with RTL (Urdu) support.
+*   **Phase II: The Gateway** – Developing the 3-step registration portal with Aadhar validation and secure PIN generation.
+*   **Phase III: The Command Center** – Creating the Admin Dashboard with real-time student matrix and lifecycle tracking (Edit/Delete).
+*   **Phase IV: Intelligence** – Integrating Chart.js for data-driven insights and professional export tools.
 
 ---
 
-## 📂 Core Structure
+## 🛠️ Feature Timeline (Project Chronology)
+
+- [x] **Smart Multi-lingual Engine:** Custom Zero-dependency switcher for English, Hindi, Marathi, and Urdu.
+- [x] **Validated Enrollment:** 3-Step registration form with real-time Aadhar auto-formatting (`XXXX-XXXX-XXXX`).
+- [x] **Secure PIN System:** Instant OTP generation for parent-registration verification.
+- [x] **Dynamic Admin Matrix:** A searchable, filterable student database with automated "Approved" default views.
+- [x] **Visual Analytics:** Real-time donut, pie, and bar charts tracking Gender ratios, Batch distribution, and Course enrollment.
+- [x] **Lifecycle Tracking:** Specialized student status management (Active, Pending, Left).
+- [x] **Professional Data Portability:** 
+    - **Excel:** Native `.xlsx` exports with frozen headers and auto-filters.
+    - **PDF:** Portrait-oriented, institution-branded directories with audit timestamps.
+
+---
+
+## 🏗️ Technical Architecture
+
+### The Engine
+- **Frontend:** Vanilla HTML5/CSS3/ES6+ (No heavy frameworks for 0ms hydration latency).
+- **Backend-as-a-Service:** **Supabase** (Postgres) managing secure student records and authentication.
+- **Data Ops:** **SheetJS** for XLSX generation and institutional **CSS Media Queries** for PDF layout.
+- **Analytics:** **Chart.js** for high-performance client-side rendering.
+
+### Static vs. Dynamic
+| Component | Type | Technology |
+| :--- | :--- | :--- |
+| **Hero & Info Sections** | Static | Content-Optimized HTML |
+| **Prayer Synchronization** | Dynamic | Aladhan API (Real-time sync) |
+| **Student Matrix** | Dynamic | Supabase Real-time Queries |
+| **Admin Analytics** | Dynamic | Chart.js Data Mapping |
+
+---
+
+## 📂 Project Structure
 
 ```text
 mqlc/
-├── index.html              # Public Landing Page & Live Bulletin
-├── register.html           # Multi-step OTP Student Registration Portal
-├── admin.html              # Secured Administrative Operations Dashboard
+├── index.html              # Public Landing Page & Multilingual Router
+├── register.html           # 3-Step Secure Enrollment Portal
+├── admin.html              # The Command Center (Dashboard + Analytics)
 ├── css/
-│   ├── main.css            # Root variables, Typography rules, & Globals
-│   ├── admin.css           # Admin GUI layout matrix
-│   └── hero.css            # Dynamic responsive hero blocks
+│   ├── main.css            # Design System & Root Variables
+│   ├── admin.css           # Premium Dashboard Layout & Print Engine
+│   └── hero.css            # Mobile-first Responsive Hero Blocks
 ├── js/
-│   ├── main.js             # External API requests, Observers, Live Counters
-│   ├── lang.js             # State retention & recursive translation engine
-│   ├── admin.js            # Dashboard logic, Chart.js mapping & CRUD 
-│   └── register.js         # OTP Verification & Database insertion gates
+│   ├── admin.js            # Dashboard CRUD, Analytics & Export Logic
+│   ├── lang.js             # The Localization Engine
+│   └── register.js         # OTP & Registration State Machine
 ```
 
 ---
 
-## 🚀 Local Development
+## 🚀 Deployment & Local Setup
+Managed via **Vercel** for global edge performance.
 
-1. **Clone the repository.**
-2. Initialize the development sandbox:  
-   ```bash
-   npx vercel dev
-   ```
-   *(You can also securely run it on any standard local HTTP server environment).*
-3. **Environment Setup:** Ensure you provide a valid `js/supabase-config.js` containing your provisioned Supabase public parameters.
-
-> **Note:** The application expects a modern Chromium/WebKit compliant browser environment to natively execute ES6 asynchronous payload routing and JavaScript animations.
+1. **Clone & Install:** `git clone ...`
+2. **Environment:** Setup `js/supabase-config.js` with your parameters.
+3. **Run:** `npx vercel dev`
 
 ---
 <div align="center">
-  <i>Developed with precision for community impact.</i>
+  <i>"Efficiency in management, Excellence in education."</i>
 </div>
