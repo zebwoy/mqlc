@@ -413,6 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
         school_name: fd.get('school_name'),
         school_days: Array.from(manualForm.querySelectorAll('input[name="school_days_arr"]:checked')).map(cb => cb.value).join(', '),
         school_time: `${fd.get('school_time_from')} - ${fd.get('school_time_to')}`,
+        batch: fd.get('batch'),
         status: 'approved' // explicitly bypass queue and auto-approve manual entries
       };
 
@@ -527,6 +528,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const searchTerm = (document.getElementById('ds-filter-search')?.value || '').toLowerCase();
     const statusFilter = document.getElementById('ds-filter-status')?.value || 'all';
+    const batchFilter = document.getElementById('ds-filter-batch')?.value || 'all';
+    const courseFilter = document.getElementById('ds-filter-course')?.value || 'all';
 
     let filtered = [...(cachedStudents || [])].sort((a, b) => new Date(b.created_at || b.doj) - new Date(a.created_at || a.doj));
 
@@ -540,6 +543,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // Handle Batch Filter
+    if (batchFilter !== 'all') {
+      filtered = filtered.filter(s => s.batch === batchFilter);
+    }
+
+    // Handle Course Filter
+    if (courseFilter !== 'all') {
+      filtered = filtered.filter(s => s.course_applying === courseFilter);
+    }
+
     // Handle Text Filter
     if (searchTerm) {
       filtered = filtered.filter(s =>
@@ -549,21 +562,108 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     feedContainer.innerHTML = '';
+
+    // Update Counter
+    const countEl = document.getElementById('ds-filter-count');
+    if (countEl) countEl.textContent = `Showing ${filtered.length} student${filtered.length === 1 ? '' : 's'}`;
+
     if (filtered.length === 0) {
       feedContainer.innerHTML = '<p class="text-muted" style="text-align: center; padding: 2rem;">No students found matching filter criteria.</p>';
       return;
     }
 
     filtered.forEach(app => {
-      let stClass = app.status === 'approved' ? 'approved' : (app.status === 'rejected' ? 'rejected' : 'pending');
+      let stClass = app.status === 'approved' ? 'approved' :
+                    (app.status === 'rejected' ? 'rejected' : 
+                    (app.status === 'left' ? 'rejected' : 'pending')); // Use danger color for left too
       feedContainer.innerHTML += `
-        <div class="activity-item">
+        <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center;">
           <div class="activity-detail">
-            <h4>${app.student_name}</h4>
-            <p>${app.course_applying} | Form: ${app.form_no || 'N/A'}</p>
+            <h4 style="margin-bottom: 0.25rem;">${app.student_name}</h4>
+            <p style="font-size: 0.8rem; margin-bottom: 0.25rem;">${app.course_applying} | Form: ${app.form_no || 'N/A'}</p>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              ${app.batch ? `<span style="font-size: 0.7rem; background: #FFECD1; color: #9C6F00; padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase;">${app.batch} Batch</span>` : ''}
+              ${app.status === 'left' ? `<span style="font-size: 0.7rem; background: #fde8e8; color: #c53030; padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase;">Inactive</span>` : ''}
+            </div>
           </div>
-          <span class="badge ${stClass}">${app.status}</span>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <span class="badge ${stClass}">${app.status}</span>
+            <button class="btn-edit-student" data-id="${app.id}" style="background: none; border: none; cursor: pointer; color: var(--admin-muted); display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 4px; transition: background 0.2s;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
+              </svg>
+            </button>
+          </div>
         </div>`;
+    });
+
+    // Hook up Edit buttons
+    document.querySelectorAll('.btn-edit-student').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        openEditModal(id);
+      });
+    });
+  }
+
+  // ─── Edit Student Logic ────────
+  async function openEditModal(id) {
+    const student = cachedStudents.find(s => s.id.toString() === id.toString());
+    if (!student) return;
+
+    document.getElementById('edit-student-id').value = student.id;
+    document.getElementById('edit-student-name').value = student.student_name;
+    document.getElementById('edit-student-father').value = student.father_name;
+    document.getElementById('edit-student-batch').value = student.batch || 'Zuhr';
+    document.getElementById('edit-student-course').value = student.course_applying || 'Noorani Qaida';
+    document.getElementById('edit-student-status').value = student.status || 'approved';
+    document.getElementById('edit-status-msg').style.display = 'none';
+
+    document.getElementById('modal-edit-student').showModal();
+  }
+
+  const editForm = document.getElementById('form-edit-student');
+  if (editForm) {
+    editForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('edit-student-id').value;
+      const statusMsg = document.getElementById('edit-status-msg');
+      
+      const payload = {
+        student_name: document.getElementById('edit-student-name').value,
+        father_name: document.getElementById('edit-student-father').value,
+        batch: document.getElementById('edit-student-batch').value,
+        course_applying: document.getElementById('edit-student-course').value,
+        status: document.getElementById('edit-student-status').value
+      };
+
+      try {
+        statusMsg.textContent = 'Updating...';
+        statusMsg.className = 'status-msg';
+        statusMsg.style.display = 'block';
+
+        const { error } = await window._supabase
+          .from('student_registrations')
+          .update(payload)
+          .eq('id', id);
+
+        if (error) throw error;
+
+        statusMsg.textContent = 'Student updated successfully';
+        statusMsg.className = 'status-msg success';
+        
+        // Refresh cache and UI
+        await hydrateDashboardAndAnalytics();
+        
+        setTimeout(() => {
+          document.getElementById('modal-edit-student').close();
+        }, 1000);
+
+      } catch (err) {
+        console.error(err);
+        statusMsg.textContent = 'Failed to update: ' + err.message;
+        statusMsg.className = 'status-msg error';
+      }
     });
   }
 
@@ -625,12 +725,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Aggregation Logic
     const courseCount = {};
     const genderCount = { 'Male': 0, 'Female': 0 };
+    const batchCount = { 'Zuhr': 0, 'Asr': 0, 'Maghrib': 0 };
     const classCount = {};
     const timelineCount = {};
 
     approvedData.forEach(s => {
       if (s.course_applying) courseCount[s.course_applying] = (courseCount[s.course_applying] || 0) + 1;
       if (s.gender) genderCount[s.gender] = (genderCount[s.gender] || 0) + 1;
+      if (s.batch) batchCount[s.batch] = (batchCount[s.batch] || 0) + 1;
       if (s.current_class) classCount[s.current_class] = (classCount[s.current_class] || 0) + 1;
       if (s.doj) {
         const month = s.doj.substring(0, 7);
@@ -638,13 +740,31 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    const commonOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } };
+    const commonOptions = { 
+      responsive: true, 
+      maintainAspectRatio: false, 
+      plugins: { 
+        legend: { 
+          position: 'bottom',
+          labels: { padding: 20, boxWidth: 12, usePointStyle: true }
+        } 
+      } 
+    };
+
+    const pieOptions = {
+      ...commonOptions,
+      scales: {
+        x: { display: false },
+        y: { display: false }
+      }
+    };
 
     // 1. Chart Growth
     const months = Object.keys(timelineCount).sort();
     const tData = months.map(m => timelineCount[m]);
     const ctxGrowth = document.getElementById('chart-growth');
     if (ctxGrowth) {
+      document.getElementById('total-growth').textContent = `Total: ${approvedData.length}`;
       chartInstances.growth = new Chart(ctxGrowth, {
         type: 'line',
         data: { labels: months.length ? months : ['No Data'], datasets: [{ label: 'New Enrollments', data: tData.length ? tData : [0], borderColor: '#2D6A4F', backgroundColor: 'rgba(45, 106, 79, 0.1)', fill: true, tension: 0.3 }] },
@@ -655,26 +775,44 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. Chart Course
     const ctxCourse = document.getElementById('chart-course');
     if (ctxCourse) {
+      const total = Object.values(courseCount).reduce((a, b) => a + b, 0);
+      document.getElementById('total-course').textContent = `Total: ${total}`;
       chartInstances.course = new Chart(ctxCourse, {
         type: 'doughnut',
         data: { labels: Object.keys(courseCount).length ? Object.keys(courseCount) : ['None'], datasets: [{ data: Object.keys(courseCount).length ? Object.values(courseCount) : [1], backgroundColor: ['#D4A017', '#2D6A4F', '#1E293B', '#64748B'] }] },
-        options: commonOptions
+        options: pieOptions
+      });
+    }
+
+    // 2b. Chart Batch
+    const ctxBatch = document.getElementById('chart-batch');
+    if (ctxBatch) {
+      const total = Object.values(batchCount).reduce((a, b) => a + b, 0);
+      document.getElementById('total-batch').textContent = `Total: ${total}`;
+      chartInstances.batch = new Chart(ctxBatch, {
+        type: 'doughnut',
+        data: { labels: ['Zuhr', 'Asr', 'Maghrib'], datasets: [{ data: [batchCount['Zuhr'], batchCount['Asr'], batchCount['Maghrib']], backgroundColor: ['#FFC107', '#2D6A4F', '#1E293B'] }] },
+        options: pieOptions
       });
     }
 
     // 3. Chart Gender
     const ctxGender = document.getElementById('chart-gender');
     if (ctxGender) {
+      const total = (genderCount['Male'] || 0) + (genderCount['Female'] || 0);
+      document.getElementById('total-gender').textContent = `Total: ${total}`;
       chartInstances.gender = new Chart(ctxGender, {
         type: 'pie',
         data: { labels: ['Male', 'Female'], datasets: [{ data: [genderCount['Male'] || 0, genderCount['Female'] || 0], backgroundColor: ['#3b82f6', '#ec4899'] }] },
-        options: commonOptions
+        options: pieOptions
       });
     }
 
     // 4. Chart School Class
     const ctxSchool = document.getElementById('chart-school');
     if (ctxSchool) {
+      const total = Object.values(classCount).reduce((a, b) => a + b, 0);
+      document.getElementById('total-school').textContent = `Total: ${total}`;
       chartInstances.school = new Chart(ctxSchool, {
         type: 'bar',
         data: { labels: Object.keys(classCount).length ? Object.keys(classCount) : ['None'], datasets: [{ label: 'Students', data: Object.keys(classCount).length ? Object.values(classCount) : [0], backgroundColor: '#2D6A4F' }] },
@@ -694,18 +832,144 @@ document.addEventListener('DOMContentLoaded', () => {
   const dsBtnRef = document.getElementById('btn-ds-refresh');
   if (dsBtnRef) {
     dsBtnRef.addEventListener('click', () => {
-      chartsRendered = false;
-      Object.values(chartInstances).forEach(c => c.destroy());
-      chartInstances = {};
-      hydrateDashboardAndAnalytics();
+      // Clear all UI filters
+      const searchInput = document.getElementById('ds-filter-search');
+      const statusSelect = document.getElementById('ds-filter-status');
+      const batchSelect = document.getElementById('ds-filter-batch');
+      const courseSelect = document.getElementById('ds-filter-course');
+
+      if (searchInput) searchInput.value = '';
+      if (statusSelect) statusSelect.value = 'approved';
+      if (batchSelect) batchSelect.value = 'all';
+      if (courseSelect) courseSelect.value = 'all';
+
+      // Re-trigger matrix rendering with default filters
+      renderStudentMatrix();
     });
   }
 
   // Wire real-time cohesive filter events
   const filterInput = document.getElementById('ds-filter-search');
   const filterDropdown = document.getElementById('ds-filter-status');
+  const batchDropdown = document.getElementById('ds-filter-batch');
+  const courseDropdown = document.getElementById('ds-filter-course');
   if (filterInput) filterInput.addEventListener('input', renderStudentMatrix);
   if (filterDropdown) filterDropdown.addEventListener('change', renderStudentMatrix);
+  if (batchDropdown) batchDropdown.addEventListener('change', renderStudentMatrix);
+  if (courseDropdown) courseDropdown.addEventListener('change', renderStudentMatrix);
+
+  // ─── Export Logic ────────
+  function exportToExcel() {
+    const searchTerm = (document.getElementById('ds-filter-search')?.value || '').toLowerCase();
+    const statusFilter = document.getElementById('ds-filter-status')?.value || 'all';
+    const batchFilter = document.getElementById('ds-filter-batch')?.value || 'all';
+    const courseFilter = document.getElementById('ds-filter-course')?.value || 'all';
+
+    let filtered = [...(cachedStudents || [])];
+    if (statusFilter !== 'all') filtered = filtered.filter(s => s.status === statusFilter);
+    if (batchFilter !== 'all') filtered = filtered.filter(s => s.batch === batchFilter);
+    if (courseFilter !== 'all') filtered = filtered.filter(s => s.course_applying === courseFilter);
+    if (searchTerm) {
+      filtered = filtered.filter(s =>
+        (s.student_name || '').toLowerCase().includes(searchTerm) ||
+        (s.form_no || '').toLowerCase().includes(searchTerm)
+      );
+    }
+
+    if (filtered.length === 0) {
+      alert('No data to export based on current filters.');
+      return;
+    }
+
+    if (typeof XLSX === 'undefined') {
+      alert('Excel engine is still loading. Please try again in a moment.');
+      return;
+    }
+
+    // Prepare Data for SheetJS
+    const data = filtered.map(s => ({
+      'Form No': s.form_no || 'N/A',
+      'Student Name': s.student_name || '',
+      'Father Name': s.father_name || '',
+      'Course': s.course_applying || '',
+      'Batch': s.batch || 'N/A',
+      'Status': s.status ? s.status.charAt(0).toUpperCase() + s.status.slice(1) : '',
+      'Joining Date': s.doj || '',
+      'Gender': s.gender || '',
+      'Aadhar No': s.aadhar_no || '',
+      'School': s.school_name || '',
+      'Current Class': s.current_class || ''
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+
+    // 1. Set Column Widths (Better readability)
+    const wscols = [
+      { wch: 15 }, // Form No
+      { wch: 25 }, // Student Name
+      { wch: 25 }, // Father Name
+      { wch: 25 }, // Course
+      { wch: 10 }, // Batch
+      { wch: 10 }, // Status
+      { wch: 12 }, // Joining Date
+      { wch: 10 }, // Gender
+      { wch: 15 }, // Aadhar
+      { wch: 30 }, // School
+      { wch: 15 }  // Class
+    ];
+    ws['!cols'] = wscols;
+
+    // 2. Enable Autofilter for the whole range
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    ws['!autofilter'] = { ref: XLSX.utils.encode_range(range) };
+
+    // 3. Freeze Top Row (Header)
+    ws['!views'] = [{ state: 'frozen', ySplit: 1, activePane: 'bottomLeft', pane: 'bottomLeft' }];
+
+    // 4. Create Workbook and Download
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Students");
+    XLSX.writeFile(wb, `MQLC_Students_${new Date().toISOString().split('T')[0]}.xlsx`);
+  }
+
+  function exportToPDF() {
+    // Set timestamp for branding
+    const tsEl = document.getElementById('print-timestamp');
+    if (tsEl) tsEl.textContent = `Date: ${new Date().toLocaleString()}`;
+    
+    // Simple window.print approach for immediate PDF/Print
+    window.print();
+  }
+
+  const btnExportExcel = document.getElementById('btn-ds-export-excel');
+  const btnExportPDF = document.getElementById('btn-ds-export-pdf');
+  const btnExportToggle = document.getElementById('btn-export-toggle');
+  const exportDropdown = document.getElementById('export-dropdown');
+
+  if (btnExportToggle && exportDropdown) {
+    btnExportToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      exportDropdown.style.display = exportDropdown.style.display === 'none' ? 'block' : 'none';
+    });
+    document.addEventListener('click', () => {
+      exportDropdown.style.display = 'none';
+    });
+    // Prevent menu close when clicking inside
+    exportDropdown.addEventListener('click', (e) => e.stopPropagation());
+  }
+
+  if (btnExportExcel) {
+    btnExportExcel.addEventListener('click', () => {
+      exportToExcel();
+      if (exportDropdown) exportDropdown.style.display = 'none';
+    });
+  }
+  if (btnExportPDF) {
+    btnExportPDF.addEventListener('click', () => {
+      exportToPDF();
+      if (exportDropdown) exportDropdown.style.display = 'none';
+    });
+  }
 
   // Auto trigger once to cache states quietly
   setTimeout(hydrateDashboardAndAnalytics, 1000);
