@@ -2,6 +2,23 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
+  /* ── Secret Admin Access (triple-click logo) ──────────────── */
+  const logoMark = document.querySelector('.nav-logo-mark');
+  if (logoMark) {
+    let clickCount = 0;
+    let clickTimer = null;
+    logoMark.addEventListener('click', (e) => {
+      clickCount++;
+      clearTimeout(clickTimer);
+      if (clickCount >= 3) {
+        e.preventDefault();
+        clickCount = 0;
+        window.location.href = '/admin.html';
+      }
+      clickTimer = setTimeout(() => { clickCount = 0; }, 600);
+    });
+  }
+
   /* ── Numeral localization helper ──────────────────────────── */
   const NUMERAL_MAP = {
     ur: ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'],

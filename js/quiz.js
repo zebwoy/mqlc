@@ -313,8 +313,25 @@ document.addEventListener('DOMContentLoaded', () => {
       statusEl.innerText = "";
 
       try {
+        // Build a clean, deterministic quiz_id: seriesName_quizNo_DDMMYY
+        const seriesRaw = (quizData.topic && quizData.topic.en)
+          ? quizData.topic.en.split(':')[0].trim()
+          : 'general';
+        const seriesSlug = seriesRaw.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+        const quizNum = quizData.quiz_no || '0';
+        // Format lecture_date "05 April 2026" → "050426"
+        let dateStamp = '000000';
+        if (quizData.lecture_date) {
+          const d = new Date(quizData.lecture_date);
+          if (!isNaN(d)) {
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const yy = String(d.getFullYear()).slice(-2);
+            dateStamp = `${dd}${mm}${yy}`;
+          }
+        }
         const payload = {
-          quiz_id: quizData.quiz_no ? `Quiz-${quizData.quiz_no}` : 'unknown',
+          quiz_id: `${seriesSlug}_${quizNum}_${dateStamp}`,
           player_name: document.getElementById('demo-name').value,
           age: document.getElementById('demo-age').value,
           gender: document.querySelector('input[name="demo-gender"]:checked').value,
