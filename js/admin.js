@@ -572,17 +572,45 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // Sort: Group by batch, then alphabetically by name within each batch
+    const batchOrder = ['Zuhr', 'Asr', 'Maghrib'];
+    filtered.sort((a, b) => {
+      const batchA = batchOrder.indexOf(a.batch) === -1 ? 99 : batchOrder.indexOf(a.batch);
+      const batchB = batchOrder.indexOf(b.batch) === -1 ? 99 : batchOrder.indexOf(b.batch);
+      if (batchA !== batchB) return batchA - batchB;
+      return (a.student_name || '').localeCompare(b.student_name || '');
+    });
+
+    // Group students by batch for section headers
+    const groups = {};
     filtered.forEach(app => {
-      let stClass = app.status === 'approved' ? 'approved' :
-                    (app.status === 'rejected' ? 'rejected' : 
-                    (app.status === 'left' ? 'rejected' : 'pending')); // Use danger color for left too
+      const key = app.batch || 'Unassigned';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(app);
+    });
+
+    // Render with batch section headers
+    const orderedKeys = [...batchOrder.filter(b => groups[b]), ...(groups['Unassigned'] ? ['Unassigned'] : [])];
+
+    orderedKeys.forEach(batchName => {
+      const students = groups[batchName];
+      // Batch section header
       feedContainer.innerHTML += `
+        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.5rem; margin-top: 0.75rem; border-bottom: 2px solid var(--admin-accent);">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--admin-accent); text-transform: uppercase; letter-spacing: 0.5px;">${batchName} Batch</span>
+          <span style="font-size: 0.7rem; background: var(--admin-bg); color: var(--admin-muted); padding: 2px 8px; border-radius: 10px; font-weight: 500;">${students.length}</span>
+        </div>`;
+
+      students.forEach(app => {
+        let stClass = app.status === 'approved' ? 'approved' :
+          (app.status === 'rejected' ? 'rejected' :
+            (app.status === 'left' ? 'rejected' : 'pending'));
+        feedContainer.innerHTML += `
         <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center;">
           <div class="activity-detail">
             <h4 style="margin-bottom: 0.25rem;">${app.student_name}</h4>
             <p style="font-size: 0.8rem; margin-bottom: 0.25rem;">${app.course_applying} | Form: ${app.form_no || 'N/A'}</p>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-              ${app.batch ? `<span style="font-size: 0.7rem; background: #FFECD1; color: #9C6F00; padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase;">${app.batch} Batch</span>` : ''}
               ${app.status === 'left' ? `<span style="font-size: 0.7rem; background: #fde8e8; color: #c53030; padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase;">Inactive</span>` : ''}
             </div>
           </div>
@@ -595,6 +623,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </button>
           </div>
         </div>`;
+      });
     });
 
     // Hook up Edit buttons
@@ -628,7 +657,7 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const id = document.getElementById('edit-student-id').value;
       const statusMsg = document.getElementById('edit-status-msg');
-      
+
       const payload = {
         student_name: document.getElementById('edit-student-name').value,
         father_name: document.getElementById('edit-student-father').value,
@@ -651,10 +680,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         statusMsg.textContent = 'Student updated successfully';
         statusMsg.className = 'status-msg success';
-        
+
         // Refresh cache and UI
         await hydrateDashboardAndAnalytics();
-        
+
         setTimeout(() => {
           document.getElementById('modal-edit-student').close();
         }, 1000);
@@ -740,15 +769,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    const commonOptions = { 
-      responsive: true, 
-      maintainAspectRatio: false, 
-      plugins: { 
-        legend: { 
+    const commonOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
           position: 'bottom',
           labels: { padding: 20, boxWidth: 12, usePointStyle: true }
-        } 
-      } 
+        }
+      }
     };
 
     const pieOptions = {
@@ -886,6 +915,15 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // Sort: batch order then alphabetical
+    const batchOrder = ['Zuhr', 'Asr', 'Maghrib'];
+    filtered.sort((a, b) => {
+      const bA = batchOrder.indexOf(a.batch) === -1 ? 99 : batchOrder.indexOf(a.batch);
+      const bB = batchOrder.indexOf(b.batch) === -1 ? 99 : batchOrder.indexOf(b.batch);
+      if (bA !== bB) return bA - bB;
+      return (a.student_name || '').localeCompare(b.student_name || '');
+    });
+
     // Prepare Data for SheetJS
     const data = filtered.map(s => ({
       'Form No': s.form_no || 'N/A',
@@ -913,7 +951,7 @@ document.addEventListener('DOMContentLoaded', () => {
       { wch: 10 }, // Status
       { wch: 12 }, // Joining Date
       { wch: 10 }, // Gender
-      { wch: 15 }, // Aadhar
+      { wch: 15 }, // Aadhar No.
       { wch: 30 }, // School
       { wch: 15 }  // Class
     ];
@@ -936,9 +974,124 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set timestamp for branding
     const tsEl = document.getElementById('print-timestamp');
     if (tsEl) tsEl.textContent = `Date: ${new Date().toLocaleString()}`;
-    
-    // Simple window.print approach for immediate PDF/Print
-    window.print();
+
+    // Get the currently filtered students (same logic as export to Excel)
+    const searchTerm = (document.getElementById('ds-filter-search')?.value || '').toLowerCase();
+    const statusFilter = document.getElementById('ds-filter-status')?.value || 'all';
+    const batchFilter = document.getElementById('ds-filter-batch')?.value || 'all';
+    const courseFilter = document.getElementById('ds-filter-course')?.value || 'all';
+
+    let filtered = [...(cachedStudents || [])];
+    if (statusFilter !== 'all') filtered = filtered.filter(s => s.status === statusFilter);
+    if (batchFilter !== 'all') filtered = filtered.filter(s => s.batch === batchFilter);
+    if (courseFilter !== 'all') filtered = filtered.filter(s => s.course_applying === courseFilter);
+    if (searchTerm) {
+      filtered = filtered.filter(s =>
+        (s.student_name || '').toLowerCase().includes(searchTerm) ||
+        (s.form_no || '').toLowerCase().includes(searchTerm)
+      );
+    }
+
+    if (filtered.length === 0) {
+      alert('No data to export based on current filters.');
+      return;
+    }
+
+    // Sort: batch order then alphabetical
+    const batchOrder = ['Zuhr', 'Asr', 'Maghrib'];
+    filtered.sort((a, b) => {
+      const bA = batchOrder.indexOf(a.batch) === -1 ? 99 : batchOrder.indexOf(a.batch);
+      const bB = batchOrder.indexOf(b.batch) === -1 ? 99 : batchOrder.indexOf(b.batch);
+      if (bA !== bB) return bA - bB;
+      return (a.student_name || '').localeCompare(b.student_name || '');
+    });
+
+    // Group by batch
+    const groups = {};
+    filtered.forEach(s => {
+      const key = s.batch || 'Unassigned';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(s);
+    });
+    const orderedKeys = [...batchOrder.filter(b => groups[b]), ...(groups['Unassigned'] ? ['Unassigned'] : [])];
+
+    // Build the table
+    const container = document.getElementById('print-table-container');
+    if (!container) return;
+
+    const filterParts = [];
+    if (statusFilter !== 'all') filterParts.push(`Status: ${statusFilter}`);
+    if (batchFilter !== 'all') filterParts.push(`Batch: ${batchFilter}`);
+    if (courseFilter !== 'all') filterParts.push(`Course: ${courseFilter}`);
+    if (searchTerm) filterParts.push(`Search: "${searchTerm}"`);
+    const filterSummary = filterParts.length > 0
+      ? `<p style="font-size:9pt;color:#666;margin:0 0 10pt 0;">Filters Applied: ${filterParts.join(' | ')} &mdash; ${filtered.length} record(s)</p>`
+      : `<p style="font-size:9pt;color:#666;margin:0 0 10pt 0;">All Records &mdash; ${filtered.length} total</p>`;
+
+    const thStyle = 'padding:6pt 4pt;text-align:left;border:1px solid #ddd;';
+    const tdStyle = 'padding:5pt 4pt;border:1px solid #eee;';
+
+    let tableHTML = filterSummary;
+
+    orderedKeys.forEach(batchName => {
+      const students = groups[batchName];
+
+      // Batch section header
+      tableHTML += `
+        <div style="margin-top:14pt;margin-bottom:6pt;padding:5pt 8pt;background:#2D6A4F;color:#fff;border-radius:4pt;font-size:9pt;font-weight:700;font-family:'Inter',sans-serif;">
+          ${batchName} Batch &mdash; ${students.length} student${students.length === 1 ? '' : 's'}
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:8.5pt;font-family:'Inter',sans-serif;margin-bottom:4pt;">
+          <thead>
+            <tr style="background:#f0f0f0;">
+              <th style="${thStyle}">#</th>
+              <th style="${thStyle}">Form No</th>
+              <th style="${thStyle}">Student Name</th>
+              <th style="${thStyle}">Father Name</th>
+              <th style="${thStyle}">Course</th>
+              <th style="${thStyle}">Status</th>
+              <th style="${thStyle}">Gender</th>
+              <th style="${thStyle}">Contact</th>
+              <th style="${thStyle}">Aadhar No.</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+      students.forEach((s, i) => {
+        const bgColor = i % 2 === 0 ? '#fff' : '#f8f9fa';
+        const contact = s.contact_father || s.contact_mother || 'N/A';
+        tableHTML += `
+            <tr style="background:${bgColor};">
+              <td style="${tdStyle}">${i + 1}</td>
+              <td style="${tdStyle}">${s.form_no || 'N/A'}</td>
+              <td style="${tdStyle}font-weight:600;">${s.student_name || ''}</td>
+              <td style="${tdStyle}">${s.father_name || ''}</td>
+              <td style="${tdStyle}">${s.course_applying || ''}</td>
+              <td style="${tdStyle}text-transform:capitalize;">${s.status || ''}</td>
+              <td style="${tdStyle}">${s.gender || ''}</td>
+              <td style="${tdStyle}">${contact}</td>
+              <td style="${tdStyle}">${s.aadhar_no || ''}</td>
+            </tr>`;
+      });
+
+      tableHTML += `
+          </tbody>
+        </table>`;
+    });
+
+    container.innerHTML = tableHTML;
+
+    // Use a small delay to let the DOM render before triggering print
+    const originalTitle = document.title;
+    document.title = `MQLC_Student_Directory_${new Date().toISOString().split('T')[0]}`;
+    setTimeout(() => {
+      window.print();
+      // Restore title and clean up after printing
+      setTimeout(() => {
+        document.title = originalTitle;
+        container.innerHTML = '';
+      }, 1000);
+    }, 200);
   }
 
   const btnExportExcel = document.getElementById('btn-ds-export-excel');

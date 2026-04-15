@@ -649,122 +649,49 @@ a {
     font-size: 10pt;
   }
 
-  /* Hide UI elements */
-  .sidebar, 
-  .horizontal-nav, 
-  .nav-item, 
-  .btn-primary, 
-  .btn-secondary,
-  .export-container,
-  .content-header, /* Hide the "Student Management" header too to save space */
-  #ds-filter-search,
-  #ds-filter-status,
-  #ds-filter-batch,
-  #ds-filter-course,
-  #ds-filter-count,
-  .kpi-grid,
-  .sub-pane, /* Hide all sub-panes by default */
-  #sub-analytics {
+  /* Hide the ENTIRE dashboard UI — we only want the table */
+  #auth-view,
+  #dashboard-view,
+  .sidebar,
+  .horizontal-nav {
     display: none !important;
   }
 
-  /* Force Only Student List (Dashboard) to be visible */
-  #sub-dashboard {
-    display: block !important;
-  }
-
-  /* Show Print Logic */
+  /* Show Print Branding Header */
   #print-branding {
     display: block !important;
   }
 
-  .main-content {
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  /* Force Dashboard Visibility */
-  #sub-dashboard[style*="display: none"] {
+  /* Show the Print Table */
+  #print-table-container {
     display: block !important;
   }
 
-  .card {
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
+  /* Table styling for clean print output */
+  #print-table-container table {
+    width: 100%;
+    border-collapse: collapse;
+    page-break-inside: auto;
   }
 
-  .activity-item {
-    border-bottom: 1px solid #eee !important;
+  #print-table-container tr {
     page-break-inside: avoid;
-    padding: 0.5rem 0 !important;
+    page-break-after: auto;
   }
 
-  /* Clean up text */
-  h3, h4 {
-    color: #000 !important;
+  #print-table-container thead {
+    display: table-header-group;
   }
 
-  .text-muted {
-    color: #444 !important;
+  #print-table-container th {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
 
-  .badge {
-    border: 1px solid #ccc !important;
-    color: #000 !important;
-    background: transparent !important;
-  }
-
-  /* Specific Fixes for the Student List Feed */
-  #ds-activity-feed {
-    max-height: none !important;
-    overflow: visible !important;
-    height: auto !important;
-    display: block !important;
-    padding: 0 !important;
-  }
-
-  .activity-item {
-    border: none !important;
-    border-bottom: 0.5pt solid #ddd !important;
-    padding: 10pt 0 !important;
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: flex-start !important;
-    page-break-inside: avoid !important;
-    background: transparent !important;
-    margin: 0 !important;
-    border-radius: 0 !important;
-    box-shadow: none !important;
-  }
-
-  .activity-detail h4 {
-    font-size: 12pt !important;
-    font-weight: 700 !important;
-    margin: 0 0 2pt 0 !important;
-    text-transform: capitalize !important;
-  }
-
-  .activity-detail p {
-    font-size: 9pt !important;
-    margin: 0 0 4pt 0 !important;
-    color: #333 !important;
-  }
-
-  /* Hide edit buttons and unnecessary UI noise in print */
-  .btn-edit-student,
-  .activity-item svg {
-    display: none !important;
-  }
-
-  /* Make status badge look professional in B&W */
-  .badge {
-    font-size: 8pt !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.05em !important;
-    padding: 2pt 6pt !important;
-    border: 1px solid #000 !important;
-    font-weight: 600 !important;
+  #print-table-container tr:nth-child(even) {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
 }
