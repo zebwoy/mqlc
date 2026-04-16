@@ -114,6 +114,17 @@
           </svg>
           Upload Manager
         </button>
+        <button class="nav-item" data-target="tab-leaderboard">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+            <path d="M4 22h16"></path>
+            <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 19.24 7 20v2"></path>
+            <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 19.24 17 20v2"></path>
+            <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+          </svg>
+          Quiz Leaderboard
+        </button>
         <button class="nav-item" data-target="tab-jamat">
           <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
@@ -595,6 +606,45 @@
             </div>
           </div>
 
+        </div>
+      </section>
+
+      <!-- ──────────────────────────────────────────────────────────
+           TAB: QUIZ LEADERBOARD
+      ─────────────────────────────────────────────────────────── -->
+      <section id="tab-leaderboard" class="tab-pane" style="display: none;">
+        <header class="content-header">
+          <div>
+            <h2>Quiz Leaderboard</h2>
+            <p>View quiz performance standings. Select a quiz to see its leaderboard.</p>
+          </div>
+        </header>
+
+        <div class="card">
+          <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+            <select id="lb-quiz-select" style="padding: 0.5rem 1rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.9rem; background: #fff; cursor: pointer; min-width: 280px;">
+              <option value="">── Loading Quizzes... ──</option>
+            </select>
+            <span id="lb-entry-count" style="font-size: 0.8rem; color: var(--admin-muted); font-weight: 500;"></span>
+          </div>
+
+          <!-- Leaderboard Table -->
+          <div class="table-responsive">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--admin-border); text-align: left;">
+                  <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--admin-muted);">Rank</th>
+                  <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--admin-muted);">Name</th>
+                  <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--admin-muted);">Area</th>
+                  <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--admin-muted);">Score</th>
+                  <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--admin-muted);">Time</th>
+                </tr>
+              </thead>
+              <tbody id="lb-admin-tbody">
+                <tr><td colspan="5" style="text-align: center; padding: 2rem; color: var(--admin-muted);">Select a quiz above to view its leaderboard.</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 

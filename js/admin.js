@@ -1255,4 +1255,101 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 5000);
   }
 
+  // ─── 6. QUIZ LEADERBOARD VIEWER ──────────────────────────────────
+  const lbSelect = document.getElementById('lb-quiz-select');
+  const lbTbody = document.getElementById('lb-admin-tbody');
+  const lbCount = document.getElementById('lb-entry-count');
+
+  async function loadQuizList() {
+    if (!window._supabase || !lbSelect) return;
+
+    try {
+      // Fetch all distinct quiz_ids
+      const { data, error } = await window._supabase
+        .from('quiz_leaderboard')
+        .select('quiz_id');
+
+      if (error) throw error;
+
+      // Get unique quiz_ids
+      const uniqueIds = [...new Set((data || []).map(r => r.quiz_id))].sort().reverse();
+
+      lbSelect.innerHTML = '<option value="">── Select a Quiz ──</option>';
+      uniqueIds.forEach(id => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = id;
+        lbSelect.appendChild(opt);
+      });
+    } catch (err) {
+      console.error('Failed to load quiz list:', err);
+      lbSelect.innerHTML = '<option value="">── Error loading quizzes ──</option>';
+    }
+  }
+
+  async function loadLeaderboard(quizId) {
+    if (!window._supabase || !lbTbody) return;
+
+    lbTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--admin-muted);">Loading...</td></tr>';
+
+    try {
+      const { data, error } = await window._supabase
+        .from('quiz_leaderboard')
+        .select('*')
+        .eq('quiz_id', quizId)
+        .order('score', { ascending: false })
+        .order('time_taken', { ascending: true });
+
+      if (error) throw error;
+
+      if (lbCount) lbCount.textContent = `${(data || []).length} entries`;
+
+      if (!data || data.length === 0) {
+        lbTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--admin-muted);">No entries for this quiz yet.</td></tr>';
+        return;
+      }
+
+      const medals = ['🥇', '🥈', '🥉'];
+      lbTbody.innerHTML = '';
+
+      data.forEach((row, i) => {
+        const rank = i + 1;
+        const medal = medals[i] || rank;
+        const mins = Math.floor(row.time_taken / 60);
+        const secs = row.time_taken % 60;
+        const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+        const bgColor = i % 2 === 0 ? 'transparent' : 'var(--admin-bg)';
+
+        lbTbody.innerHTML += `
+          <tr style="background:${bgColor};border-bottom:1px solid var(--admin-border);">
+            <td style="padding:0.75rem 0.5rem;font-weight:600;font-size:1rem;">${medal}</td>
+            <td style="padding:0.75rem 0.5rem;font-weight:600;">${row.player_name}</td>
+            <td style="padding:0.75rem 0.5rem;color:var(--admin-muted);">${row.area || '—'}</td>
+            <td style="padding:0.75rem 0.5rem;"><span style="background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:12px;font-weight:600;font-size:0.85rem;">${row.score}</span></td>
+            <td style="padding:0.75rem 0.5rem;color:var(--admin-muted);font-size:0.85rem;">${timeStr}</td>
+          </tr>`;
+      });
+
+    } catch (err) {
+      console.error('Failed to load leaderboard:', err);
+      lbTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--admin-danger);">Failed to load data.</td></tr>';
+    }
+  }
+
+  // Wire up
+  const lbTabBtn = document.querySelector('[data-target="tab-leaderboard"]');
+  if (lbTabBtn) lbTabBtn.addEventListener('click', loadQuizList);
+
+  if (lbSelect) {
+    lbSelect.addEventListener('change', () => {
+      const val = lbSelect.value;
+      if (val) {
+        loadLeaderboard(val);
+      } else {
+        lbTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--admin-muted);">Select a quiz above to view its leaderboard.</td></tr>';
+        if (lbCount) lbCount.textContent = '';
+      }
+    });
+  }
+
 });
