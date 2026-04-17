@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const rawUrl = urlParams.get('src');
+  // Read quiz source from sessionStorage (primary) or URL param (fallback)
+  const rawUrl = sessionStorage.getItem('mqlc_quiz_src') || new URLSearchParams(window.location.search).get('src');
+  if (rawUrl) sessionStorage.removeItem('mqlc_quiz_src'); // Clean up after reading
 
   // ─── Numeral Localization Utility ─────────────────────────────
   const NUMERAL_MAP = {

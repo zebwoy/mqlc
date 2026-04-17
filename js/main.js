@@ -397,9 +397,9 @@ document.addEventListener('DOMContentLoaded', () => {
                       <span><strong style="color:var(--gold);"><span data-en="Lecture" data-mr="व्याख्यान" data-ur="لیکچر" data-hi="व्याख्यान">Lecture</span>:</strong> <bdi>${qDate}</bdi></span>
                       <span><strong style="color:var(--gold);"><span data-en="Closes" data-mr="बंद" data-ur="بند" data-hi="बंद">Closes</span>:</strong> <bdi>${closesDate}</bdi></span>
                   </div>
-                  <a href="/quiz.html?src=${encodeURIComponent(item.secure_url)}" target="_blank" class="btn-primary quiz-begin-btn">
+                  <button onclick="sessionStorage.setItem('mqlc_quiz_src','${item.secure_url}');window.open('/quiz.html','_blank');" class="btn-primary quiz-begin-btn" style="border:none;cursor:pointer;">
                       <span data-en="Begin Quiz &rarr;" data-mr="प्रश्नमंजुषा सुरू करा &rarr;" data-ur="کوئز شروع کریں &larr;" data-hi="प्रश्नोत्तरी शुरू करें &rarr;">Begin Quiz &rarr;</span>
-                  </a>
+                  </button>
                 </div>
               `;
 
