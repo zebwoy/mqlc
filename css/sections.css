@@ -782,13 +782,57 @@
   justify-content: center;
 }
 
+/* Premium Download Button */
+.btn-download-poster {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.8rem 2rem;
+  border: none;
+  border-radius: 50px;
+  background: linear-gradient(135deg, var(--green), #1B4332);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px rgba(45, 106, 79, 0.35);
+  letter-spacing: 0.3px;
+}
+
+.btn-download-poster:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(45, 106, 79, 0.5);
+  background: linear-gradient(135deg, #1B4332, var(--green));
+}
+
+.btn-download-poster:active {
+  transform: translateY(0);
+}
+
+.btn-download-poster svg {
+  flex-shrink: 0;
+}
+
+.btn-download-poster.downloading {
+  opacity: 0.85;
+  pointer-events: none;
+  animation: dlPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes dlPulse {
+  0%, 100% { box-shadow: 0 4px 14px rgba(45, 106, 79, 0.35); }
+  50% { box-shadow: 0 4px 24px rgba(212, 160, 23, 0.5); }
+}
+
 /* Make expandable cards clickable */
 .bulletin-card.expandable {
   cursor: pointer;
 }
 
 .bulletin-card.expandable::after {
-  content: '👆 Click to maximize';
+  content: '👆 Click to expand';
   position: absolute;
   bottom: 1rem;
   right: 1rem;
@@ -796,6 +840,18 @@
   color: var(--gold);
   opacity: 0.8;
   font-weight: 500;
+}
+
+/* Poster Preview Image */
+.bulletin-preview-img {
+  width: 100%;
+  max-height: 300px;
+  border-radius: 8px;
+  object-fit: contain;
+  object-position: top;
+  margin-top: 0.5rem;
+  background: #f8f9fa;
+  border: 1px solid rgba(0,0,0,0.05);
 }
 
 /* ─── Responsive ─────────────────────────────────────────────── */
@@ -853,7 +909,7 @@
 
   .bulletin-card {
     flex: 0 0 88%;
-    padding: 1.5rem 1.25rem;
+    padding: 1.25rem 1rem;
     border-radius: 14px;
   }
 
@@ -862,6 +918,17 @@
   .bulletin-card:nth-child(even),
   .bulletin-card:nth-child(3n) {
     transform: none;
+  }
+
+  .bulletin-card.expandable::after {
+    content: '\1F446 Tap to view';
+    bottom: 0.5rem;
+    right: 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .bulletin-preview-img {
+    max-height: 380px;
   }
 
   .bulletin-title {

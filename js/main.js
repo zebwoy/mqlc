@@ -332,9 +332,18 @@ document.addEventListener('DOMContentLoaded', () => {
           // Cloudinary dynamically converts the 1st page of a PDF to JPG automatically!
           const previewUrl = isPdf ? item.secure_url.replace('.pdf', '.jpg') : item.secure_url;
 
-          // Parse a clean title from the raw Cloudinary ID as fallback
+          // Smart title: prefer original filename, fallback to formatted date
           const rawId = item.public_id.split('/').pop();
-          const safeTitle = rawId.replace(/[_-]/g, ' ');
+          const originalName = item.filename || '';
+          const isHashName = /^[a-z0-9]{15,}$/i.test(originalName) || !originalName;
+          let safeTitle;
+          if (isHashName) {
+            // Filename is a hash — use upload date instead
+            const uploadDate = item.created_at ? new Date(item.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+            safeTitle = isPdf ? `Notice — ${uploadDate}` : `Poster — ${uploadDate}`;
+          } else {
+            safeTitle = originalName.replace(/[_-]/g, ' ');
+          }
 
           if (isJson) {
             try {
@@ -421,13 +430,16 @@ document.addEventListener('DOMContentLoaded', () => {
             card.innerHTML = `
               <h4 class="bulletin-title" style="text-transform: capitalize;">${safeTitle}</h4>
               <div class="gold-divider" style="margin: 1rem 0;"></div>
-              <img src="${previewUrl}" loading="lazy" style="width:100%; height:220px; border-radius:8px; object-fit:cover; margin-top: 1.5rem; background: #f8f9fa; border: 1px solid rgba(0,0,0,0.05);" alt="${safeTitle} Preview">
+              <img src="${previewUrl}" loading="lazy" class="bulletin-preview-img" alt="${safeTitle} Preview">
             `;
             // Wiring the Lightbox Modal trigger securely without layout shift!
+            const downloadName = `MQLC_${safeTitle.replace(/[^a-zA-Z0-9]/g, '_')}.${item.format}`;
+            const downloadUrl = item.secure_url;
             card.addEventListener('click', () => {
               modalBody.innerHTML = `<img src="${previewUrl}" alt="Full Announcement" style="width:100%; border-radius: 8px;">`;
-              modalDownloadBtn.href = item.secure_url; // Direct raw file link
-              modalDownloadBtn.download = `${rawId}.${item.format}`;
+              // Store download info on the button for the blob-based handler
+              modalDownloadBtn.dataset.url = downloadUrl;
+              modalDownloadBtn.dataset.name = downloadName;
               bulletinModal.showModal();
             });
             bulletinCarousel.appendChild(card);
