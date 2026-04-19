@@ -438,6 +438,9 @@ document.addEventListener('DOMContentLoaded', () => {
           manualStatusMsg.style.display = 'none';
           manualStatusMsg.textContent = '';
         }, 3000);
+
+        // Regenerate a fresh form number for the next entry
+        await initManualFormNumber();
       } catch (err) {
         console.error(err);
         manualStatusMsg.textContent = `Failed to save: ${err.message}`;
@@ -513,12 +516,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         formNoInput.value = `${prefix}${nextNum.toString().padStart(4, '0')}`;
+        formNoInput.dataset.generated = 'true'; // Mark as auto-generated
       } catch (err) {
         console.error("Form No Gen Failure:", err);
         formNoInput.value = `${prefix}0001`; // Fallback to start
       }
     }
-  }
+
+    // Initial call + call whenever the Manual tab pill is clicked
+    initManualFormNumber();
+    const manualPillBtn = document.querySelector('[data-sub="sub-manual"]');
+    if (manualPillBtn) {
+      manualPillBtn.addEventListener('click', () => {
+        // Only regenerate if the field is empty or stale
+        const fi = manualForm.querySelector('input[name="form_no"]');
+        if (!fi || !fi.value || fi.value === 'Generating...') {
+          initManualFormNumber();
+        }
+      });
+    }
+
+  } // end if (manualForm)
 
   let cachedStudents = [];
 
