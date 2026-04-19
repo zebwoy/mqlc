@@ -410,9 +410,9 @@ document.addEventListener('DOMContentLoaded', () => {
         contact_father: fd.get('contact_father'),
         contact_mother: fd.get('contact_mother'),
         current_class: fd.get('current_class'),
-        school_name: fd.get('school_name'),
-        school_days: Array.from(manualForm.querySelectorAll('input[name="school_days_arr"]:checked')).map(cb => cb.value).join(', '),
-        school_time: `${fd.get('school_time_from')} - ${fd.get('school_time_to')}`,
+        school_name: fd.get('current_class') === 'Not going to school yet' ? 'N/A' : fd.get('school_name'),
+        school_days: fd.get('current_class') === 'Not going to school yet' ? 'N/A' : Array.from(manualForm.querySelectorAll('input[name="school_days_arr"]:checked')).map(cb => cb.value).join(', '),
+        school_time: fd.get('current_class') === 'Not going to school yet' ? 'N/A' : `${fd.get('school_time_from')} - ${fd.get('school_time_to')}`,
         batch: fd.get('batch'),
         status: 'approved' // explicitly bypass queue and auto-approve manual entries
       };
@@ -482,6 +482,32 @@ document.addEventListener('DOMContentLoaded', () => {
           formatted += val[i];
         }
         e.target.value = formatted;
+      });
+    }
+
+    // School Details Toggle Logic
+    const currentClassSelect = document.getElementById('manual_current_class');
+    const schoolNameGroup = document.getElementById('manual_school_name_group');
+    const schoolDaysGroup = document.getElementById('manual_school_days_group');
+    const schoolTimeGroup = document.getElementById('manual_school_time_group');
+
+    if (currentClassSelect) {
+      currentClassSelect.addEventListener('change', (e) => {
+        const isNotGoing = e.target.value === 'NA';
+
+        if (schoolNameGroup) {
+          schoolNameGroup.style.display = isNotGoing ? 'none' : '';
+          const nameInput = schoolNameGroup.querySelector('input');
+          if (nameInput) nameInput.required = !isNotGoing;
+        }
+        if (schoolDaysGroup) {
+          schoolDaysGroup.style.display = isNotGoing ? 'none' : '';
+        }
+        if (schoolTimeGroup) {
+          schoolTimeGroup.style.display = isNotGoing ? 'none' : '';
+          const timeInputs = schoolTimeGroup.querySelectorAll('input');
+          timeInputs.forEach(input => input.required = !isNotGoing);
+        }
       });
     }
 

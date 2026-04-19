@@ -138,6 +138,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // School Details Toggle Logic
+  const regCurrentClassSelect = document.getElementById('reg_current_class');
+  const regSchoolNameGroup = document.getElementById('reg_school_name_group');
+  const regSchoolDaysGroup = document.getElementById('reg_school_days_group');
+  const regSchoolTimeGroup = document.getElementById('reg_school_time_group');
+  
+  if (regCurrentClassSelect) {
+    regCurrentClassSelect.addEventListener('change', (e) => {
+      const isNotGoing = e.target.value === 'NA';
+      
+      if (regSchoolNameGroup) {
+        regSchoolNameGroup.style.display = isNotGoing ? 'none' : '';
+        const nameInput = regSchoolNameGroup.querySelector('input');
+        if (nameInput) nameInput.required = !isNotGoing;
+      }
+      if (regSchoolDaysGroup) {
+        regSchoolDaysGroup.style.display = isNotGoing ? 'none' : '';
+      }
+      if (regSchoolTimeGroup) {
+        regSchoolTimeGroup.style.display = isNotGoing ? 'none' : '';
+        const timeInputs = regSchoolTimeGroup.querySelectorAll('input');
+        timeInputs.forEach(input => input.required = !isNotGoing);
+      }
+    });
+  }
+
   document.querySelectorAll('.btn-prev').forEach(btn => {
     btn.addEventListener('click', () => {
       if (currentStepIdx > 0) {
@@ -237,9 +263,9 @@ document.addEventListener('DOMContentLoaded', () => {
         contact_father: fd.get('contact_father'),
         contact_mother: fd.get('contact_mother') || null,
         current_class: fd.get('current_class'),
-        school_name: fd.get('school_name'),
-        school_days: Array.from(form.querySelectorAll('input[name="school_days_arr"]:checked')).map(cb => cb.value).join(', '),
-        school_time: `${fd.get('school_time_from')} - ${fd.get('school_time_to')}`,
+        school_name: (fd.get('current_class') === 'Not going to school yet' || fd.get('current_class') === 'NA') ? 'N/A' : fd.get('school_name'),
+        school_days: (fd.get('current_class') === 'Not going to school yet' || fd.get('current_class') === 'NA') ? 'N/A' : Array.from(form.querySelectorAll('input[name="school_days_arr"]:checked')).map(cb => cb.value).join(', '),
+        school_time: (fd.get('current_class') === 'Not going to school yet' || fd.get('current_class') === 'NA') ? 'N/A' : `${fd.get('school_time_from')} - ${fd.get('school_time_to')}`,
         status: 'pending'
       };
 
@@ -293,7 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
           el.placeholder = text;
         } else if (el.tagName === 'TEXTAREA') {
           el.placeholder = text;
-        } else if (el.tagName !== 'OPTION') { // don't override select option defaults
+        } else {
           el.innerHTML = text;
         }
       }

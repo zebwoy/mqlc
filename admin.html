@@ -34,7 +34,8 @@
 <body>
 
   <!-- Print Branding (Hidden from UI, visible on PDF) -->
-  <div id="print-branding" style="display: none; text-align: center; padding: 20px; border-bottom: 2px solid #2D6A4F; margin-bottom: 30px;">
+  <div id="print-branding"
+    style="display: none; text-align: center; padding: 20px; border-bottom: 2px solid #2D6A4F; margin-bottom: 30px;">
     <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1rem;">
       <img src="assets/logo.png" alt="MQLC Logo" style="width: 60px; height: 60px;">
       <div style="text-align: left;">
@@ -115,7 +116,8 @@
           Upload Manager
         </button>
         <button class="nav-item" data-target="tab-leaderboard">
-          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
             <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
             <path d="M4 22h16"></path>
@@ -256,7 +258,8 @@
                   </div>
                   <div class="input-group">
                     <label>Form Number</label>
-                    <input type="text" name="form_no" readonly style="background: var(--admin-bg); cursor: not-allowed; font-weight: 600;">
+                    <input type="text" name="form_no" readonly
+                      style="background: var(--admin-bg); cursor: not-allowed; font-weight: 600;">
                   </div>
                   <div class="input-group full-width">
                     <label>Applying For Course</label>
@@ -325,8 +328,9 @@
                 <div class="grid-2">
                   <div class="input-group">
                     <label>Currently studying in Class</label>
-                    <select name="current_class" required>
-                      <option value="">Select class...</option>
+                    <select name="current_class" id="manual_current_class" required>
+                      <option value="Select Class" disabled selected>Select Class</option>
+                      <option value="NA">Not Applicable</option>
                       <option value="Nursery/KG">Nursery/KG</option>
                       <option value="Class 1">Class 1</option>
                       <option value="Class 2">Class 2</option>
@@ -342,14 +346,15 @@
                       <option value="Class 12">Class 12</option>
                     </select>
                   </div>
-                  <div class="input-group">
+                  <div class="input-group" id="manual_school_name_group">
                     <label>Name of School / College</label>
                     <input type="text" name="school_name" required>
                   </div>
-                  <div class="input-group full-width">
+                  <div class="input-group full-width" id="manual_school_days_group">
                     <label>School Days</label>
                     <div class="days-selector">
-                      <label class="day-pill highlight-pill"><input type="checkbox" id="sd-everyday"><span>Everyday</span></label>
+                      <label class="day-pill highlight-pill"><input type="checkbox"
+                          id="sd-everyday"><span>Everyday</span></label>
                       <label class="day-pill"><input type="checkbox" name="school_days_arr"
                           value="Mon"><span>Mon</span></label>
                       <label class="day-pill"><input type="checkbox" name="school_days_arr"
@@ -366,7 +371,7 @@
                           value="Sun"><span>Sun</span></label>
                     </div>
                   </div>
-                  <div class="input-group full-width">
+                  <div class="input-group full-width" id="manual_school_time_group">
                     <label>School Timings</label>
                     <div class="time-range">
                       <input type="time" name="school_time_from" required>
@@ -416,48 +421,64 @@
           </div>
 
           <div class="card" style="margin-bottom: 2rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
               <h3 style="margin: 0;">Student List</h3>
               <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                <input type="text" id="ds-filter-search" placeholder="Search by name..." style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; width: 140px;">
-                <select id="ds-filter-status" style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; background: #fff; cursor: pointer;">
+                <input type="text" id="ds-filter-search" placeholder="Search by name..."
+                  style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; width: 140px;">
+                <select id="ds-filter-status"
+                  style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; background: #fff; cursor: pointer;">
                   <option value="all">All Statuses</option>
                   <option value="approved" selected>Approved</option>
                   <option value="pending">Pending</option>
                   <option value="rejected">Rejected</option>
                   <option value="left">Left</option>
                 </select>
-                <select id="ds-filter-batch" style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; background: #fff; cursor: pointer;">
+                <select id="ds-filter-batch"
+                  style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; background: #fff; cursor: pointer;">
                   <option value="all">All Batches</option>
                   <option value="Zuhr">Zuhr</option>
                   <option value="Asr">Asr</option>
                   <option value="Maghrib">Maghrib</option>
                 </select>
-                <select id="ds-filter-course" style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; background: #fff; cursor: pointer;">
+                <select id="ds-filter-course"
+                  style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; background: #fff; cursor: pointer;">
                   <option value="all">All Courses</option>
                   <option value="Noorani Qaida">Noorani Qaida</option>
                   <option value="Qur'an Reading (Nazra)">Qur'an Reading (Nazra)</option>
                   <option value="Qur'an Memorization (Hifz)">Qur'an Memorization (Hifz)</option>
                 </select>
-                <button class="btn-secondary" id="btn-ds-refresh" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-radius: 50px;">Reset</button>
+                <button class="btn-secondary" id="btn-ds-refresh"
+                  style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-radius: 50px;">Reset</button>
                 <div style="height: 20px; width: 1px; background: var(--admin-border); margin: 0 0.5rem;"></div>
-                
+
                 <div class="export-container" style="position: relative; display: inline-block;">
-                  <button class="btn-secondary" id="btn-export-toggle" style="padding: 0.4rem 0.5rem; border-radius: 50px; display: flex; align-items: center; justify-content: center;" title="Export Data">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <button class="btn-secondary" id="btn-export-toggle"
+                    style="padding: 0.4rem 0.5rem; border-radius: 50px; display: flex; align-items: center; justify-content: center;"
+                    title="Export Data">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                       <polyline points="7 10 12 15 17 10"></polyline>
                       <line x1="12" y1="15" x2="12" y2="3"></line>
                     </svg>
                   </button>
-                  <div id="export-dropdown" class="card shadow-md" style="display: none; position: absolute; right: 0; top: calc(100% + 10px); width: 220px; padding: 0.75rem; z-index: 1000; border-radius: 12px;">
-                    <h4 style="font-size: 0.75rem; text-transform: uppercase; color: var(--admin-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">Export Filtered To:</h4>
-                    <button class="export-option" id="btn-ds-export-excel" style="width: 100%; text-align: left; background: none; border: none; padding: 0.6rem 0.75rem; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; color: var(--admin-text); display: flex; align-items: center; gap: 0.75rem; transition: background 0.2s;">
-                      <span style="background: #e8f5e9; color: #2e7d32; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">X</span>
+                  <div id="export-dropdown" class="card shadow-md"
+                    style="display: none; position: absolute; right: 0; top: calc(100% + 10px); width: 220px; padding: 0.75rem; z-index: 1000; border-radius: 12px;">
+                    <h4
+                      style="font-size: 0.75rem; text-transform: uppercase; color: var(--admin-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">
+                      Export Filtered To:</h4>
+                    <button class="export-option" id="btn-ds-export-excel"
+                      style="width: 100%; text-align: left; background: none; border: none; padding: 0.6rem 0.75rem; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; color: var(--admin-text); display: flex; align-items: center; gap: 0.75rem; transition: background 0.2s;">
+                      <span
+                        style="background: #e8f5e9; color: #2e7d32; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">X</span>
                       Excel (.csv)
                     </button>
-                    <button class="export-option" id="btn-ds-export-pdf" style="width: 100%; text-align: left; background: none; border: none; padding: 0.6rem 0.75rem; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; color: var(--admin-text); display: flex; align-items: center; gap: 0.75rem; transition: background 0.2s; margin-top: 0.25rem;">
-                      <span style="background: #fff5f5; color: #c53030; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">P</span>
+                    <button class="export-option" id="btn-ds-export-pdf"
+                      style="width: 100%; text-align: left; background: none; border: none; padding: 0.6rem 0.75rem; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; color: var(--admin-text); display: flex; align-items: center; gap: 0.75rem; transition: background 0.2s; margin-top: 0.25rem;">
+                      <span
+                        style="background: #fff5f5; color: #c53030; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">P</span>
                       PDF / Print
                     </button>
                   </div>
@@ -465,7 +486,8 @@
               </div>
             </div>
             <div style="margin-bottom: 1rem; padding: 0 0.5rem;">
-              <span id="ds-filter-count" style="font-size: 0.85rem; color: var(--admin-muted); font-weight: 600;">Showing 0 students</span>
+              <span id="ds-filter-count"
+                style="font-size: 0.85rem; color: var(--admin-muted); font-weight: 600;">Showing 0 students</span>
             </div>
 
             <div class="activity-feed" id="ds-activity-feed">
@@ -484,7 +506,9 @@
             <div class="card chart-card" style="grid-column: span 2;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h3 style="margin: 0;">Enrollment Growth Timeline</h3>
-                <span id="total-growth" style="font-size: 0.75rem; background: var(--admin-bg); padding: 2px 8px; border-radius: 4px; font-weight: 600; color: var(--admin-muted);">Total: --</span>
+                <span id="total-growth"
+                  style="font-size: 0.75rem; background: var(--admin-bg); padding: 2px 8px; border-radius: 4px; font-weight: 600; color: var(--admin-muted);">Total:
+                  --</span>
               </div>
               <div class="chart-container" style="position: relative; height: 320px; width: 100%;">
                 <canvas id="chart-growth"></canvas>
@@ -495,7 +519,9 @@
             <div class="card chart-card">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h3 style="margin: 0;">Course Enrollment</h3>
-                <span id="total-course" style="font-size: 0.75rem; background: var(--admin-bg); padding: 2px 8px; border-radius: 4px; font-weight: 600; color: var(--admin-muted);">Total: --</span>
+                <span id="total-course"
+                  style="font-size: 0.75rem; background: var(--admin-bg); padding: 2px 8px; border-radius: 4px; font-weight: 600; color: var(--admin-muted);">Total:
+                  --</span>
               </div>
               <div class="chart-container" style="position: relative; height: 280px; width: 100%;">
                 <canvas id="chart-course"></canvas>
@@ -506,7 +532,9 @@
             <div class="card chart-card">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h3 style="margin: 0;">Batch Distribution</h3>
-                <span id="total-batch" style="font-size: 0.75rem; background: var(--admin-bg); padding: 2px 8px; border-radius: 4px; font-weight: 600; color: var(--admin-muted);">Total: --</span>
+                <span id="total-batch"
+                  style="font-size: 0.75rem; background: var(--admin-bg); padding: 2px 8px; border-radius: 4px; font-weight: 600; color: var(--admin-muted);">Total:
+                  --</span>
               </div>
               <div class="chart-container" style="position: relative; height: 280px; width: 100%;">
                 <canvas id="chart-batch"></canvas>
@@ -517,7 +545,9 @@
             <div class="card chart-card">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h3 style="margin: 0;">Gender Demographics</h3>
-                <span id="total-gender" style="font-size: 0.75rem; background: var(--admin-bg); padding: 2px 8px; border-radius: 4px; font-weight: 600; color: var(--admin-muted);">Total: --</span>
+                <span id="total-gender"
+                  style="font-size: 0.75rem; background: var(--admin-bg); padding: 2px 8px; border-radius: 4px; font-weight: 600; color: var(--admin-muted);">Total:
+                  --</span>
               </div>
               <div class="chart-container" style="position: relative; height: 280px; width: 100%;">
                 <canvas id="chart-gender"></canvas>
@@ -528,7 +558,9 @@
             <div class="card chart-card" style="grid-column: span 2;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h3 style="margin: 0;">Secular Education Breakdown</h3>
-                <span id="total-school" style="font-size: 0.75rem; background: var(--admin-bg); padding: 2px 8px; border-radius: 4px; font-weight: 600; color: var(--admin-muted);">Total: --</span>
+                <span id="total-school"
+                  style="font-size: 0.75rem; background: var(--admin-bg); padding: 2px 8px; border-radius: 4px; font-weight: 600; color: var(--admin-muted);">Total:
+                  --</span>
               </div>
               <div class="chart-container" style="position: relative; height: 320px; width: 100%;">
                 <canvas id="chart-school"></canvas>
@@ -622,7 +654,8 @@
 
         <div class="card">
           <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
-            <select id="lb-quiz-select" style="padding: 0.5rem 1rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.9rem; background: #fff; cursor: pointer; min-width: 280px;">
+            <select id="lb-quiz-select"
+              style="padding: 0.5rem 1rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.9rem; background: #fff; cursor: pointer; min-width: 280px;">
               <option value="">── Loading Quizzes... ──</option>
             </select>
             <span id="lb-entry-count" style="font-size: 0.8rem; color: var(--admin-muted); font-weight: 500;"></span>
@@ -633,15 +666,28 @@
             <table style="width: 100%; border-collapse: collapse;">
               <thead>
                 <tr style="border-bottom: 2px solid var(--admin-border); text-align: left;">
-                  <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--admin-muted);">Rank</th>
-                  <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--admin-muted);">Name</th>
-                  <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--admin-muted);">Area</th>
-                  <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--admin-muted);">Score</th>
-                  <th style="padding: 0.75rem 0.5rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--admin-muted);">Time</th>
+                  <th
+                    style="padding: 0.75rem 0.5rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--admin-muted);">
+                    Rank</th>
+                  <th
+                    style="padding: 0.75rem 0.5rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--admin-muted);">
+                    Name</th>
+                  <th
+                    style="padding: 0.75rem 0.5rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--admin-muted);">
+                    Area</th>
+                  <th
+                    style="padding: 0.75rem 0.5rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--admin-muted);">
+                    Score</th>
+                  <th
+                    style="padding: 0.75rem 0.5rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--admin-muted);">
+                    Time</th>
                 </tr>
               </thead>
               <tbody id="lb-admin-tbody">
-                <tr><td colspan="5" style="text-align: center; padding: 2rem; color: var(--admin-muted);">Select a quiz above to view its leaderboard.</td></tr>
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: 2rem; color: var(--admin-muted);">Select a quiz
+                    above to view its leaderboard.</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -800,20 +846,23 @@
 
     <form id="form-edit-student">
       <input type="hidden" id="edit-student-id">
-      
+
       <div class="input-group" style="margin-bottom: 1.5rem;">
         <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Full Name</label>
-        <input type="text" id="edit-student-name" required style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none;">
+        <input type="text" id="edit-student-name" required
+          style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none;">
       </div>
 
       <div class="input-group" style="margin-bottom: 1.5rem;">
         <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Father's Name</label>
-        <input type="text" id="edit-student-father" required style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none;">
+        <input type="text" id="edit-student-father" required
+          style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none;">
       </div>
 
       <div class="input-group" style="margin-bottom: 1.5rem;">
         <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Assigned Batch</label>
-        <select id="edit-student-batch" required style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none; background: white; cursor: pointer;">
+        <select id="edit-student-batch" required
+          style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none; background: white; cursor: pointer;">
           <option value="Zuhr">Zuhr</option>
           <option value="Asr">Asr</option>
           <option value="Maghrib">Maghrib</option>
@@ -822,7 +871,8 @@
 
       <div class="input-group" style="margin-bottom: 1.5rem;">
         <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Studying Course</label>
-        <select id="edit-student-course" required style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none; background: white; cursor: pointer;">
+        <select id="edit-student-course" required
+          style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none; background: white; cursor: pointer;">
           <option value="Noorani Qaida">Noorani Qaida</option>
           <option value="Qur'an Reading (Nazra)">Qur'an Reading (Nazra)</option>
           <option value="Qur'an Memorization (Hifz)">Qur'an Memorization (Hifz)</option>
@@ -831,7 +881,8 @@
 
       <div class="input-group" style="margin-bottom: 2rem;">
         <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Current Status</label>
-        <select id="edit-student-status" required style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none; background: white; cursor: pointer;">
+        <select id="edit-student-status" required
+          style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none; background: white; cursor: pointer;">
           <option value="approved">Approved / Active</option>
           <option value="left">Left / Inactive</option>
           <option value="pending">Pending Review</option>
@@ -842,8 +893,10 @@
       <div id="edit-status-msg" class="status-msg" style="margin-bottom: 1rem;"></div>
 
       <div style="display: flex; gap: 1rem;">
-        <button type="submit" class="btn-primary" style="flex: 1; background: var(--admin-accent); color: white;">Save Changes</button>
-        <button type="button" onclick="document.getElementById('modal-edit-student').close()" class="btn-secondary" style="flex: 1; border: 1px solid var(--admin-border);">Cancel</button>
+        <button type="submit" class="btn-primary" style="flex: 1; background: var(--admin-accent); color: white;">Save
+          Changes</button>
+        <button type="button" onclick="document.getElementById('modal-edit-student').close()" class="btn-secondary"
+          style="flex: 1; border: 1px solid var(--admin-border);">Cancel</button>
       </div>
     </form>
   </dialog>
