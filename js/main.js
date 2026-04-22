@@ -2,6 +2,11 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
+  // Global helper for opening quizzes cleanly without inline HTML escaping nightmare
+  window._openQuiz = function(secureUrl, shortId) {
+    sessionStorage.setItem('mqlc_quiz_src', secureUrl);
+    window.open('/quiz.html?q=' + shortId, '_blank');
+  };
   /* ── Secret Admin Access (triple-click logo) ──────────────── */
   const logoMark = document.querySelector('.nav-logo-mark');
   if (logoMark) {
@@ -406,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
                       <span><strong style="color:var(--gold);"><span data-en="Lecture" data-mr="व्याख्यान" data-ur="لیکچر" data-hi="व्याख्यान">Lecture</span>:</strong> <bdi>${qDate}</bdi></span>
                       <span><strong style="color:var(--gold);"><span data-en="Closes" data-mr="बंद" data-ur="بند" data-hi="बंद">Closes</span>:</strong> <bdi>${closesDate}</bdi></span>
                   </div>
-                  <button onclick="sessionStorage.setItem('mqlc_quiz_src','${item.secure_url}');window.open('/quiz.html','_blank');" class="btn-primary quiz-begin-btn" style="border:none;cursor:pointer;">
+                  <button onclick="window._openQuiz('${item.secure_url}', '${encodeURIComponent(item.public_id.split('/').pop())}')" class="btn-primary quiz-begin-btn" style="border:none;cursor:pointer;">
                       <span data-en="Begin Quiz &rarr;" data-mr="प्रश्नमंजुषा सुरू करा &rarr;" data-ur="کوئز شروع کریں &larr;" data-hi="प्रश्नोत्तरी शुरू करें &rarr;">Begin Quiz &rarr;</span>
                   </button>
                 </div>

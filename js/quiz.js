@@ -1,7 +1,21 @@
 document.addEventListener('DOMContentLoaded', () => {
   // Read quiz source from sessionStorage (primary) or URL param (fallback)
-  const rawUrl = sessionStorage.getItem('mqlc_quiz_src') || new URLSearchParams(window.location.search).get('src');
-  if (rawUrl) sessionStorage.removeItem('mqlc_quiz_src'); // Clean up after reading
+  const qParam = new URLSearchParams(window.location.search).get('q');
+  let rawUrl = sessionStorage.getItem('mqlc_quiz_src');
+  
+  if (rawUrl) {
+    sessionStorage.removeItem('mqlc_quiz_src'); // Clean up after reading
+  } else if (qParam) {
+    // Reconstruct Cloudinary URL using the clean filename ID
+    rawUrl = `https://res.cloudinary.com/dlcowjk3q/raw/upload/home/mqlc/bulletin/${qParam}`;
+    // Fallback to appending .json if the public_id from parameter doesn't already have it
+    if (!rawUrl.endsWith('.json')) {
+        rawUrl += '.json';
+    }
+  } else {
+    // Legacy support for '?src='
+    rawUrl = new URLSearchParams(window.location.search).get('src');
+  }
 
   // ─── Numeral Localization Utility ─────────────────────────────
   const NUMERAL_MAP = {
