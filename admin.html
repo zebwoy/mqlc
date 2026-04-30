@@ -181,6 +181,8 @@
               Entry</button>
             <button class="pill-nav" data-sub="sub-dashboard"
               style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: transparent; color: var(--admin-text); font-weight: 500; cursor: pointer;">Dashboard</button>
+            <button class="pill-nav" data-sub="sub-fees"
+              style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: transparent; color: var(--admin-text); font-weight: 500; cursor: pointer;">Fee Tracker</button>
             <button class="pill-nav" data-sub="sub-analytics"
               style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: transparent; color: var(--admin-text); font-weight: 500; cursor: pointer;">Analytics</button>
           </div>
@@ -492,6 +494,91 @@
 
             <div class="activity-feed" id="ds-activity-feed">
               <p class="text-muted" style="text-align: center; padding: 2rem;">Loading recent applications...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sub-View: Fee Tracker -->
+        <div id="sub-fees" class="sub-pane" style="display: none;">
+
+          <!-- Month Navigation -->
+          <div class="card" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <button id="fee-prev-month" class="btn-secondary" style="padding: 0.4rem 0.75rem; border-radius: 50px; font-size: 0.85rem;">◀</button>
+              <h3 id="fee-month-label" style="margin: 0; min-width: 160px; text-align: center;">April 2026</h3>
+              <button id="fee-next-month" class="btn-secondary" style="padding: 0.4rem 0.75rem; border-radius: 50px; font-size: 0.85rem;">▶</button>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <select id="fee-filter-batch"
+                style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; background: #fff; cursor: pointer;">
+                <option value="all">All Batches</option>
+                <option value="Zuhr">Zuhr</option>
+                <option value="Asr">Asr</option>
+                <option value="Maghrib">Maghrib</option>
+              </select>
+              <div class="export-container" style="position: relative; display: inline-block;">
+                <button class="btn-secondary" id="btn-fee-export-toggle"
+                  style="padding: 0.4rem 0.5rem; border-radius: 50px; display: flex; align-items: center; justify-content: center;"
+                  title="Export Fee Report">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                </button>
+                <div id="fee-export-dropdown" class="card shadow-md"
+                  style="display: none; position: absolute; right: 0; top: calc(100% + 10px); width: 220px; padding: 0.75rem; z-index: 1000; border-radius: 12px;">
+                  <h4
+                    style="font-size: 0.75rem; text-transform: uppercase; color: var(--admin-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">
+                    Export Fee Report:</h4>
+                  <button class="export-option" id="btn-fee-export-excel"
+                    style="width: 100%; text-align: left; background: none; border: none; padding: 0.6rem 0.75rem; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; color: var(--admin-text); display: flex; align-items: center; gap: 0.75rem; transition: background 0.2s;">
+                    <span style="background: #e8f5e9; color: #2e7d32; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">X</span>
+                    Excel (.csv)
+                  </button>
+                  <button class="export-option" id="btn-fee-export-pdf"
+                    style="width: 100%; text-align: left; background: none; border: none; padding: 0.6rem 0.75rem; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; color: var(--admin-text); display: flex; align-items: center; gap: 0.75rem; transition: background 0.2s; margin-top: 0.25rem;">
+                    <span style="background: #fff5f5; color: #c53030; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">P</span>
+                    PDF / Print
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fee KPI Cards -->
+          <div class="kpi-grid" style="margin-bottom: 2rem;">
+            <div class="kpi-card">
+              <span class="kpi-label">Expected</span>
+              <h3 id="fee-kpi-expected" class="kpi-value">₹--</h3>
+              <span class="kpi-trend">Total fees due this month</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Collected</span>
+              <h3 id="fee-kpi-collected" class="kpi-value text-accent">₹--</h3>
+              <span class="kpi-trend">Actual payments received</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Pending</span>
+              <h3 id="fee-kpi-pending" class="kpi-value" style="color: #dc2626;">₹--</h3>
+              <span class="kpi-trend">Outstanding balance</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Collection Rate</span>
+              <h3 id="fee-kpi-rate" class="kpi-value text-gold">--%</h3>
+              <span id="fee-kpi-rate-sub" class="kpi-trend">0 of 0 students paid</span>
+            </div>
+          </div>
+
+          <!-- Fee Matrix -->
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+              <h3 style="margin: 0;">Fee Collection Matrix</h3>
+              <span id="fee-filter-count" style="font-size: 0.85rem; color: var(--admin-muted); font-weight: 600;">Showing 0 students</span>
+            </div>
+            <div class="activity-feed" id="fee-matrix-feed">
+              <p class="text-muted" style="text-align: center; padding: 2rem;">Select the Fee Tracker tab to load data.</p>
             </div>
           </div>
         </div>
@@ -900,6 +987,61 @@
       </div>
     </form>
   </dialog>
+
+  <!-- Record Payment Modal -->
+  <dialog id="modal-record-payment"
+    style="border: none; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); padding: 2rem; max-width: 440px; width: 90vw; outline: none; background: var(--admin-white);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h3 style="margin: 0; color: var(--admin-text);">Record Payment</h3>
+      <button onclick="document.getElementById('modal-record-payment').close()"
+        style="background: none; border: none; cursor: pointer; font-size: 1.25rem;">✕</button>
+    </div>
+
+    <!-- Student Context -->
+    <div style="background: var(--admin-bg); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+        <span style="font-weight: 600; color: var(--admin-text);" id="pay-student-name">Student Name</span>
+        <span style="font-size: 0.85rem; color: var(--admin-muted);" id="pay-month-label">April 2026</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--admin-muted);">
+        <span>Expected: <strong id="pay-expected" style="color: var(--admin-text);">₹0</strong></span>
+        <span>Already Paid: <strong id="pay-already" style="color: var(--admin-accent);">₹0</strong></span>
+        <span>Remaining: <strong id="pay-remaining" style="color: #dc2626;">₹0</strong></span>
+      </div>
+    </div>
+
+    <form id="form-record-payment">
+      <input type="hidden" id="pay-student-id">
+      <input type="hidden" id="pay-month">
+
+      <div class="input-group" style="margin-bottom: 1.25rem;">
+        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Amount (₹)</label>
+        <input type="number" id="pay-amount" required min="1"
+          style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none; font-size: 1.1rem; font-weight: 600;">
+      </div>
+
+      <div class="input-group" style="margin-bottom: 1.25rem;">
+        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Date</label>
+        <input type="date" id="pay-date" required
+          style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none;">
+      </div>
+
+      <div class="input-group" style="margin-bottom: 1.5rem;">
+        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Notes <span style="font-weight: 400; color: var(--admin-muted);">(optional)</span></label>
+        <input type="text" id="pay-notes" placeholder="e.g. Remaining ₹200 with next month"
+          style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none;">
+      </div>
+
+      <div id="pay-status-msg" class="status-msg" style="margin-bottom: 1rem;"></div>
+
+      <div style="display: flex; gap: 1rem;">
+        <button type="submit" id="btn-pay-submit" class="btn-primary" style="flex: 1; background: var(--admin-accent); color: white;">Record Payment</button>
+        <button type="button" onclick="document.getElementById('modal-record-payment').close()" class="btn-secondary"
+          style="flex: 1; border: 1px solid var(--admin-border);">Cancel</button>
+      </div>
+    </form>
+  </dialog>
+
 </body>
 
 </html>

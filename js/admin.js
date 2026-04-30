@@ -1171,6 +1171,375 @@ document.addEventListener('DOMContentLoaded', () => {
   // Auto trigger once to cache states quietly
   setTimeout(hydrateDashboardAndAnalytics, 1000);
 
+  // ─── 3g. FEE TRACKER ENGINE ─────────────────────────────────────
+  let feeCurrentMonth = new Date().toISOString().substring(0, 7); // 'YYYY-MM'
+  let cachedFeePayments = [];
+
+  function feeMonthLabel(ym) {
+    const [y, m] = ym.split('-');
+    const d = new Date(parseInt(y), parseInt(m) - 1);
+    return d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+  }
+
+  // Month navigation
+  const feePrev = document.getElementById('fee-prev-month');
+  const feeNext = document.getElementById('fee-next-month');
+  const feeLabel = document.getElementById('fee-month-label');
+
+  if (feePrev) feePrev.addEventListener('click', () => { shiftFeeMonth(-1); });
+  if (feeNext) feeNext.addEventListener('click', () => { shiftFeeMonth(1); });
+
+  function shiftFeeMonth(dir) {
+    const [y, m] = feeCurrentMonth.split('-').map(Number);
+    const d = new Date(y, m - 1 + dir);
+    feeCurrentMonth = d.toISOString().substring(0, 7);
+    hydrateFeeTracker();
+  }
+
+  // Batch filter
+  const feeBatchFilter = document.getElementById('fee-filter-batch');
+  if (feeBatchFilter) feeBatchFilter.addEventListener('change', renderFeeMatrix);
+
+  // Hook to pill click
+  const feePill = document.querySelector('[data-sub="sub-fees"]');
+  if (feePill) feePill.addEventListener('click', hydrateFeeTracker);
+
+  async function hydrateFeeTracker() {
+    if (!window._supabase) return;
+    if (feeLabel) feeLabel.textContent = feeMonthLabel(feeCurrentMonth);
+
+    try {
+      // Ensure student cache is fresh
+      if (!cachedStudents || !cachedStudents.length) {
+        const { data } = await window._supabase.from('student_registrations').select('*');
+        cachedStudents = data || [];
+      }
+      // Fetch payments for this month
+      const { data: payments, error } = await window._supabase
+        .from('fee_payments')
+        .select('*')
+        .eq('month', feeCurrentMonth);
+      if (error) throw error;
+      cachedFeePayments = payments || [];
+      renderFeeMatrix();
+    } catch (err) {
+      console.error('Fee tracker error:', err);
+    }
+  }
+
+  function renderFeeMatrix() {
+    const feed = document.getElementById('fee-matrix-feed');
+    const countEl = document.getElementById('fee-filter-count');
+    if (!feed) return;
+
+    const batchFilter = feeBatchFilter ? feeBatchFilter.value : 'all';
+    let students = cachedStudents.filter(s => s.status === 'approved');
+    if (batchFilter !== 'all') students = students.filter(s => s.batch === batchFilter);
+
+    // Sort by batch then name
+    const batchOrder = ['Zuhr', 'Asr', 'Maghrib'];
+    students.sort((a, b) => {
+      const ba = batchOrder.indexOf(a.batch) === -1 ? 99 : batchOrder.indexOf(a.batch);
+      const bb = batchOrder.indexOf(b.batch) === -1 ? 99 : batchOrder.indexOf(b.batch);
+      if (ba !== bb) return ba - bb;
+      return (a.student_name || '').localeCompare(b.student_name || '');
+    });
+
+    // Group by batch
+    const groups = {};
+    students.forEach(s => {
+      const k = s.batch || 'Unassigned';
+      if (!groups[k]) groups[k] = [];
+      groups[k].push(s);
+    });
+
+    // KPI calculations
+    let totalExpected = 0, totalCollected = 0, paidCount = 0;
+    students.forEach(s => {
+      const fee = parseInt(s.monthly_fee) || 0;
+      totalExpected += fee;
+      const paid = cachedFeePayments.filter(p => p.student_id === s.id).reduce((sum, p) => sum + (p.amount || 0), 0);
+      totalCollected += paid;
+      if (paid >= fee && fee > 0) paidCount++;
+    });
+    const totalPending = Math.max(0, totalExpected - totalCollected);
+    const rate = totalExpected > 0 ? Math.round((totalCollected / totalExpected) * 100) : 0;
+
+    const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+    el('fee-kpi-expected', '₹' + totalExpected.toLocaleString('en-IN'));
+    el('fee-kpi-collected', '₹' + totalCollected.toLocaleString('en-IN'));
+    el('fee-kpi-pending', '₹' + totalPending.toLocaleString('en-IN'));
+    el('fee-kpi-rate', rate + '%');
+    el('fee-kpi-rate-sub', `${paidCount} of ${students.length} students fully paid`);
+    if (countEl) countEl.textContent = `Showing ${students.length} student${students.length === 1 ? '' : 's'}`;
+
+    // Render matrix
+    feed.innerHTML = '';
+    if (students.length === 0) {
+      feed.innerHTML = '<p class="text-muted" style="text-align: center; padding: 2rem;">No approved students found.</p>';
+      return;
+    }
+
+    const orderedKeys = [...batchOrder.filter(b => groups[b]), ...(groups['Unassigned'] ? ['Unassigned'] : [])];
+    orderedKeys.forEach(batchName => {
+      const batch = groups[batchName];
+      feed.innerHTML += `<div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.5rem; margin-top: 0.75rem; border-bottom: 2px solid var(--admin-accent);">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--admin-accent); text-transform: uppercase; letter-spacing: 0.5px;">${batchName} Batch</span>
+        <span style="font-size: 0.7rem; background: var(--admin-bg); color: var(--admin-muted); padding: 2px 8px; border-radius: 10px; font-weight: 500;">${batch.length}</span>
+      </div>`;
+
+      batch.forEach(s => {
+        const fee = parseInt(s.monthly_fee) || 0;
+        const payments = cachedFeePayments.filter(p => p.student_id === s.id);
+        const paid = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+        const remaining = Math.max(0, fee - paid);
+
+        let statusBadge, statusClass;
+        if (fee === 0) { statusBadge = 'No Fee Set'; statusClass = 'pending'; }
+        else if (paid >= fee) { statusBadge = '✅ Paid'; statusClass = 'approved'; }
+        else if (paid > 0) { statusBadge = '⚠️ Partial'; statusClass = 'pending'; }
+        else { statusBadge = '⬜ Unpaid'; statusClass = 'rejected'; }
+
+        const showRecord = fee > 0 && paid < fee;
+        const showUndo = payments.length > 0;
+
+        feed.innerHTML += `
+        <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+          <div class="activity-detail" style="flex: 1; min-width: 180px;">
+            <h4 style="margin-bottom: 0.25rem;">${s.student_name}</h4>
+            <p style="font-size: 0.8rem; margin-bottom: 0.25rem;">₹${paid.toLocaleString('en-IN')} / ₹${fee.toLocaleString('en-IN')}${remaining > 0 && paid > 0 ? ` · <span style="color:#dc2626;">₹${remaining.toLocaleString('en-IN')} due</span>` : ''}</p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <span class="badge ${statusClass}" style="font-size: 0.75rem;">${statusBadge}</span>
+            ${showRecord ? `<button class="btn-fee-record btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" data-fee="${fee}" data-paid="${paid}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;">💰 Record</button>` : ''}
+            ${showUndo ? `<button class="btn-fee-undo btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="Undo last payment">⟳</button>` : ''}
+            <button class="btn-fee-history btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="View history">📋</button>
+          </div>
+        </div>
+        <div class="fee-history-panel" data-history-for="${s.id}" style="display: none; background: var(--admin-bg); border-radius: 8px; padding: 0.75rem 1rem; margin: 0 0 0.5rem 0; font-size: 0.82rem;"></div>`;
+      });
+    });
+
+    // Hook buttons
+    feed.querySelectorAll('.btn-fee-record').forEach(btn => {
+      btn.addEventListener('click', () => openPaymentModal(btn.dataset.sid, btn.dataset.name, parseInt(btn.dataset.fee), parseInt(btn.dataset.paid)));
+    });
+    feed.querySelectorAll('.btn-fee-undo').forEach(btn => {
+      btn.addEventListener('click', () => undoLastPayment(btn.dataset.sid, btn.dataset.name));
+    });
+    feed.querySelectorAll('.btn-fee-history').forEach(btn => {
+      btn.addEventListener('click', () => toggleHistory(btn.dataset.sid));
+    });
+  }
+
+  // ─── Payment Modal ─────────
+  function openPaymentModal(studentId, name, fee, paid) {
+    const remaining = Math.max(0, fee - paid);
+    document.getElementById('pay-student-id').value = studentId;
+    document.getElementById('pay-month').value = feeCurrentMonth;
+    document.getElementById('pay-student-name').textContent = name;
+    document.getElementById('pay-month-label').textContent = feeMonthLabel(feeCurrentMonth);
+    document.getElementById('pay-expected').textContent = '₹' + fee.toLocaleString('en-IN');
+    document.getElementById('pay-already').textContent = '₹' + paid.toLocaleString('en-IN');
+    document.getElementById('pay-remaining').textContent = '₹' + remaining.toLocaleString('en-IN');
+    document.getElementById('pay-amount').value = remaining;
+    document.getElementById('pay-date').value = new Date().toISOString().substring(0, 10);
+    document.getElementById('pay-notes').value = '';
+    document.getElementById('pay-status-msg').style.display = 'none';
+    document.getElementById('modal-record-payment').showModal();
+  }
+
+  const payForm = document.getElementById('form-record-payment');
+  if (payForm) {
+    payForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const statusMsg = document.getElementById('pay-status-msg');
+      const btn = document.getElementById('btn-pay-submit');
+
+      const studentId = document.getElementById('pay-student-id').value;
+      const month = document.getElementById('pay-month').value;
+      const amount = parseInt(document.getElementById('pay-amount').value);
+      const paidOn = document.getElementById('pay-date').value;
+      const notes = document.getElementById('pay-notes').value.trim();
+
+      if (!amount || amount <= 0) {
+        statusMsg.textContent = 'Please enter a valid amount.';
+        statusMsg.className = 'status-msg error';
+        statusMsg.style.display = 'block';
+        return;
+      }
+
+      btn.textContent = 'Recording...';
+      btn.disabled = true;
+
+      try {
+        // Get admin email
+        let adminEmail = 'admin';
+        const { data: { session } } = await window._supabase.auth.getSession();
+        if (session?.user?.email) adminEmail = session.user.email;
+
+        const { error } = await window._supabase.from('fee_payments').insert([{
+          student_id: studentId,
+          month,
+          amount,
+          paid_on: paidOn,
+          recorded_by: adminEmail,
+          notes: notes || null
+        }]);
+        if (error) throw error;
+
+        statusMsg.textContent = 'Payment recorded successfully!';
+        statusMsg.className = 'status-msg success';
+        statusMsg.style.display = 'block';
+
+        setTimeout(() => {
+          document.getElementById('modal-record-payment').close();
+          hydrateFeeTracker();
+        }, 800);
+      } catch (err) {
+        console.error(err);
+        statusMsg.textContent = 'Failed: ' + err.message;
+        statusMsg.className = 'status-msg error';
+        statusMsg.style.display = 'block';
+      } finally {
+        btn.textContent = 'Record Payment';
+        btn.disabled = false;
+      }
+    });
+  }
+
+  // ─── Undo Last Payment ─────────
+  async function undoLastPayment(studentId, name) {
+    if (!confirm(`Undo the last payment for ${name} in ${feeMonthLabel(feeCurrentMonth)}?`)) return;
+    try {
+      const payments = cachedFeePayments.filter(p => p.student_id === studentId).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      if (!payments.length) return;
+      const { error } = await window._supabase.from('fee_payments').delete().eq('id', payments[0].id);
+      if (error) throw error;
+      await hydrateFeeTracker();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to undo: ' + err.message);
+    }
+  }
+
+  // ─── Student History Toggle ─────────
+  async function toggleHistory(studentId) {
+    const panel = document.querySelector(`[data-history-for="${studentId}"]`);
+    if (!panel) return;
+    if (panel.style.display !== 'none') { panel.style.display = 'none'; return; }
+
+    panel.innerHTML = '<em>Loading history...</em>';
+    panel.style.display = 'block';
+
+    try {
+      const { data, error } = await window._supabase
+        .from('fee_payments')
+        .select('*')
+        .eq('student_id', studentId)
+        .order('month', { ascending: false })
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+
+      if (!data || !data.length) {
+        panel.innerHTML = '<em style="color: var(--admin-muted);">No payment history found.</em>';
+        return;
+      }
+
+      // Group by month
+      const byMonth = {};
+      data.forEach(p => {
+        if (!byMonth[p.month]) byMonth[p.month] = [];
+        byMonth[p.month].push(p);
+      });
+
+      let html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">';
+      html += '<thead><tr style="border-bottom: 1px solid var(--admin-border);"><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Month</th><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Amount</th><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Date</th><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Notes</th></tr></thead><tbody>';
+      Object.keys(byMonth).sort().reverse().forEach(month => {
+        byMonth[month].forEach(p => {
+          html += `<tr style="border-bottom: 1px solid var(--admin-bg);"><td style="padding: 4px 8px;">${feeMonthLabel(month)}</td><td style="padding: 4px 8px; font-weight: 600;">₹${p.amount.toLocaleString('en-IN')}</td><td style="padding: 4px 8px;">${p.paid_on || '—'}</td><td style="padding: 4px 8px; color: var(--admin-muted);">${p.notes || '—'}</td></tr>`;
+        });
+      });
+      html += '</tbody></table>';
+      panel.innerHTML = html;
+    } catch (err) {
+      panel.innerHTML = '<em style="color: #dc2626;">Error loading history.</em>';
+    }
+  }
+
+  // ─── Fee Export ─────────
+  const btnFeeExportToggle = document.getElementById('btn-fee-export-toggle');
+  const feeExportDropdown = document.getElementById('fee-export-dropdown');
+  if (btnFeeExportToggle && feeExportDropdown) {
+    btnFeeExportToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      feeExportDropdown.style.display = feeExportDropdown.style.display === 'none' ? 'block' : 'none';
+    });
+    document.addEventListener('click', () => { feeExportDropdown.style.display = 'none'; });
+  }
+
+  function getFeeExportData() {
+    const batchFilter = feeBatchFilter ? feeBatchFilter.value : 'all';
+    let students = cachedStudents.filter(s => s.status === 'approved');
+    if (batchFilter !== 'all') students = students.filter(s => s.batch === batchFilter);
+    return students.map(s => {
+      const fee = parseInt(s.monthly_fee) || 0;
+      const paid = cachedFeePayments.filter(p => p.student_id === s.id).reduce((sum, p) => sum + (p.amount || 0), 0);
+      const remaining = Math.max(0, fee - paid);
+      let status = fee === 0 ? 'No Fee' : paid >= fee ? 'Paid' : paid > 0 ? 'Partial' : 'Unpaid';
+      return { Name: s.student_name, Batch: s.batch || '', Course: s.course_applying || '', 'Expected (₹)': fee, 'Paid (₹)': paid, 'Remaining (₹)': remaining, Status: status };
+    });
+  }
+
+  const btnFeeExcel = document.getElementById('btn-fee-export-excel');
+  if (btnFeeExcel) {
+    btnFeeExcel.addEventListener('click', () => {
+      feeExportDropdown.style.display = 'none';
+      const rows = getFeeExportData();
+      if (!rows.length) return alert('No data to export.');
+      if (typeof XLSX !== 'undefined') {
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Fee Report');
+        XLSX.writeFile(wb, `MQLC_Fee_Report_${feeCurrentMonth}.xlsx`);
+      } else {
+        const headers = Object.keys(rows[0]);
+        const csv = [headers.join(','), ...rows.map(r => headers.map(h => `"${r[h]}"`).join(','))].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `MQLC_Fee_Report_${feeCurrentMonth}.csv`; a.click();
+      }
+    });
+  }
+
+  const btnFeePDF = document.getElementById('btn-fee-export-pdf');
+  if (btnFeePDF) {
+    btnFeePDF.addEventListener('click', () => {
+      feeExportDropdown.style.display = 'none';
+      const rows = getFeeExportData();
+      if (!rows.length) return alert('No data to export.');
+      const printBranding = document.getElementById('print-branding');
+      const printTable = document.getElementById('print-table-container');
+      const ts = document.getElementById('print-timestamp');
+      if (ts) ts.textContent = 'Date: ' + new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
+
+      let tableHTML = `<h3 style="margin-bottom:1rem;">Fee Collection Report — ${feeMonthLabel(feeCurrentMonth)}</h3>`;
+      tableHTML += '<table style="width:100%; border-collapse:collapse; font-size:0.85rem;">';
+      tableHTML += '<thead><tr style="background:#f0f0f0;"><th style="padding:8px; text-align:left; border:1px solid #ddd;">Name</th><th style="padding:8px; text-align:left; border:1px solid #ddd;">Batch</th><th style="padding:8px; text-align:right; border:1px solid #ddd;">Expected</th><th style="padding:8px; text-align:right; border:1px solid #ddd;">Paid</th><th style="padding:8px; text-align:right; border:1px solid #ddd;">Remaining</th><th style="padding:8px; text-align:left; border:1px solid #ddd;">Status</th></tr></thead><tbody>';
+      rows.forEach(r => {
+        tableHTML += `<tr><td style="padding:6px 8px; border:1px solid #ddd;">${r.Name}</td><td style="padding:6px 8px; border:1px solid #ddd;">${r.Batch}</td><td style="padding:6px 8px; border:1px solid #ddd; text-align:right;">₹${r['Expected (₹)']}</td><td style="padding:6px 8px; border:1px solid #ddd; text-align:right;">₹${r['Paid (₹)']}</td><td style="padding:6px 8px; border:1px solid #ddd; text-align:right;">₹${r['Remaining (₹)']}</td><td style="padding:6px 8px; border:1px solid #ddd;">${r.Status}</td></tr>`;
+      });
+      tableHTML += '</tbody></table>';
+      if (printTable) printTable.innerHTML = tableHTML;
+      if (printBranding) printBranding.style.display = 'block';
+      if (printTable) printTable.style.display = 'block';
+      window.print();
+      setTimeout(() => {
+        if (printBranding) printBranding.style.display = 'none';
+        if (printTable) printTable.style.display = 'none';
+      }, 500);
+    });
+  }
+
   // ─── 4. GLOBAL SETTINGS BINDING ───────────────────────────────
   const settingsForm = document.getElementById('settings-form');
   const cfgStatus = document.getElementById('cfg-status');
