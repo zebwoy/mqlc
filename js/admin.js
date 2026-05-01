@@ -640,7 +640,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const students = groups[batchName];
       // Batch section header
       feedContainer.innerHTML += `
-        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.5rem; margin-top: 0.75rem; border-bottom: 2px solid var(--admin-accent);">
+        <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.5rem; margin-top: 0.75rem; border-bottom: 2px solid var(--admin-accent); margin-bottom: 2%;">
           <span style="font-size: 0.8rem; font-weight: 700; color: var(--admin-accent); text-transform: uppercase; letter-spacing: 0.5px;">${batchName} Batch</span>
           <span style="font-size: 0.7rem; background: var(--admin-bg); color: var(--admin-muted); padding: 2px 8px; border-radius: 10px; font-weight: 500;">${students.length}</span>
         </div>`;
@@ -1191,14 +1191,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function shiftFeeMonth(dir) {
     const [y, m] = feeCurrentMonth.split('-').map(Number);
-    const d = new Date(y, m - 1 + dir);
-    feeCurrentMonth = d.toISOString().substring(0, 7);
+    // Add 15 days to avoid timezone backward drift when creating new dates
+    const d = new Date(y, m - 1 + dir, 15);
+    feeCurrentMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
     hydrateFeeTracker();
   }
 
-  // Batch filter
+  // Filters
   const feeBatchFilter = document.getElementById('fee-filter-batch');
+  const feeNameFilter = document.getElementById('fee-filter-name');
+  const feeStatusFilter = document.getElementById('fee-filter-status');
+
   if (feeBatchFilter) feeBatchFilter.addEventListener('change', renderFeeMatrix);
+  if (feeNameFilter) feeNameFilter.addEventListener('input', renderFeeMatrix);
+  if (feeStatusFilter) feeStatusFilter.addEventListener('change', renderFeeMatrix);
 
   // Hook to pill click
   const feePill = document.querySelector('[data-sub="sub-fees"]');
@@ -1233,8 +1239,25 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!feed) return;
 
     const batchFilter = feeBatchFilter ? feeBatchFilter.value : 'all';
+    const statusFilter = feeStatusFilter ? feeStatusFilter.value : 'all';
+    const nameFilter = feeNameFilter ? feeNameFilter.value.toLowerCase().trim() : '';
+
     let students = cachedStudents.filter(s => s.status === 'approved');
-    if (batchFilter !== 'all') students = students.filter(s => s.batch === batchFilter);
+
+    // Apply Filters (Name, Batch, Status)
+    students = students.filter(s => {
+      if (nameFilter && !(s.student_name || '').toLowerCase().includes(nameFilter)) return false;
+      if (batchFilter !== 'all' && s.batch !== batchFilter) return false;
+      if (statusFilter !== 'all') {
+        const fee = parseInt(s.monthly_fee) || 0;
+        const paid = cachedFeePayments.filter(p => p.student_id === s.id).reduce((sum, p) => sum + (p.amount || 0), 0);
+        let status = 'unpaid';
+        if (paid >= fee && fee > 0) status = 'paid';
+        else if (paid > 0) status = 'partial';
+        if (status !== statusFilter) return false;
+      }
+      return true;
+    });
 
     // Sort by batch then name
     const batchOrder = ['Zuhr', 'Asr', 'Maghrib'];
@@ -1283,7 +1306,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const orderedKeys = [...batchOrder.filter(b => groups[b]), ...(groups['Unassigned'] ? ['Unassigned'] : [])];
     orderedKeys.forEach(batchName => {
       const batch = groups[batchName];
-      feed.innerHTML += `<div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.5rem; margin-top: 0.75rem; border-bottom: 2px solid var(--admin-accent);">
+      feed.innerHTML += `<div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0.5rem; margin-top: 0.75rem; border-bottom: 2px solid var(--admin-accent); margin-bottom: 2%;">
         <span style="font-size: 0.8rem; font-weight: 700; color: var(--admin-accent); text-transform: uppercase; letter-spacing: 0.5px;">${batchName} Batch</span>
         <span style="font-size: 0.7rem; background: var(--admin-bg); color: var(--admin-muted); padding: 2px 8px; border-radius: 10px; font-weight: 500;">${batch.length}</span>
       </div>`;
@@ -1298,7 +1321,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (fee === 0) { statusBadge = 'No Fee Set'; statusClass = 'pending'; }
         else if (paid >= fee) { statusBadge = '✅ Paid'; statusClass = 'approved'; }
         else if (paid > 0) { statusBadge = '⚠️ Partial'; statusClass = 'pending'; }
-        else { statusBadge = '⬜ Unpaid'; statusClass = 'rejected'; }
+        else { statusBadge = 'Unpaid'; statusClass = 'rejected'; }
 
         const showRecord = fee > 0 && paid < fee;
         const showUndo = payments.length > 0;
@@ -1343,10 +1366,31 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('pay-already').textContent = '₹' + paid.toLocaleString('en-IN');
     document.getElementById('pay-remaining').textContent = '₹' + remaining.toLocaleString('en-IN');
     document.getElementById('pay-amount').value = remaining;
-    document.getElementById('pay-date').value = new Date().toISOString().substring(0, 10);
+
+    const d = new Date();
+    document.getElementById('pay-date').value = String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
+
     document.getElementById('pay-notes').value = '';
     document.getElementById('pay-status-msg').style.display = 'none';
     document.getElementById('modal-record-payment').showModal();
+  }
+
+  // Auto-format DD/MM/YYYY logic
+  const payDateInput = document.getElementById('pay-date');
+  if (payDateInput) {
+    payDateInput.addEventListener('input', function (e) {
+      if (e.inputType === 'deleteContentBackward') return; // Allow natural backspace
+      let v = this.value.replace(/\D/g, ''); // Strip non-digits
+      if (v.length > 8) v = v.substring(0, 8); // Max 8 digits
+
+      if (v.length >= 5) {
+        this.value = `${v.substring(0, 2)}/${v.substring(2, 4)}/${v.substring(4)}`;
+      } else if (v.length >= 3) {
+        this.value = `${v.substring(0, 2)}/${v.substring(2)}`;
+      } else {
+        this.value = v;
+      }
+    });
   }
 
   const payForm = document.getElementById('form-record-payment');
@@ -1359,7 +1403,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const studentId = document.getElementById('pay-student-id').value;
       const month = document.getElementById('pay-month').value;
       const amount = parseInt(document.getElementById('pay-amount').value);
-      const paidOn = document.getElementById('pay-date').value;
+
+      // Parse DD/MM/YYYY back to YYYY-MM-DD for Supabase
+      const rawDate = document.getElementById('pay-date').value;
+      const dateParts = rawDate.split('/');
+      if (dateParts.length !== 3 || dateParts[2].length !== 4) {
+        statusMsg.textContent = 'Please enter a valid complete date (DD/MM/YYYY).';
+        statusMsg.className = 'status-msg error';
+        statusMsg.style.display = 'block';
+        return;
+      }
+      const paidOn = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+
       const notes = document.getElementById('pay-notes').value.trim();
 
       if (!amount || amount <= 0) {
@@ -1482,13 +1537,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const batchFilter = feeBatchFilter ? feeBatchFilter.value : 'all';
     let students = cachedStudents.filter(s => s.status === 'approved');
     if (batchFilter !== 'all') students = students.filter(s => s.batch === batchFilter);
-    return students.map(s => {
+    let rows = students.map(s => {
       const fee = parseInt(s.monthly_fee) || 0;
       const paid = cachedFeePayments.filter(p => p.student_id === s.id).reduce((sum, p) => sum + (p.amount || 0), 0);
       const remaining = Math.max(0, fee - paid);
       let status = fee === 0 ? 'No Fee' : paid >= fee ? 'Paid' : paid > 0 ? 'Partial' : 'Unpaid';
       return { Name: s.student_name, Batch: s.batch || '', Course: s.course_applying || '', 'Expected (₹)': fee, 'Paid (₹)': paid, 'Remaining (₹)': remaining, Status: status };
     });
+
+    // Smart Sort: Group by status priority, then alphabetical by name
+    const statusPriority = { 'Unpaid': 1, 'Partial': 2, 'Paid': 3, 'No Fee': 4 };
+    rows.sort((a, b) => {
+      const pA = statusPriority[a.Status] || 99;
+      const pB = statusPriority[b.Status] || 99;
+      if (pA !== pB) return pA - pB;
+      return (a.Name || '').localeCompare(b.Name || '');
+    });
+
+    return rows;
   }
 
   const btnFeeExcel = document.getElementById('btn-fee-export-excel');
@@ -1522,10 +1588,30 @@ document.addEventListener('DOMContentLoaded', () => {
       const ts = document.getElementById('print-timestamp');
       if (ts) ts.textContent = 'Date: ' + new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
 
-      let tableHTML = `<h3 style="margin-bottom:1rem;">Fee Collection Report — ${feeMonthLabel(feeCurrentMonth)}</h3>`;
+      let totalExp = 0, totalCol = 0;
+      rows.forEach(r => { totalExp += r['Expected (₹)'] || 0; totalCol += r['Paid (₹)'] || 0; });
+      const totalPen = Math.max(0, totalExp - totalCol);
+      const colRate = totalExp > 0 ? Math.round((totalCol / totalExp) * 100) : 0;
+
+      let tableHTML = `<h3 style="margin-bottom:0.5rem;">Fee Collection Report — ${feeMonthLabel(feeCurrentMonth)}</h3>`;
+      tableHTML += `
+      <div style="display:flex; justify-content:space-between; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 15px; margin-bottom:1.5rem; font-size:0.85rem;">
+        <div><strong>Expected:</strong> ₹${totalExp.toLocaleString('en-IN')}</div>
+        <div><strong>Collected:</strong> <span style="color:#2e7d32; font-weight:700;">₹${totalCol.toLocaleString('en-IN')}</span></div>
+        <div><strong>Pending:</strong> <span style="color:#c53030; font-weight:700;">₹${totalPen.toLocaleString('en-IN')}</span></div>
+        <div><strong>Rate:</strong> <span style="color:#b45309; font-weight:700;">${colRate}%</span></div>
+      </div>`;
       tableHTML += '<table style="width:100%; border-collapse:collapse; font-size:0.85rem;">';
       tableHTML += '<thead><tr style="background:#f0f0f0;"><th style="padding:8px; text-align:left; border:1px solid #ddd;">Name</th><th style="padding:8px; text-align:left; border:1px solid #ddd;">Batch</th><th style="padding:8px; text-align:right; border:1px solid #ddd;">Expected</th><th style="padding:8px; text-align:right; border:1px solid #ddd;">Paid</th><th style="padding:8px; text-align:right; border:1px solid #ddd;">Remaining</th><th style="padding:8px; text-align:left; border:1px solid #ddd;">Status</th></tr></thead><tbody>';
+
+      let currentStatus = null;
       rows.forEach(r => {
+        if (currentStatus !== r.Status) {
+          currentStatus = r.Status;
+          let bg = currentStatus === 'Unpaid' ? '#fef2f2' : currentStatus === 'Partial' ? '#fffbeb' : currentStatus === 'Paid' ? '#f0fdf4' : '#f8fafc';
+          let color = currentStatus === 'Unpaid' ? '#991b1b' : currentStatus === 'Partial' ? '#92400e' : currentStatus === 'Paid' ? '#166534' : '#475569';
+          tableHTML += `<tr style="background:${bg};"><td colspan="6" style="padding:8px; border:1px solid #ddd; font-weight:700; color:${color}; text-transform:uppercase; font-size:0.8rem; letter-spacing:0.5px;">${currentStatus} STUDENTS</td></tr>`;
+        }
         tableHTML += `<tr><td style="padding:6px 8px; border:1px solid #ddd;">${r.Name}</td><td style="padding:6px 8px; border:1px solid #ddd;">${r.Batch}</td><td style="padding:6px 8px; border:1px solid #ddd; text-align:right;">₹${r['Expected (₹)']}</td><td style="padding:6px 8px; border:1px solid #ddd; text-align:right;">₹${r['Paid (₹)']}</td><td style="padding:6px 8px; border:1px solid #ddd; text-align:right;">₹${r['Remaining (₹)']}</td><td style="padding:6px 8px; border:1px solid #ddd;">${r.Status}</td></tr>`;
       });
       tableHTML += '</tbody></table>';
@@ -1537,6 +1623,149 @@ document.addEventListener('DOMContentLoaded', () => {
         if (printBranding) printBranding.style.display = 'none';
         if (printTable) printTable.style.display = 'none';
       }, 500);
+    });
+  }
+
+  // ─── Fee Import (Bulk Upload) ─────────
+  const fileInput = document.getElementById('fee-import-file');
+  const btnImportClick = document.getElementById('btn-fee-import-click');
+  let pendingImportData = [];
+
+  if (btnImportClick && fileInput) {
+    btnImportClick.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (typeof XLSX === 'undefined') {
+        alert("Excel parser is still loading. Please wait a second and try again.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function (evt) {
+        const data = evt.target.result;
+        let workbook;
+        try {
+          workbook = XLSX.read(data, { type: 'binary' });
+        } catch (err) {
+          alert('Failed to parse Excel file. Make sure it is a valid .xlsx or .csv file.');
+          return;
+        }
+
+        const firstSheet = workbook.SheetNames[0];
+        const rows = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet]);
+        processImportRows(rows);
+      };
+      reader.readAsBinaryString(file);
+      fileInput.value = ''; // reset so same file can be chosen again
+    });
+  }
+
+  function processImportRows(rows) {
+    pendingImportData = [];
+    let html = '<table style="width:100%; border-collapse:collapse; font-size:0.85rem; margin-top: 0.5rem;">';
+    html += '<tr style="border-bottom:1px solid var(--admin-border);"><th style="text-align:left; padding:4px;">Student Name</th><th style="text-align:right; padding:4px;">Amount</th><th style="text-align:right; padding:4px;">Status</th></tr>';
+
+    let validCount = 0;
+
+    rows.forEach(row => {
+      // Find Name and Amount columns dynamically
+      const nameKey = Object.keys(row).find(k => k.toLowerCase().includes('name'));
+      const amtKey = Object.keys(row).find(k => {
+        const l = k.toLowerCase();
+        return l === 'amount' || l.includes('paid') || l === 'payment';
+      });
+
+      if (!nameKey || !amtKey) return;
+
+      const name = row[nameKey];
+      let amt = row[amtKey];
+
+      // Clean string currency formats like '₹500' or '500.00'
+      if (typeof amt === 'string') amt = parseInt(amt.replace(/[^0-9]/g, ''));
+      amt = parseInt(amt);
+
+      if (!name || isNaN(amt) || amt <= 0) return;
+
+      // Exact match or very close match
+      const nToMatch = String(name).trim().toLowerCase();
+      const student = cachedStudents.find(s => (s.student_name || '').trim().toLowerCase() === nToMatch);
+
+      if (student) {
+        pendingImportData.push({ student_id: student.id, name: student.student_name, amount: amt });
+        html += `<tr style="border-bottom:1px solid var(--admin-bg);"><td style="padding:4px;">${student.student_name}</td><td style="padding:4px; text-align:right; font-weight:600;">₹${amt.toLocaleString('en-IN')}</td><td style="padding:4px; text-align:right;"><span style="color:#2e7d32; font-weight:600; background:#e8f5e9; padding:2px 8px; border-radius:12px; font-size:0.75rem;">Ready</span></td></tr>`;
+        validCount++;
+      } else {
+        html += `<tr style="border-bottom:1px solid var(--admin-bg);"><td style="padding:4px; color:var(--admin-danger);">${name}</td><td style="padding:4px; text-align:right;">₹${amt}</td><td style="padding:4px; text-align:right;"><span style="color:#c53030; font-weight:600; background:#fff5f5; padding:2px 8px; border-radius:12px; font-size:0.75rem;">Not Found</span></td></tr>`;
+      }
+    });
+
+    html += '</table>';
+
+    const previewContainer = document.getElementById('import-preview-content');
+    document.getElementById('import-month-label').textContent = feeMonthLabel(feeCurrentMonth);
+
+    if (validCount === 0) {
+      previewContainer.innerHTML = '<p style="text-align:center; padding:1rem; color:var(--admin-danger);">No valid payments found. Make sure your file has "Name" and "Amount" columns, and that the names match the database exactly.</p>';
+      document.getElementById('btn-confirm-import').style.display = 'none';
+    } else {
+      previewContainer.innerHTML = html;
+      document.getElementById('btn-confirm-import').style.display = 'block';
+    }
+
+    document.getElementById('import-status-msg').style.display = 'none';
+    document.getElementById('modal-import-preview').showModal();
+  }
+
+  const btnConfirmImport = document.getElementById('btn-confirm-import');
+  if (btnConfirmImport) {
+    btnConfirmImport.addEventListener('click', async () => {
+      if (pendingImportData.length === 0) return;
+
+      btnConfirmImport.textContent = 'Importing...';
+      btnConfirmImport.disabled = true;
+      const statusMsg = document.getElementById('import-status-msg');
+
+      try {
+        let adminEmail = 'admin';
+        const { data: { session } } = await window._supabase.auth.getSession();
+        if (session?.user?.email) adminEmail = session.user.email;
+
+        // Create standard YYYY-MM-DD for today
+        const d = new Date();
+        const paidOn = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+
+        const payload = pendingImportData.map(p => ({
+          student_id: p.student_id,
+          month: feeCurrentMonth,
+          amount: p.amount,
+          paid_on: paidOn,
+          recorded_by: adminEmail,
+          notes: 'Bulk Excel Import'
+        }));
+
+        const { error } = await window._supabase.from('fee_payments').insert(payload);
+        if (error) throw error;
+
+        statusMsg.textContent = `Successfully recorded ${payload.length} payments!`;
+        statusMsg.className = 'status-msg success';
+        statusMsg.style.display = 'block';
+
+        setTimeout(() => {
+          document.getElementById('modal-import-preview').close();
+          hydrateFeeTracker();
+        }, 1200);
+      } catch (err) {
+        console.error(err);
+        statusMsg.textContent = 'Import Failed: ' + err.message;
+        statusMsg.className = 'status-msg error';
+        statusMsg.style.display = 'block';
+      } finally {
+        btnConfirmImport.textContent = 'Confirm Import';
+        btnConfirmImport.disabled = false;
+      }
     });
   }
 

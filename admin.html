@@ -105,7 +105,7 @@
             <line x1="16" y1="17" x2="8" y2="17"></line>
             <polyline points="10 9 9 9 8 9"></polyline>
           </svg>
-          Student Registrations
+          Student Management
         </button>
         <button class="nav-item" data-target="tab-media">
           <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2">
@@ -182,7 +182,8 @@
             <button class="pill-nav" data-sub="sub-dashboard"
               style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: transparent; color: var(--admin-text); font-weight: 500; cursor: pointer;">Dashboard</button>
             <button class="pill-nav" data-sub="sub-fees"
-              style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: transparent; color: var(--admin-text); font-weight: 500; cursor: pointer;">Fee Tracker</button>
+              style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: transparent; color: var(--admin-text); font-weight: 500; cursor: pointer;">Fee
+              Tracker</button>
             <button class="pill-nav" data-sub="sub-analytics"
               style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: transparent; color: var(--admin-text); font-weight: 500; cursor: pointer;">Analytics</button>
           </div>
@@ -502,13 +503,18 @@
         <div id="sub-fees" class="sub-pane" style="display: none;">
 
           <!-- Month Navigation -->
-          <div class="card" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+          <div class="card"
+            style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div style="display: flex; align-items: center; gap: 1rem;">
-              <button id="fee-prev-month" class="btn-secondary" style="padding: 0.4rem 0.75rem; border-radius: 50px; font-size: 0.85rem;">◀</button>
+              <button id="fee-prev-month" class="btn-secondary"
+                style="padding: 0.4rem 0.75rem; border-radius: 50px; font-size: 0.85rem;">◀</button>
               <h3 id="fee-month-label" style="margin: 0; min-width: 160px; text-align: center;">April 2026</h3>
-              <button id="fee-next-month" class="btn-secondary" style="padding: 0.4rem 0.75rem; border-radius: 50px; font-size: 0.85rem;">▶</button>
+              <button id="fee-next-month" class="btn-secondary"
+                style="padding: 0.4rem 0.75rem; border-radius: 50px; font-size: 0.85rem;">▶</button>
             </div>
             <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <input type="text" id="fee-filter-name" placeholder="Search by name..."
+                style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; width: 140px;">
               <select id="fee-filter-batch"
                 style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; background: #fff; cursor: pointer;">
                 <option value="all">All Batches</option>
@@ -516,7 +522,26 @@
                 <option value="Asr">Asr</option>
                 <option value="Maghrib">Maghrib</option>
               </select>
-              <div class="export-container" style="position: relative; display: inline-block;">
+              <select id="fee-filter-status"
+                style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; background: #fff; cursor: pointer;">
+                <option value="all">All Status</option>
+                <option value="paid">Paid</option>
+                <option value="partial">Partial</option>
+                <option value="unpaid">Unpaid</option>
+              </select>
+              <div class="export-container"
+                style="position: relative; display: flex; gap: 0.5rem; align-items: center;">
+                <input type="file" id="fee-import-file" accept=".xlsx, .xls, .csv" style="display: none;">
+                <button class="btn-secondary" id="btn-fee-import-click"
+                  style="padding: 0.4rem 0.5rem; border-radius: 50px; display: flex; align-items: center; justify-content: center;"
+                  title="Import Payments from Excel">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                </button>
                 <button class="btn-secondary" id="btn-fee-export-toggle"
                   style="padding: 0.4rem 0.5rem; border-radius: 50px; display: flex; align-items: center; justify-content: center;"
                   title="Export Fee Report">
@@ -534,12 +559,14 @@
                     Export Fee Report:</h4>
                   <button class="export-option" id="btn-fee-export-excel"
                     style="width: 100%; text-align: left; background: none; border: none; padding: 0.6rem 0.75rem; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; color: var(--admin-text); display: flex; align-items: center; gap: 0.75rem; transition: background 0.2s;">
-                    <span style="background: #e8f5e9; color: #2e7d32; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">X</span>
-                    Excel (.csv)
+                    <span
+                      style="background: #e8f5e9; color: #2e7d32; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">X</span>
+                    Excel (.xlsx)
                   </button>
                   <button class="export-option" id="btn-fee-export-pdf"
                     style="width: 100%; text-align: left; background: none; border: none; padding: 0.6rem 0.75rem; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; color: var(--admin-text); display: flex; align-items: center; gap: 0.75rem; transition: background 0.2s; margin-top: 0.25rem;">
-                    <span style="background: #fff5f5; color: #c53030; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">P</span>
+                    <span
+                      style="background: #fff5f5; color: #c53030; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">P</span>
                     PDF / Print
                   </button>
                 </div>
@@ -575,10 +602,12 @@
           <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
               <h3 style="margin: 0;">Fee Collection Matrix</h3>
-              <span id="fee-filter-count" style="font-size: 0.85rem; color: var(--admin-muted); font-weight: 600;">Showing 0 students</span>
+              <span id="fee-filter-count"
+                style="font-size: 0.85rem; color: var(--admin-muted); font-weight: 600;">Showing 0 students</span>
             </div>
             <div class="activity-feed" id="fee-matrix-feed">
-              <p class="text-muted" style="text-align: center; padding: 2rem;">Select the Fee Tracker tab to load data.</p>
+              <p class="text-muted" style="text-align: center; padding: 2rem;">Select the Fee Tracker tab to load data.
+              </p>
             </div>
           </div>
         </div>
@@ -872,174 +901,193 @@
   <!-- Application Logic -->
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/admin.js"></script>
 
   <!-- Decision Modal Lightbox -->
-  <dialog id="modal-decision"
-    style="border: none; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); padding: 2rem; max-width: 600px; width: 90vw; outline: none; background: var(--admin-white);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h3 id="modal-student-name" style="margin: 0; color: var(--admin-text);">Review Application</h3>
-      <button onclick="document.getElementById('modal-decision').close()"
-        style="background: none; border: none; cursor: pointer; font-size: 1.25rem;">✕</button>
+  <dialog id="modal-decision" class="admin-modal" style="max-width: 600px;">
+    <div class="modal-header">
+      <h3 id="modal-student-name">Review Application</h3>
+      <button onclick="document.getElementById('modal-decision').close()" class="modal-close-btn">✕</button>
     </div>
 
-    <div id="modal-student-details"
-      style="background: var(--admin-bg); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; max-height: 40vh; overflow-y: auto; color: var(--admin-text); line-height: 1.6;">
-      <!-- Details populated by JS dynamically -->
-    </div>
+    <div class="modal-body">
+      <div id="modal-student-details" class="modal-detail-panel">
+        <!-- Details populated by JS dynamically -->
+      </div>
 
-    <!-- Approval Prompt -->
-    <div id="modal-prompt-approve" style="display: none; margin-bottom: 1rem;">
-      <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--admin-accent);">Monthly Fee
-        Assignment</label>
-      <input type="number" id="input-assign-fee" placeholder="e.g. 500"
-        style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); font-size: 1rem;">
-    </div>
+      <!-- Approval Prompt -->
+      <div id="modal-prompt-approve" style="display: none;">
+        <div class="modal-field">
+          <label class="modal-label" style="color: var(--admin-accent);">Monthly Fee Assignment</label>
+          <input type="number" id="input-assign-fee" placeholder="e.g. 500" class="modal-input lg">
+        </div>
+      </div>
 
-    <!-- Rejection Prompt -->
-    <div id="modal-prompt-reject" style="display: none; margin-bottom: 1rem;">
-      <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--admin-danger);">Reason for
-        Rejection</label>
-      <textarea id="input-reject-reason" rows="2" placeholder="e.g. Needs to provide Aadhar card"
-        style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); font-size: 1rem;"></textarea>
-    </div>
+      <!-- Rejection Prompt -->
+      <div id="modal-prompt-reject" style="display: none;">
+        <div class="modal-field">
+          <label class="modal-label" style="color: var(--admin-danger);">Reason for Rejection</label>
+          <textarea id="input-reject-reason" rows="2" placeholder="e.g. Needs to provide Aadhar card"
+            class="modal-textarea"></textarea>
+        </div>
+      </div>
 
-    <div id="modal-feedback" class="status-msg"></div>
+      <div id="modal-feedback" class="status-msg"></div>
 
-    <div id="modal-trigger-group" style="display: flex; gap: 1rem; margin-top: 1rem;">
-      <input type="hidden" id="modal-hidden-id">
-      <button id="btn-modal-trigger-approve" class="btn-primary"
-        style="flex: 1; background: var(--admin-accent); color: white;">Approve</button>
-      <button id="btn-modal-trigger-reject" class="btn-primary"
-        style="flex: 1; background: transparent; border: 1px solid var(--admin-danger); color: var(--admin-danger);">Reject</button>
-    </div>
+      <div id="modal-trigger-group" class="modal-actions" style="margin-top: 1rem;">
+        <input type="hidden" id="modal-hidden-id">
+        <button id="btn-modal-trigger-approve" class="btn-primary">Approve</button>
+        <button id="btn-modal-trigger-reject" class="btn-danger">Reject</button>
+      </div>
 
-    <div id="modal-final-actions" style="display: none; gap: 1rem; margin-top: 1rem;">
-      <button id="btn-modal-confirm" class="btn-primary" style="flex: 1;">Confirm Action</button>
-      <button id="btn-modal-cancel" class="btn-secondary"
-        style="flex: 1; border: 1px solid var(--admin-border);">Cancel</button>
+      <div id="modal-final-actions" class="modal-actions" style="display: none;">
+        <button id="btn-modal-confirm" class="btn-primary">Confirm Action</button>
+        <button id="btn-modal-cancel" class="btn-secondary">Cancel</button>
+      </div>
     </div>
   </dialog>
 
   <!-- Edit Student Modal -->
-  <dialog id="modal-edit-student"
-    style="border: none; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); padding: 2rem; max-width: 500px; width: 90vw; outline: none; background: var(--admin-white);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h3 style="margin: 0; color: var(--admin-text);">Edit Student Info</h3>
-      <button onclick="document.getElementById('modal-edit-student').close()"
-        style="background: none; border: none; cursor: pointer; font-size: 1.25rem;">✕</button>
+  <dialog id="modal-edit-student" class="admin-modal">
+    <div class="modal-header">
+      <h3>Edit Student Info</h3>
+      <button onclick="document.getElementById('modal-edit-student').close()" class="modal-close-btn">✕</button>
     </div>
 
-    <form id="form-edit-student">
-      <input type="hidden" id="edit-student-id">
+    <div class="modal-body">
+      <form id="form-edit-student">
+        <input type="hidden" id="edit-student-id">
 
-      <div class="input-group" style="margin-bottom: 1.5rem;">
-        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Full Name</label>
-        <input type="text" id="edit-student-name" required
-          style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none;">
-      </div>
+        <div class="modal-field">
+          <label class="modal-label">Full Name</label>
+          <input type="text" id="edit-student-name" required class="modal-input">
+        </div>
 
-      <div class="input-group" style="margin-bottom: 1.5rem;">
-        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Father's Name</label>
-        <input type="text" id="edit-student-father" required
-          style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none;">
-      </div>
+        <div class="modal-field">
+          <label class="modal-label">Father's Name</label>
+          <input type="text" id="edit-student-father" required class="modal-input">
+        </div>
 
-      <div class="input-group" style="margin-bottom: 1.5rem;">
-        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Assigned Batch</label>
-        <select id="edit-student-batch" required
-          style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none; background: white; cursor: pointer;">
-          <option value="Zuhr">Zuhr</option>
-          <option value="Asr">Asr</option>
-          <option value="Maghrib">Maghrib</option>
-        </select>
-      </div>
+        <div class="modal-field">
+          <label class="modal-label">Assigned Batch</label>
+          <select id="edit-student-batch" required class="modal-select">
+            <option value="Zuhr">Zuhr</option>
+            <option value="Asr">Asr</option>
+            <option value="Maghrib">Maghrib</option>
+          </select>
+        </div>
 
-      <div class="input-group" style="margin-bottom: 1.5rem;">
-        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Studying Course</label>
-        <select id="edit-student-course" required
-          style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none; background: white; cursor: pointer;">
-          <option value="Noorani Qaida">Noorani Qaida</option>
-          <option value="Qur'an Reading (Nazra)">Qur'an Reading (Nazra)</option>
-          <option value="Qur'an Memorization (Hifz)">Qur'an Memorization (Hifz)</option>
-        </select>
-      </div>
+        <div class="modal-field">
+          <label class="modal-label">Studying Course</label>
+          <select id="edit-student-course" required class="modal-select">
+            <option value="Noorani Qaida">Noorani Qaida</option>
+            <option value="Qur'an Reading (Nazra)">Qur'an Reading (Nazra)</option>
+            <option value="Qur'an Memorization (Hifz)">Qur'an Memorization (Hifz)</option>
+          </select>
+        </div>
 
-      <div class="input-group" style="margin-bottom: 2rem;">
-        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Current Status</label>
-        <select id="edit-student-status" required
-          style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none; background: white; cursor: pointer;">
-          <option value="approved">Approved / Active</option>
-          <option value="left">Left / Inactive</option>
-          <option value="pending">Pending Review</option>
-          <option value="rejected">Rejected</option>
-        </select>
-      </div>
+        <div class="modal-field">
+          <label class="modal-label">Current Status</label>
+          <select id="edit-student-status" required class="modal-select">
+            <option value="approved">Approved / Active</option>
+            <option value="left">Left / Inactive</option>
+            <option value="pending">Pending Review</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
 
-      <div id="edit-status-msg" class="status-msg" style="margin-bottom: 1rem;"></div>
+        <div id="edit-status-msg" class="status-msg" style="margin-bottom: 1rem;"></div>
 
-      <div style="display: flex; gap: 1rem;">
-        <button type="submit" class="btn-primary" style="flex: 1; background: var(--admin-accent); color: white;">Save
-          Changes</button>
-        <button type="button" onclick="document.getElementById('modal-edit-student').close()" class="btn-secondary"
-          style="flex: 1; border: 1px solid var(--admin-border);">Cancel</button>
-      </div>
-    </form>
+        <div class="modal-actions">
+          <button type="submit" class="btn-primary">Save Changes</button>
+          <button type="button" onclick="document.getElementById('modal-edit-student').close()"
+            class="btn-secondary">Cancel</button>
+        </div>
+      </form>
+    </div>
   </dialog>
 
   <!-- Record Payment Modal -->
-  <dialog id="modal-record-payment"
-    style="border: none; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); padding: 2rem; max-width: 440px; width: 90vw; outline: none; background: var(--admin-white);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-      <h3 style="margin: 0; color: var(--admin-text);">Record Payment</h3>
-      <button onclick="document.getElementById('modal-record-payment').close()"
-        style="background: none; border: none; cursor: pointer; font-size: 1.25rem;">✕</button>
+  <dialog id="modal-record-payment" class="admin-modal" style="max-width: 460px;">
+    <div class="modal-header">
+      <h3>Record Payment</h3>
+      <button onclick="document.getElementById('modal-record-payment').close()" class="modal-close-btn">✕</button>
     </div>
 
-    <!-- Student Context -->
-    <div style="background: var(--admin-bg); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
-      <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-        <span style="font-weight: 600; color: var(--admin-text);" id="pay-student-name">Student Name</span>
-        <span style="font-size: 0.85rem; color: var(--admin-muted);" id="pay-month-label">April 2026</span>
+    <div class="modal-body">
+      <!-- Student Context -->
+      <div class="modal-context-card">
+        <div class="modal-context-row">
+          <span class="modal-context-name" id="pay-student-name">Student Name</span>
+          <span class="modal-context-sub" id="pay-month-label">April 2026</span>
+        </div>
+        <div class="modal-context-row">
+          <span class="modal-context-label">Expected: <strong class="modal-context-value"
+              id="pay-expected">₹0</strong></span>
+          <span class="modal-context-label">Paid: <strong class="modal-context-value accent"
+              id="pay-already">₹0</strong></span>
+          <span class="modal-context-label">Due: <strong class="modal-context-value danger"
+              id="pay-remaining">₹0</strong></span>
+        </div>
       </div>
-      <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--admin-muted);">
-        <span>Expected: <strong id="pay-expected" style="color: var(--admin-text);">₹0</strong></span>
-        <span>Already Paid: <strong id="pay-already" style="color: var(--admin-accent);">₹0</strong></span>
-        <span>Remaining: <strong id="pay-remaining" style="color: #dc2626;">₹0</strong></span>
+
+      <form id="form-record-payment">
+        <input type="hidden" id="pay-student-id">
+        <input type="hidden" id="pay-month">
+
+        <div class="modal-field">
+          <label class="modal-label">Amount (₹)</label>
+          <input type="number" id="pay-amount" required min="1" class="modal-input lg">
+        </div>
+
+        <div class="modal-field">
+          <label class="modal-label">Date</label>
+          <input type="text" id="pay-date" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric" required
+            class="modal-input">
+        </div>
+
+        <div class="modal-field">
+          <label class="modal-label">Notes <span class="optional">(optional)</span></label>
+          <input type="text" id="pay-notes" placeholder="e.g. Remaining ₹200 with next month" class="modal-input">
+        </div>
+
+        <div id="pay-status-msg" class="status-msg" style="margin-bottom: 1rem;"></div>
+
+        <div class="modal-actions">
+          <button type="submit" id="btn-pay-submit" class="btn-primary">Record Payment</button>
+          <button type="button" onclick="document.getElementById('modal-record-payment').close()"
+            class="btn-secondary">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Bulk Import Preview Modal -->
+  <dialog id="modal-import-preview" class="admin-modal" style="max-width: 540px;">
+    <div class="modal-header">
+      <h3>Review Payment Import</h3>
+      <button onclick="document.getElementById('modal-import-preview').close()" class="modal-close-btn">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-context-card" style="margin-bottom: 1rem; padding: 1rem; background: var(--admin-bg);">
+        <p style="font-size: 0.85rem; color: var(--admin-muted); margin: 0;">
+          Ensure your Excel/CSV file has a <strong>Name</strong> column and an <strong>Amount</strong> column. We'll
+          automatically match students and queue the payments for <strong id="import-month-label"
+            style="color: var(--admin-accent);"></strong>.
+        </p>
+      </div>
+      <div id="import-preview-content"
+        style="max-height: 280px; overflow-y: auto; margin-bottom: 1rem; border: 1px solid var(--admin-border); border-radius: 8px; padding: 0.5rem;">
+        <!-- Table injected here -->
+      </div>
+      <div id="import-status-msg" class="status-msg" style="margin-bottom: 1rem;"></div>
+      <div class="modal-actions">
+        <button id="btn-confirm-import" class="btn-primary">Confirm Import</button>
+        <button onclick="document.getElementById('modal-import-preview').close()" class="btn-secondary">Cancel</button>
       </div>
     </div>
-
-    <form id="form-record-payment">
-      <input type="hidden" id="pay-student-id">
-      <input type="hidden" id="pay-month">
-
-      <div class="input-group" style="margin-bottom: 1.25rem;">
-        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Amount (₹)</label>
-        <input type="number" id="pay-amount" required min="1"
-          style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none; font-size: 1.1rem; font-weight: 600;">
-      </div>
-
-      <div class="input-group" style="margin-bottom: 1.25rem;">
-        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Date</label>
-        <input type="date" id="pay-date" required
-          style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none;">
-      </div>
-
-      <div class="input-group" style="margin-bottom: 1.5rem;">
-        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Notes <span style="font-weight: 400; color: var(--admin-muted);">(optional)</span></label>
-        <input type="text" id="pay-notes" placeholder="e.g. Remaining ₹200 with next month"
-          style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--admin-border); outline: none;">
-      </div>
-
-      <div id="pay-status-msg" class="status-msg" style="margin-bottom: 1rem;"></div>
-
-      <div style="display: flex; gap: 1rem;">
-        <button type="submit" id="btn-pay-submit" class="btn-primary" style="flex: 1; background: var(--admin-accent); color: white;">Record Payment</button>
-        <button type="button" onclick="document.getElementById('modal-record-payment').close()" class="btn-secondary"
-          style="flex: 1; border: 1px solid var(--admin-border);">Cancel</button>
-      </div>
-    </form>
   </dialog>
 
 </body>
