@@ -673,13 +673,26 @@
             <!-- School Class Distribution -->
             <div class="card chart-card" style="grid-column: span 2;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3 style="margin: 0;">Education Analysis</h3>
+                <h3 style="margin: 0;">Education Analysis (Current Class)</h3>
                 <span id="total-school"
                   style="font-size: 0.75rem; background: var(--admin-bg); padding: 2px 8px; border-radius: 4px; font-weight: 600; color: var(--admin-muted);">Total:
                   --</span>
               </div>
               <div class="chart-container" style="position: relative; height: 320px; width: 100%;">
                 <canvas id="chart-school"></canvas>
+              </div>
+            </div>
+
+            <!-- Age & Course Demographics -->
+            <div class="card chart-card" style="grid-column: span 2;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="margin: 0;">Age & Course Demographics</h3>
+                <span id="total-age"
+                  style="font-size: 0.75rem; background: var(--admin-bg); padding: 2px 8px; border-radius: 4px; font-weight: 600; color: var(--admin-muted);">Total:
+                  --</span>
+              </div>
+              <div class="chart-container" style="position: relative; height: 320px; width: 100%;">
+                <canvas id="chart-age"></canvas>
               </div>
             </div>
 

@@ -801,12 +801,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const batchCount = { 'Zuhr': 0, 'Asr': 0, 'Maghrib': 0 };
     const classCount = {};
     const timelineCount = {};
+    
+    const ageCourseCount = {
+      'Under 6 yrs': {},
+      '6-8 yrs': {},
+      '9-11 yrs': {},
+      '12-14 yrs': {},
+      '15+ yrs': {},
+      'Unknown': {}
+    };
 
     approvedData.forEach(s => {
       if (s.course_applying) courseCount[s.course_applying] = (courseCount[s.course_applying] || 0) + 1;
       if (s.gender) genderCount[s.gender] = (genderCount[s.gender] || 0) + 1;
       if (s.batch) batchCount[s.batch] = (batchCount[s.batch] || 0) + 1;
       if (s.current_class) classCount[s.current_class] = (classCount[s.current_class] || 0) + 1;
+      
+      let ageGroup = 'Unknown';
+      if (s.dob) {
+        let d = new Date(s.dob);
+        if (!isNaN(d)) {
+          let age = Math.floor((new Date() - d) / (1000 * 60 * 60 * 24 * 365.25));
+          if (age < 6) ageGroup = 'Under 6 yrs';
+          else if (age <= 8) ageGroup = '6-8 yrs';
+          else if (age <= 11) ageGroup = '9-11 yrs';
+          else if (age <= 14) ageGroup = '12-14 yrs';
+          else ageGroup = '15+ yrs';
+        }
+      }
+      let course = s.course_applying || 'Unknown';
+      if (!ageCourseCount[ageGroup][course]) ageCourseCount[ageGroup][course] = 0;
+      ageCourseCount[ageGroup][course]++;
+
       if (s.doj) {
         const month = s.doj.substring(0, 7);
         timelineCount[month] = (timelineCount[month] || 0) + 1;
@@ -886,10 +912,67 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ctxSchool) {
       const total = Object.values(classCount).reduce((a, b) => a + b, 0);
       document.getElementById('total-school').textContent = `Total: ${total}`;
+      
+      let classKeys = Object.keys(classCount);
+      // Smart Sort for classes (Nursery/KG -> 1 -> 2 -> ... -> 12)
+      classKeys.sort((a, b) => {
+        const getVal = (str) => {
+          str = str.toLowerCase().trim();
+          if (str.includes('nursery') || str.includes('kg') || str.includes('pre')) return 0;
+          const match = str.match(/\d+/);
+          if (match) return parseInt(match[0]);
+          return 99; // Unknowns at the end
+        };
+        const valA = getVal(a);
+        const valB = getVal(b);
+        if (valA !== valB) return valA - valB;
+        return a.localeCompare(b);
+      });
+      
+      const classVals = classKeys.map(k => classCount[k]);
+
       chartInstances.school = new Chart(ctxSchool, {
         type: 'bar',
-        data: { labels: Object.keys(classCount).length ? Object.keys(classCount) : ['None'], datasets: [{ label: 'Students', data: Object.keys(classCount).length ? Object.values(classCount) : [0], backgroundColor: '#2D6A4F' }] },
+        data: { labels: classKeys.length ? classKeys : ['None'], datasets: [{ label: 'Students', data: classKeys.length ? classVals : [0], backgroundColor: '#2D6A4F' }] },
         options: commonOptions
+      });
+    }
+
+    // 5. Age & Course Demographics
+    const ctxAge = document.getElementById('chart-age');
+    if (ctxAge) {
+      const labels = ['Under 6 yrs', '6-8 yrs', '9-11 yrs', '12-14 yrs', '15+ yrs', 'Unknown'];
+      const allCourses = new Set();
+      labels.forEach(l => Object.keys(ageCourseCount[l]).forEach(c => allCourses.add(c)));
+      
+      const colors = ['#D4A017', '#2D6A4F', '#1E293B', '#64748B'];
+      const datasets = Array.from(allCourses).map((course, idx) => ({
+        label: course,
+        data: labels.map(l => ageCourseCount[l][course] || 0),
+        backgroundColor: colors[idx % colors.length]
+      }));
+
+      // Hide Unknown if perfectly tracked
+      const totalUnknown = datasets.reduce((sum, ds) => sum + ds.data[5], 0);
+      if (totalUnknown === 0) {
+        labels.pop();
+        datasets.forEach(ds => ds.data.pop());
+      }
+      
+      const totalAge = datasets.reduce((sum, ds) => sum + ds.data.reduce((a,b)=>a+b,0), 0);
+      const elTotalAge = document.getElementById('total-age');
+      if(elTotalAge) elTotalAge.textContent = `Total: ${totalAge}`;
+
+      chartInstances.age = new Chart(ctxAge, {
+        type: 'bar',
+        data: { labels, datasets },
+        options: {
+          ...commonOptions,
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true }
+          }
+        }
       });
     }
 
