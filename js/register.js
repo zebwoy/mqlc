@@ -1,13 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-  const SUPABASE_URL = "https://xtgpgavrptueujndvduv.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0Z3BnYXZycHR1ZXVqbmR2ZHV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MzEzNTUsImV4cCI6MjA5MDMwNzM1NX0.Jn5sLJIAY9UsfLR7X7CREXg2ZRB3Vuc993kpxusNdaw";
-
   if (!window._supabase) {
-    if (typeof window.supabase !== 'undefined') {
-      window._supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    if (typeof window.supabase !== 'undefined' && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+      window._supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
     } else {
-      console.warn("Supabase library not loaded natively yet.");
+      console.warn("Supabase configuration or library not loaded natively yet.");
     }
   }
 
@@ -24,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const submitStatus = document.getElementById('submit-status');
 
   // Wizard Elements
-  const wizardSteps = ['step-course', 'step-identity', 'step-edu'];
+  const wizardSteps = ['step-identity', 'step-edu'];
   let currentStepIdx = 0;
   const progressContainer = document.getElementById('wizard-progress-container');
   const progressBar = document.getElementById('wizard-progress-bar');
@@ -138,32 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // School Details Toggle Logic
-  const regCurrentClassSelect = document.getElementById('reg_current_class');
-  const regSchoolNameGroup = document.getElementById('reg_school_name_group');
-  const regSchoolDaysGroup = document.getElementById('reg_school_days_group');
-  const regSchoolTimeGroup = document.getElementById('reg_school_time_group');
-  
-  if (regCurrentClassSelect) {
-    regCurrentClassSelect.addEventListener('change', (e) => {
-      const isNotGoing = e.target.value === 'NA';
-      
-      if (regSchoolNameGroup) {
-        regSchoolNameGroup.style.display = isNotGoing ? 'none' : '';
-        const nameInput = regSchoolNameGroup.querySelector('input');
-        if (nameInput) nameInput.required = !isNotGoing;
-      }
-      if (regSchoolDaysGroup) {
-        regSchoolDaysGroup.style.display = isNotGoing ? 'none' : '';
-      }
-      if (regSchoolTimeGroup) {
-        regSchoolTimeGroup.style.display = isNotGoing ? 'none' : '';
-        const timeInputs = regSchoolTimeGroup.querySelectorAll('input');
-        timeInputs.forEach(input => input.required = !isNotGoing);
-      }
-    });
-  }
-
   document.querySelectorAll('.btn-prev').forEach(btn => {
     btn.addEventListener('click', () => {
       if (currentStepIdx > 0) {
@@ -251,21 +222,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const fd = new FormData(form);
       const payload = {
-        doj: today,
-        form_no: generatedFormNo,
-        course_applying: fd.get('course_applying'),
-        student_name: fd.get('student_name'),
-        father_name: fd.get('father_name'),
-        gender: fd.get('gender'),
-        dob: fd.get('dob'),
+        doj: today || null,
+        form_no: generatedFormNo || null,
+        course_applying: 'Unassigned',
+        student_name: fd.get('student_name') || null,
+        father_name: fd.get('father_name') || null,
+        gender: fd.get('gender') || null,
+        dob: fd.get('dob') || null,
         aadhar_no: fd.get('aadhar_no') || null,
-        address: fd.get('address'),
-        contact_father: fd.get('contact_father'),
+        address: fd.get('address') || null,
+        contact_father: fd.get('contact_father') || null,
         contact_mother: fd.get('contact_mother') || null,
-        current_class: fd.get('current_class'),
-        school_name: (fd.get('current_class') === 'Not going to school yet' || fd.get('current_class') === 'NA') ? 'N/A' : fd.get('school_name'),
-        school_days: (fd.get('current_class') === 'Not going to school yet' || fd.get('current_class') === 'NA') ? 'N/A' : Array.from(form.querySelectorAll('input[name="school_days_arr"]:checked')).map(cb => cb.value).join(', '),
-        school_time: (fd.get('current_class') === 'Not going to school yet' || fd.get('current_class') === 'NA') ? 'N/A' : `${fd.get('school_time_from')} - ${fd.get('school_time_to')}`,
+        current_class: fd.get('current_class') || null,
+        school_name: 'N/A',
+        school_days: 'N/A',
+        school_time: 'N/A',
         status: 'pending'
       };
 

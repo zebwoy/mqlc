@@ -20,6 +20,7 @@
 
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/api/supabase-config"></script>
 
   <!-- Flatpickr (Premium Calendar) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -98,51 +99,11 @@
     <!-- FORM WRAPPER -->
     <form id="parent-registration-form">
 
-      <!-- STAGE 2: COURSE -->
-      <section id="step-course" class="wizard-stage">
-        <h3 class="reg-title" data-en="1. Course Selection" data-mr="१. अभ्यासक्रम निवड" data-ur="۱. کورس کا انتخاب"
-          data-hi="१. पाठ्यक्रम चयन">1. Course Selection</h3>
-
-        <div class="reg-form-group">
-          <label class="group-label" data-en="Course applying for" data-mr="अर्ज करत असलेला अभ्यासक्रम"
-            data-ur="کورس جس کے لیے درخواست دے رہے ہیں" data-hi="पाठ्यक्रम जिसके लिए आवेदन कर रहे हैं">Course applying
-            for</label>
-          <div class="days-grid cards-grid">
-            <div class="pill-container">
-              <input type="radio" id="crs-qaida" name="course_applying" value="Noorani Qaida" class="visually-hidden"
-                required>
-              <label class="day-pill" for="crs-qaida" data-en="Noorani Qaida" data-mr="नूरानी कायदा"
-                data-ur="نورانی قاعدہ" data-hi="नूरानी कायदा">Noorani Qaida</label>
-            </div>
-            <div class="pill-container">
-              <input type="radio" id="crs-nazra" name="course_applying" value="Qur'an Reading (Nazra)"
-                class="visually-hidden">
-              <label class="day-pill" for="crs-nazra" data-en="Qur'an Reading (Nazra)" data-mr="कुराण वाचन (नाझरा)"
-                data-ur="قرآن خوانی (ناظرہ)" data-hi="कुरान पढ़ना (नाज़रा)">Qur'an Reading (Nazra)</label>
-            </div>
-            <div class="pill-container">
-              <input type="radio" id="crs-hifz" name="course_applying" value="Qur'an Memorization (Hifz)"
-                class="visually-hidden">
-              <label class="day-pill" for="crs-hifz" data-en="Qur'an Memorization (Hifz)"
-                data-mr="कुराण पाठांतर (हिफ्झ)" data-ur="حفظ قرآن (حفظ)" data-hi="कुरान हिफ्ज़ (हिफ्ज़)">Qur'an
-                Memorization (Hifz)</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="wizard-controls">
-          <div></div> <!-- Spacing -->
-          <button type="button" class="btn-primary btn-next">
-            <span data-en="Next Step &rarr;" data-mr="पुढील पायरी &rarr;" data-ur="اگلا مرحلہ &larr;"
-              data-hi="अगला कदम &rarr;">Next Step &rarr;</span>
-          </button>
-        </div>
-      </section>
 
       <!-- STAGE 3: STUDENT IDENTITY -->
       <section id="step-identity" class="wizard-stage">
-        <h3 class="reg-title" data-en="2. Student Identity" data-mr="२. विद्यार्थ्याची ओळख"
-          data-ur="۲. طالب علم کی شناخت" data-hi="२. छात्र की पहचान">2. Student Identity</h3>
+        <h3 class="reg-title" data-en="1. Student Identity" data-mr="१. विद्यार्थ्याची ओळख"
+          data-ur="۱. طالب علم کی شناخت" data-hi="१. छात्र की पहचान">1. Student Identity</h3>
         <div class="form-grid">
           <div class="reg-form-group full-width">
             <label class="group-label" data-en="Student Full Name" data-mr="विद्यार्थ्याचे पूर्ण नाव"
@@ -238,8 +199,8 @@
 
       <!-- STAGE 4: BACKGROUND -->
       <section id="step-edu" class="wizard-stage">
-        <h3 class="reg-title" data-en="3. Educational Background" data-mr="३. शैक्षणिक पार्श्वभूमी"
-          data-ur="۳. تعلیمی پس منظر" data-hi="३. शैक्षिक पृष्ठभूमि">3. Educational Background</h3>
+        <h3 class="reg-title" data-en="2. Educational Background" data-mr="२. शैक्षणिक पार्श्वभूमी"
+          data-ur="۲. تعلیمی پس منظر" data-hi="२. शैक्षिक पृष्ठभूमि">2. Educational Background</h3>
         <div class="form-grid">
           <div class="reg-form-group full-width">
             <label class="group-label" data-en="Currently studying in Class / Standard"
@@ -280,47 +241,6 @@
             </select>
           </div>
 
-          <div class="reg-form-group full-width" id="reg_school_name_group">
-            <label class="group-label" data-en="Name of School / College" data-mr="शाळा / महाविद्यालयाचे नाव"
-              data-ur="اسکول / کالج کا نام" data-hi="स्कूल / कॉलेज का नाम">Name of School / College</label>
-            <input type="text" class="premium-input" name="school_name" data-placeholder-en="e.g. M.H. High School"
-              data-placeholder-mr="उदा. एम.एच. हायस्कूल" data-placeholder-ur="مثلاً ایم ایچ ہائی اسکول"
-              data-placeholder-hi="उदा. एम.एच. हाई स्कूल" required>
-          </div>
-
-          <div class="reg-form-group full-width" id="reg_school_days_group">
-            <label class="group-label" data-en="School Days" data-mr="शाळेचे दिवस" data-ur="اسکول کے دن"
-              data-hi="स्कूल के दिन">School Days</label>
-            <div class="days-grid">
-              <div class="pill-container"><input type="checkbox" id="d-mo" name="school_days_arr" value="Mon"
-                  class="visually-hidden"><label for="d-mo" class="day-pill" data-en="Mon" data-mr="सोम" data-ur="پیر"
-                  data-hi="सोम">Mon</label></div>
-              <div class="pill-container"><input type="checkbox" id="d-tu" name="school_days_arr" value="Tue"
-                  class="visually-hidden"><label for="d-tu" class="day-pill" data-en="Tue" data-mr="मंगळ" data-ur="منگل"
-                  data-hi="मंगल">Tue</label></div>
-              <div class="pill-container"><input type="checkbox" id="d-we" name="school_days_arr" value="Wed"
-                  class="visually-hidden"><label for="d-we" class="day-pill" data-en="Wed" data-mr="बुध" data-ur="بدھ"
-                  data-hi="बुध">Wed</label></div>
-              <div class="pill-container"><input type="checkbox" id="d-th" name="school_days_arr" value="Thu"
-                  class="visually-hidden"><label for="d-th" class="day-pill" data-en="Thu" data-mr="गुरू"
-                  data-ur="جمعرات" data-hi="गुरु">Thu</label></div>
-              <div class="pill-container"><input type="checkbox" id="d-fr" name="school_days_arr" value="Fri"
-                  class="visually-hidden"><label for="d-fr" class="day-pill" data-en="Fri" data-mr="शुक्र"
-                  data-ur="جمعہ" data-hi="शुक्र">Fri</label></div>
-              <div class="pill-container"><input type="checkbox" id="d-sa" name="school_days_arr" value="Sat"
-                  class="visually-hidden"><label for="d-sa" class="day-pill" data-en="Sat" data-mr="शनि" data-ur="ہفتہ"
-                  data-hi="शनि">Sat</label></div>
-            </div>
-          </div>
-
-          <div class="reg-form-group full-width" id="reg_school_time_group">
-            <label class="group-label" data-en="School Timings" data-mr="शाळेची वेळ" data-ur="اسکول کا وقت"
-              data-hi="स्कूल का समय">School Timings</label>
-            <div class="time-split" dir="ltr">
-              <input type="time" class="premium-input" name="school_time_from" required>
-              <span data-en="to" data-mr="ते" data-ur="سے" data-hi="से">to</span>
-              <input type="time" class="premium-input" name="school_time_to" required>
-            </div>
           </div>
         </div>
 

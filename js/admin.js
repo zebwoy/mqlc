@@ -398,22 +398,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Collect Data
       const payload = {
-        doj: fd.get('doj'),
-        form_no: fd.get('form_no'),
-        course_applying: fd.get('course_applying'),
-        student_name: fd.get('student_name'),
-        father_name: fd.get('father_name'),
-        gender: fd.get('gender'),
-        dob: fd.get('dob'),
-        aadhar_no: fd.get('aadhar_no'),
-        address: fd.get('address'),
-        contact_father: fd.get('contact_father'),
-        contact_mother: fd.get('contact_mother'),
-        current_class: fd.get('current_class'),
-        school_name: fd.get('current_class') === 'Not going to school yet' ? 'N/A' : fd.get('school_name'),
-        school_days: fd.get('current_class') === 'Not going to school yet' ? 'N/A' : Array.from(manualForm.querySelectorAll('input[name="school_days_arr"]:checked')).map(cb => cb.value).join(', '),
-        school_time: fd.get('current_class') === 'Not going to school yet' ? 'N/A' : `${fd.get('school_time_from')} - ${fd.get('school_time_to')}`,
-        batch: fd.get('batch'),
+        doj: fd.get('doj') || null,
+        form_no: fd.get('form_no') || null,
+        course_applying: 'Unassigned',
+        student_name: fd.get('student_name') || null,
+        father_name: fd.get('father_name') || null,
+        gender: fd.get('gender') || null,
+        dob: fd.get('dob') || null,
+        aadhar_no: fd.get('aadhar_no') || null,
+        address: fd.get('address') || null,
+        contact_father: fd.get('contact_father') || null,
+        contact_mother: fd.get('contact_mother') || null,
+        current_class: fd.get('current_class') || null,
+        school_name: 'N/A',
+        school_days: 'N/A',
+        school_time: 'N/A',
+        batch: fd.get('batch') || null,
         status: 'approved' // explicitly bypass queue and auto-approve manual entries
       };
 
@@ -453,22 +453,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Everyday Shortcut Logic
-    const everydayCheckbox = document.getElementById('sd-everyday');
-    if (everydayCheckbox) {
-      everydayCheckbox.addEventListener('change', (e) => {
-        const checkboxes = manualForm.querySelectorAll('input[name="school_days_arr"]');
-        checkboxes.forEach(cb => {
-          if (cb.value !== 'Sun') {
-            cb.checked = e.target.checked;
-          } else {
-            // Uncheck Sunday if "Everyday" (Mon-Sat) is toggled
-            if (e.target.checked) cb.checked = false;
-          }
-        });
-      });
-    }
-
     // Aadhar Card Auto-Formatter (XXXX-XXXX-XXXX)
     const aadharInput = manualForm.querySelector('input[name="aadhar_no"]');
     if (aadharInput) {
@@ -482,32 +466,6 @@ document.addEventListener('DOMContentLoaded', () => {
           formatted += val[i];
         }
         e.target.value = formatted;
-      });
-    }
-
-    // School Details Toggle Logic
-    const currentClassSelect = document.getElementById('manual_current_class');
-    const schoolNameGroup = document.getElementById('manual_school_name_group');
-    const schoolDaysGroup = document.getElementById('manual_school_days_group');
-    const schoolTimeGroup = document.getElementById('manual_school_time_group');
-
-    if (currentClassSelect) {
-      currentClassSelect.addEventListener('change', (e) => {
-        const isNotGoing = e.target.value === 'NA';
-
-        if (schoolNameGroup) {
-          schoolNameGroup.style.display = isNotGoing ? 'none' : '';
-          const nameInput = schoolNameGroup.querySelector('input');
-          if (nameInput) nameInput.required = !isNotGoing;
-        }
-        if (schoolDaysGroup) {
-          schoolDaysGroup.style.display = isNotGoing ? 'none' : '';
-        }
-        if (schoolTimeGroup) {
-          schoolTimeGroup.style.display = isNotGoing ? 'none' : '';
-          const timeInputs = schoolTimeGroup.querySelectorAll('input');
-          timeInputs.forEach(input => input.required = !isNotGoing);
-        }
       });
     }
 
@@ -649,10 +607,19 @@ document.addEventListener('DOMContentLoaded', () => {
         let stClass = app.status === 'approved' ? 'approved' :
           (app.status === 'rejected' ? 'rejected' :
             (app.status === 'left' ? 'rejected' : 'pending'));
+
+        let relation = 'child';
+        if (app.gender === 'Male') relation = 'son';
+        else if (app.gender === 'Female') relation = 'daughter';
+        let parentSubtext = '';
+        if (app.father_name && app.father_name.trim() !== '' && app.father_name !== 'N/A') {
+          parentSubtext = ` <span style="font-size: 0.8rem; font-weight: 500; color: var(--admin-muted);">(${relation} of ${app.father_name})</span>`;
+        }
+
         feedContainer.innerHTML += `
         <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center;">
           <div class="activity-detail">
-            <h4 style="margin-bottom: 0.25rem;">${app.student_name}</h4>
+            <h4 style="margin-bottom: 0.25rem;">${app.student_name}${parentSubtext}</h4>
             <p style="font-size: 0.8rem; margin-bottom: 0.25rem;">${app.course_applying} | Form: ${app.form_no || 'N/A'}</p>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
               ${app.status === 'left' ? `<span style="font-size: 0.7rem; background: #fde8e8; color: #c53030; padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase;">Inactive</span>` : ''}
@@ -1409,10 +1376,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const showRecord = fee > 0 && paid < fee;
         const showUndo = payments.length > 0;
 
+        let relation = 'child';
+        if (s.gender === 'Male') relation = 'son';
+        else if (s.gender === 'Female') relation = 'daughter';
+        let parentSubtext = '';
+        if (s.father_name && s.father_name.trim() !== '' && s.father_name !== 'N/A') {
+          parentSubtext = ` <span style="font-size: 0.8rem; font-weight: 500; color: var(--admin-muted);">(${relation} of ${s.father_name})</span>`;
+        }
+
         feed.innerHTML += `
         <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
           <div class="activity-detail" style="flex: 1; min-width: 180px;">
-            <h4 style="margin-bottom: 0.25rem;">${s.student_name}</h4>
+            <h4 style="margin-bottom: 0.25rem;">${s.student_name}${parentSubtext}</h4>
             <p style="font-size: 0.8rem; margin-bottom: 0.25rem;">₹${paid.toLocaleString('en-IN')} / ₹${fee.toLocaleString('en-IN')}${remaining > 0 && paid > 0 ? ` · <span style="color:#dc2626;">₹${remaining.toLocaleString('en-IN')} due</span>` : ''}</p>
           </div>
           <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
