@@ -946,3 +946,114 @@ body:has(dialog.admin-modal[open]) > *:not(dialog) {
 .modal-actions .btn-danger:hover {
   background: #fef2f2;
 }
+
+/* ─── Mobile Responsiveness ───────────────────────────────────── */
+/* Ensure overlay is hidden globally so it doesn't break CSS Grid on desktop */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 999;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.open {
+  display: block;
+  opacity: 1;
+}
+
+@media (max-width: 992px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .sidebar {
+    position: fixed;
+    left: -100%;
+    top: 0;
+    bottom: 0;
+    width: 280px;
+    max-width: 85vw;
+    height: 100%;
+    z-index: 1000;
+    transition: left 0.3s ease;
+    box-shadow: 4px 0 10px rgba(0,0,0,0.2);
+  }
+  
+  .sidebar.open {
+    left: 0;
+  }
+  
+  .mobile-header-toggle {
+    display: flex !important;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 1.5rem 1rem;
+  }
+  
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+  
+  .horizontal-nav {
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap !important;
+    padding-bottom: 0.5rem;
+  }
+  
+  .horizontal-nav::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .activity-item {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 1rem;
+  }
+  
+  .activity-item > div {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .content-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  
+  .export-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  
+  .modal-container {
+    width: 95vw !important;
+    padding: 1.5rem !important;
+  }
+  
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mobile-header-toggle {
+  display: none;
+}

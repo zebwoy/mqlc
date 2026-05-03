@@ -12,6 +12,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const authError = document.getElementById('auth-error');
   const btnLogout = document.getElementById('btn-logout');
 
+  // Password Visibility Toggle
+  const btnTogglePassword = document.getElementById('btn-toggle-password');
+  const passwordInput = document.getElementById('password');
+  const iconEyeOpen = document.getElementById('icon-eye-open');
+  const iconEyeClosed = document.getElementById('icon-eye-closed');
+
+  if (btnTogglePassword && passwordInput) {
+    btnTogglePassword.addEventListener('click', () => {
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        iconEyeOpen.style.display = 'none';
+        iconEyeClosed.style.display = 'block';
+      } else {
+        passwordInput.type = 'password';
+        iconEyeOpen.style.display = 'block';
+        iconEyeClosed.style.display = 'none';
+      }
+    });
+  }
+
   // 1. Initial Session Check
   _supabase.auth.getSession().then(({ data: { session } }) => {
     if (session) {

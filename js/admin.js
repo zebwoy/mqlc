@@ -38,7 +38,33 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById(targetId).style.display = 'block';
     });
   });
+  // ─── 1B. MOBILE MENU TOGGLE ─────────────────────────────────────
+  const btnMobileMenu = document.getElementById('btn-mobile-menu');
+  const sidebar = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
 
+  if (btnMobileMenu && sidebar && sidebarOverlay) {
+    const closeSidebar = () => {
+      sidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('open');
+    };
+
+    btnMobileMenu.addEventListener('click', () => {
+      sidebar.classList.add('open');
+      sidebarOverlay.classList.add('open');
+    });
+
+    sidebarOverlay.addEventListener('click', closeSidebar);
+
+    // Auto-close sidebar on mobile when a nav item is clicked
+    navItems.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (window.innerWidth <= 992) {
+          closeSidebar();
+        }
+      });
+    });
+  }
   // ─── 2. CLOUDINARY MEDIA WIDGET ───────────────────────────────
   const cardUploadUpdates = document.getElementById('card-upload-updates');
   const cardUploadBulletin = document.getElementById('card-upload-bulletin');
