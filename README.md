@@ -66,6 +66,8 @@ The project was brought from a blank canvas to a fully operational administrativ
 
 - [x] **Auto-Generated Form Numbers:** Each registration is assigned a unique form number (e.g., `MQLC-26-A1B2`) generated from the current year and a random alphanumeric sequence — no manual numbering.
 
+- [x] **Streamlined Intake:** Removed legacy fields (Course, School Name, Hours, Personal Assessment) to reduce friction and accelerate the enrollment process.
+
 ### 🧠 Interactive Quiz System
 
 - [x] **JSON-Driven Quiz Engine:** Quizzes are defined as simple JSON payloads (topic, questions, options, answers) uploaded to Cloudinary — the quiz UI renders entirely from the JSON, requiring zero code changes.
@@ -95,6 +97,12 @@ The project was brought from a blank canvas to a fully operational administrativ
 - [x] **Inline Student Editor:** Each student row has an edit button that opens a modal dialog for modifying name, batch, course, and lifecycle status — changes reflect immediately in the matrix and KPI cards.
 
 - [x] **Student Lifecycle Management:** Four-state tracking (Approved → Left, Pending → Rejected) with visual badge indicators and filter-aware rendering across the entire dashboard.
+
+- [x] **Gender-Aware Phrasing:** The dashboard dynamically queries student gender to display context-aware relational subtext (e.g., "son/daughter of xyz") alongside student names.
+
+- [x] **Modern Mobile Interface:** Features an iPhone-inspired, glassmorphic floating bottom navbar. Implements strict CSS Grid containment to prevent table blowouts and ensure a seamless, native app-like experience on mobile devices.
+
+- [x] **Flexible Manual Entry:** Made administrative override fields like "Assigned Batch" strictly optional, allowing students to be onboarded rapidly before operational details are finalized.
 
 ### 💰 Fee Tracker
 
@@ -133,6 +141,8 @@ The project was brought from a blank canvas to a fully operational administrativ
 - [x] **Vercel Edge Deployment:** JAMstack architecture with zero-config edge deployment, automatic HTTPS, and global CDN distribution for sub-100ms page loads.
 
 - [x] **Environment Isolation:** All sensitive keys (Supabase, Cloudinary) are stored in `.env.local` and injected via Vercel's serverless runtime — never committed to the repository.
+
+- [x] **Credential Hardening:** Migrated all Supabase client keys from public static files into a secure `/api/supabase-config` Vercel Edge Function, perfectly protecting secrets from public repository exposure.
 
 ---
 
@@ -186,16 +196,6 @@ mqlc/
 │   ├── updates.js          # Updates Carousel Renderer
 │   └── supabase-config.js  # Supabase Client Initialization
 ```
-
----
-
-## 🚀 Deployment & Local Setup
-Managed via **Vercel** for global edge performance.
-
-1. **Clone & Install:** `git clone ...`
-2. **Environment:** Setup `js/supabase-config.js` with your parameters.
-3. **Run:** `npx vercel dev`
-
 ---
 <div align="center">
   <i>"Efficiency in management, Excellence in education."</i>

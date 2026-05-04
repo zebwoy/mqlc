@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ─── 1. TAB ROUTING ───────────────────────────────────────────
-  const navItems = document.querySelectorAll('.sidebar-nav .nav-item');
+  const navItems = document.querySelectorAll('.sidebar-nav .nav-item, .mobile-bottom-nav .nav-item');
   const tabPanes = document.querySelectorAll('.tab-pane');
 
   navItems.forEach(btn => {
@@ -33,9 +33,13 @@ document.addEventListener('DOMContentLoaded', () => {
       tabPanes.forEach(p => p.style.display = 'none');
 
       // Activate target
-      btn.classList.add('active');
       const targetId = btn.getAttribute('data-target');
       document.getElementById(targetId).style.display = 'block';
+
+      // Keep both desktop and mobile buttons in sync
+      document.querySelectorAll(`.nav-item[data-target="${targetId}"]`).forEach(
+        matchingBtn => matchingBtn.classList.add('active')
+      );
     });
   });
   // ─── 1B. MOBILE MENU TOGGLE ─────────────────────────────────────
