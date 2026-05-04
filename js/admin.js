@@ -2067,8 +2067,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Wire up
-  const lbTabBtn = document.querySelector('[data-target="tab-leaderboard"]');
-  if (lbTabBtn) lbTabBtn.addEventListener('click', loadQuizList);
+  const lbTabBtns = document.querySelectorAll('[data-target="tab-leaderboard"]');
+  lbTabBtns.forEach(btn => btn.addEventListener('click', loadQuizList));
 
   if (lbSelect) {
     lbSelect.addEventListener('change', () => {
