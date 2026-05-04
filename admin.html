@@ -235,13 +235,13 @@
           <!-- Horizontal Floating Nav Bar -->
           <div class="horizontal-nav"
             style="display: flex; gap: 0.5rem; background: var(--admin-white); padding: 0.4rem; border-radius: 50px; box-shadow: var(--shadow-sm); border: 1px solid var(--admin-border);">
-            <button class="pill-nav active" data-sub="sub-registration"
-              style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: var(--admin-accent); color: white; font-weight: 600; cursor: pointer;">Registration</button>
+            <button class="pill-nav" data-sub="sub-registration"
+              style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: transparent; color: var(--admin-text); font-weight: 500; cursor: pointer;">Registration</button>
             <button class="pill-nav" data-sub="sub-manual"
               style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: transparent; color: var(--admin-text); font-weight: 500; cursor: pointer;">Manual
               Entry</button>
-            <button class="pill-nav" data-sub="sub-dashboard"
-              style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: transparent; color: var(--admin-text); font-weight: 500; cursor: pointer;">Dashboard</button>
+            <button class="pill-nav active" data-sub="sub-dashboard"
+              style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: var(--admin-accent); color: white; font-weight: 600; cursor: pointer;">Dashboard</button>
             <button class="pill-nav" data-sub="sub-fees"
               style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: transparent; color: var(--admin-text); font-weight: 500; cursor: pointer;">Fee
               Tracker</button>
@@ -251,7 +251,7 @@
         </header>
 
         <!-- Sub-View: Registration -->
-        <div id="sub-registration" class="sub-pane active">
+        <div id="sub-registration" class="sub-pane" style="display: none;">
 
           <!-- Generating Parent PIN -->
           <div class="card"
@@ -419,7 +419,7 @@
         </div>
 
         <!-- Sub-View: Dashboard -->
-        <div id="sub-dashboard" class="sub-pane" style="display: none;">
+        <div id="sub-dashboard" class="sub-pane active">
           <!-- KPI Metrics Row -->
           <div class="kpi-grid" style="margin-bottom: 2rem;">
             <div class="kpi-card">
@@ -465,6 +465,7 @@
                   <option value="Zuhr">Zuhr</option>
                   <option value="Asr">Asr</option>
                   <option value="Maghrib">Maghrib</option>
+                  <option value="unassigned">Unassigned</option>
                 </select>
                 <select id="ds-filter-course"
                   style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; background: #fff; cursor: pointer;">
@@ -542,6 +543,7 @@
                 <option value="Zuhr">Zuhr</option>
                 <option value="Asr">Asr</option>
                 <option value="Maghrib">Maghrib</option>
+                <option value="unassigned">Unassigned</option>
               </select>
               <select id="fee-filter-status"
                 style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; background: #fff; cursor: pointer;">

@@ -577,7 +577,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle Batch Filter
     if (batchFilter !== 'all') {
-      filtered = filtered.filter(s => s.batch === batchFilter);
+      if (batchFilter === 'unassigned') {
+        filtered = filtered.filter(s => !s.batch || s.batch === '' || s.batch === 'null' || s.batch === 'undefined');
+      } else {
+        filtered = filtered.filter(s => s.batch === batchFilter);
+      }
     }
 
     // Handle Course Filter
@@ -1107,7 +1111,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let filtered = [...(cachedStudents || [])];
     if (statusFilter !== 'all') filtered = filtered.filter(s => s.status === statusFilter);
-    if (batchFilter !== 'all') filtered = filtered.filter(s => s.batch === batchFilter);
+    if (batchFilter !== 'all') {
+      if (batchFilter === 'unassigned') {
+        filtered = filtered.filter(s => !s.batch || s.batch === '' || s.batch === 'null' || s.batch === 'undefined');
+      } else {
+        filtered = filtered.filter(s => s.batch === batchFilter);
+      }
+    }
     if (courseFilter !== 'all') filtered = filtered.filter(s => s.course_applying === courseFilter);
     if (searchTerm) {
       filtered = filtered.filter(s =>
@@ -1327,7 +1337,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Apply Filters (Name, Batch, Status)
     students = students.filter(s => {
       if (nameFilter && !(s.student_name || '').toLowerCase().includes(nameFilter)) return false;
-      if (batchFilter !== 'all' && s.batch !== batchFilter) return false;
+      if (batchFilter !== 'all') {
+        if (batchFilter === 'unassigned') {
+          if (s.batch && s.batch !== '' && s.batch !== 'null' && s.batch !== 'undefined') return false;
+        } else {
+          if (s.batch !== batchFilter) return false;
+        }
+      }
       if (statusFilter !== 'all') {
         const fee = parseInt(s.monthly_fee) || 0;
         const paid = cachedFeePayments.filter(p => p.student_id === s.id).reduce((sum, p) => sum + (p.amount || 0), 0);
@@ -1624,7 +1640,13 @@ document.addEventListener('DOMContentLoaded', () => {
   function getFeeExportData() {
     const batchFilter = feeBatchFilter ? feeBatchFilter.value : 'all';
     let students = cachedStudents.filter(s => s.status === 'approved');
-    if (batchFilter !== 'all') students = students.filter(s => s.batch === batchFilter);
+    if (batchFilter !== 'all') {
+      if (batchFilter === 'unassigned') {
+        students = students.filter(s => !s.batch || s.batch === '' || s.batch === 'null' || s.batch === 'undefined');
+      } else {
+        students = students.filter(s => s.batch === batchFilter);
+      }
+    }
     let rows = students.map(s => {
       const fee = parseInt(s.monthly_fee) || 0;
       const paid = cachedFeePayments.filter(p => p.student_id === s.id).reduce((sum, p) => sum + (p.amount || 0), 0);
