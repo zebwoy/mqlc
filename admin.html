@@ -33,6 +33,14 @@
 
 <body>
 
+  <!-- Global Loader Overlay -->
+  <div id="global-loader" class="global-loader">
+    <div class="loader-card">
+      <div class="loader-spinner"></div>
+      <span class="loader-text" id="loader-label">Loading<span class="loader-dots"></span></span>
+    </div>
+  </div>
+
   <!-- Print Branding (Hidden from UI, visible on PDF) -->
   <div id="print-branding"
     style="display: none; text-align: center; padding: 20px; border-bottom: 2px solid #2D6A4F; margin-bottom: 30px;">
@@ -195,7 +203,8 @@
         </svg>
       </button>
       <button class="mobile-nav-btn nav-item" data-target="tab-leaderboard">
-        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
           <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
           <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
           <path d="M4 22h16"></path>
@@ -205,18 +214,49 @@
         </svg>
       </button>
       <button class="mobile-nav-btn nav-item" data-target="tab-jamat">
-        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"></circle>
           <polyline points="12 6 12 12 16 14"></polyline>
         </svg>
       </button>
-      <button class="mobile-nav-btn" id="btn-mobile-menu">
-        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="2">
-          <line x1="3" y1="12" x2="21" y2="12"></line>
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
-      </button>
+      <div style="position: relative;">
+        <button class="mobile-nav-btn" id="btn-mobile-more">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="2">
+            <circle cx="12" cy="5" r="1"></circle>
+            <circle cx="12" cy="12" r="1"></circle>
+            <circle cx="12" cy="19" r="1"></circle>
+          </svg>
+        </button>
+        <!-- Mobile More Popover -->
+        <div id="mobile-more-menu" class="mobile-more-popover" style="display: none;">
+          <a href="/" class="mobile-more-item" style="text-decoration: none; color: var(--admin-text);">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            Visit Website
+          </a>
+          <div style="height: 1px; background: var(--admin-border); margin: 0.25rem 0.5rem;"></div>
+          <button class="mobile-more-item nav-item" data-target="tab-settings">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z">
+              </path>
+            </svg>
+            Static Info
+          </button>
+          <button class="mobile-more-item mobile-more-danger" id="btn-mobile-logout">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            Sign Out
+          </button>
+        </div>
+      </div>
     </nav>
 
     <!-- Main Content Area -->
@@ -265,7 +305,8 @@
               <div id="otp-display"
                 style="font-size: 1.5rem; font-weight: 700; letter-spacing: 2px; color: var(--admin-accent); background: rgba(45, 106, 79, 0.1); padding: 0.5rem 1rem; border-radius: 8px; min-width: 120px; text-align: center; max-width: 100%;">
                 ------</div>
-              <button id="btn-generate-otp" class="btn-primary" style="flex: 1; min-width: fit-content;">Generate PIN</button>
+              <button id="btn-generate-otp" class="btn-primary" style="flex: 1; min-width: fit-content;">Generate
+                PIN</button>
             </div>
           </div>
 
@@ -1123,6 +1164,35 @@
         <button id="btn-confirm-import" class="btn-primary">Confirm Import</button>
         <button onclick="document.getElementById('modal-import-preview').close()" class="btn-secondary">Cancel</button>
       </div>
+    </div>
+  </dialog>
+
+  <!-- Set Fee Modal -->
+  <dialog id="modal-set-fee" class="admin-modal" style="max-width: 420px;">
+    <div class="modal-header">
+      <h3>Assign Monthly Fee</h3>
+      <button onclick="document.getElementById('modal-set-fee').close()" class="modal-close-btn">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-context-card">
+        <div class="modal-context-row">
+          <span class="modal-context-name" id="setfee-student-name">Student Name</span>
+          <span class="modal-context-sub">No fee assigned yet</span>
+        </div>
+      </div>
+      <form id="form-set-fee">
+        <input type="hidden" id="setfee-student-id">
+        <div class="modal-field">
+          <label class="modal-label">Monthly Fee Amount (₹)</label>
+          <input type="number" id="setfee-amount" required min="1" placeholder="e.g. 500" class="modal-input lg">
+        </div>
+        <div id="setfee-status-msg" class="status-msg" style="margin-bottom: 1rem;"></div>
+        <div class="modal-actions">
+          <button type="submit" id="btn-setfee-submit" class="btn-primary">Assign Fee</button>
+          <button type="button" onclick="document.getElementById('modal-set-fee').close()"
+            class="btn-secondary">Cancel</button>
+        </div>
+      </form>
     </div>
   </dialog>
 

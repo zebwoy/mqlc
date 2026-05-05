@@ -77,8 +77,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // UI Handlers
   function showDashboard() {
+    const alreadyVisible = dashView.style.display === 'grid';
     authView.style.display = 'none';
     dashView.style.display = 'grid'; // .app-layout is a grid
+    // Trigger initial data load immediately — only on first reveal
+    if (!alreadyVisible && typeof window.hydrateDashboardAndAnalytics === 'function') {
+      window.hydrateDashboardAndAnalytics();
+    }
   }
 
   function showLogin() {

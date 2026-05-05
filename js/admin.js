@@ -42,31 +42,37 @@ document.addEventListener('DOMContentLoaded', () => {
       );
     });
   });
-  // ─── 1B. MOBILE MENU TOGGLE ─────────────────────────────────────
-  const btnMobileMenu = document.getElementById('btn-mobile-menu');
-  const sidebar = document.getElementById('sidebar');
-  const sidebarOverlay = document.getElementById('sidebar-overlay');
+  // ─── 1B. MOBILE MORE MENU (Popover) ────────────────────────────────
+  const btnMobileMore = document.getElementById('btn-mobile-more');
+  const mobileMoreMenu = document.getElementById('mobile-more-menu');
+  const btnMobileLogout = document.getElementById('btn-mobile-logout');
 
-  if (btnMobileMenu && sidebar && sidebarOverlay) {
-    const closeSidebar = () => {
-      sidebar.classList.remove('open');
-      sidebarOverlay.classList.remove('open');
-    };
-
-    btnMobileMenu.addEventListener('click', () => {
-      sidebar.classList.add('open');
-      sidebarOverlay.classList.add('open');
+  if (btnMobileMore && mobileMoreMenu) {
+    btnMobileMore.addEventListener('click', (e) => {
+      e.stopPropagation();
+      mobileMoreMenu.style.display = mobileMoreMenu.style.display === 'none' ? 'block' : 'none';
     });
 
-    sidebarOverlay.addEventListener('click', closeSidebar);
+    // Dismiss on outside tap
+    document.addEventListener('click', () => {
+      mobileMoreMenu.style.display = 'none';
+    });
+    mobileMoreMenu.addEventListener('click', (e) => e.stopPropagation());
 
-    // Auto-close sidebar on mobile when a nav item is clicked
-    navItems.forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (window.innerWidth <= 992) {
-          closeSidebar();
-        }
+    // Settings button — navigate to tab and close popover
+    const mobileSettingsBtn = mobileMoreMenu.querySelector('.nav-item[data-target="tab-settings"]');
+    if (mobileSettingsBtn) {
+      mobileSettingsBtn.addEventListener('click', () => {
+        mobileMoreMenu.style.display = 'none';
       });
+    }
+  }
+
+  // Mobile Sign Out
+  if (btnMobileLogout && window._supabase) {
+    btnMobileLogout.addEventListener('click', async () => {
+      mobileMoreMenu.style.display = 'none';
+      await window._supabase.auth.signOut();
     });
   }
   // ─── 2. CLOUDINARY MEDIA WIDGET ───────────────────────────────
@@ -553,6 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
   } // end if (manualForm)
 
   let cachedStudents = [];
+  let initialLoadDone = false;
 
   function renderStudentMatrix() {
     const feedContainer = document.getElementById('ds-activity-feed');
@@ -744,6 +751,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // ─── 3f. Dashboard & Analytics Engine ──────────────────────────
   async function hydrateDashboardAndAnalytics() {
     if (!window._supabase) return;
+
+    // Global loader only on first cold boot; inline loader for subsequent refreshes
+    const isFirstLoad = !initialLoadDone;
+    const feedContainer = document.getElementById('ds-activity-feed');
+    if (isFirstLoad) {
+      if (typeof showLoader === 'function') showLoader('Loading dashboard');
+    } else if (feedContainer) {
+      feedContainer.innerHTML = '<div class="inline-loader"><div class="mini-spinner"></div>Refreshing data</div>';
+    }
+
     try {
       const { data: students, error } = await window._supabase
         .from('student_registrations')
@@ -784,9 +801,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       renderStudentMatrix();
       renderCharts(approved);
+      initialLoadDone = true;
 
     } catch (err) {
       console.error("Dashboard engine failed:", err);
+    } finally {
+      if (isFirstLoad && typeof hideLoader === 'function') hideLoader();
     }
   }
 
@@ -1258,11 +1278,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Auto trigger once to cache states quietly
-  setTimeout(hydrateDashboardAndAnalytics, 1000);
+  // Initial hydration is now triggered by auth.js via window.hydrateDashboardAndAnalytics()
+  // when the dashboard becomes visible, eliminating the blind 1s delay.
+  window.hydrateDashboardAndAnalytics = hydrateDashboardAndAnalytics;
 
   // ─── 3g. FEE TRACKER ENGINE ─────────────────────────────────────
-  let feeCurrentMonth = new Date().toISOString().substring(0, 7); // 'YYYY-MM'
+  // Show previous month by default until 25th, then current month (collection starts post-25th)
+  let feeCurrentMonth = (() => {
+    const now = new Date();
+    if (now.getDate() <= 25) {
+      // Show previous month
+      const prev = new Date(now.getFullYear(), now.getMonth() - 1, 15);
+      return prev.getFullYear() + '-' + String(prev.getMonth() + 1).padStart(2, '0');
+    }
+    return now.toISOString().substring(0, 7);
+  })();
   let cachedFeePayments = [];
 
   function feeMonthLabel(ym) {
@@ -1303,6 +1333,10 @@ document.addEventListener('DOMContentLoaded', () => {
   async function hydrateFeeTracker() {
     if (!window._supabase) return;
     if (feeLabel) feeLabel.textContent = feeMonthLabel(feeCurrentMonth);
+
+    // Inline loading indicator inside the fee feed
+    const feeFeed = document.getElementById('fee-matrix-feed');
+    if (feeFeed) feeFeed.innerHTML = '<div class="inline-loader"><div class="mini-spinner"></div>Loading fee data</div>';
 
     try {
       // Ensure student cache is fresh
@@ -1438,6 +1472,7 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
           <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
             <span class="badge ${statusClass}" style="font-size: 0.75rem;">${statusBadge}</span>
+            ${fee === 0 ? `<button class="btn-set-fee" data-sid="${s.id}" data-name="${s.student_name}">✎ Set Fee</button>` : ''}
             ${showRecord ? `<button class="btn-fee-record btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" data-fee="${fee}" data-paid="${paid}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;">💰 Record</button>` : ''}
             ${showUndo ? `<button class="btn-fee-undo btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="Undo last payment">⟳</button>` : ''}
             <button class="btn-fee-history btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="View history">📋</button>
@@ -1448,6 +1483,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Hook buttons
+    feed.querySelectorAll('.btn-set-fee').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('setfee-student-id').value = btn.dataset.sid;
+        document.getElementById('setfee-student-name').textContent = btn.dataset.name;
+        document.getElementById('setfee-amount').value = '';
+        document.getElementById('setfee-status-msg').style.display = 'none';
+        document.getElementById('modal-set-fee').showModal();
+      });
+    });
     feed.querySelectorAll('.btn-fee-record').forEach(btn => {
       btn.addEventListener('click', () => openPaymentModal(btn.dataset.sid, btn.dataset.name, parseInt(btn.dataset.fee), parseInt(btn.dataset.paid)));
     });
@@ -2100,6 +2144,78 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         lbTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--admin-muted);">Select a quiz above to view its leaderboard.</td></tr>';
         if (lbCount) lbCount.textContent = '';
+      }
+    });
+  }
+
+  // ─── 7. GLOBAL LOADER UTILITY ─────────────────────────────────────
+  const globalLoaderEl = document.getElementById('global-loader');
+  const loaderLabelEl = document.getElementById('loader-label');
+  let loaderStack = 0;
+
+  window.showLoader = function (label) {
+    // Only show loader when the dashboard is visible (not on login screen)
+    const dashboardView = document.getElementById('dashboard-view');
+    if (!dashboardView || dashboardView.style.display === 'none') return;
+    // Only allow during first cold boot — subsequent loads use inline loaders
+    if (initialLoadDone) return;
+    loaderStack++;
+    if (loaderLabelEl && label) loaderLabelEl.innerHTML = label + '<span class="loader-dots"></span>';
+    if (globalLoaderEl) globalLoaderEl.classList.add('active');
+  };
+
+  window.hideLoader = function () {
+    loaderStack = Math.max(0, loaderStack - 1);
+    if (loaderStack === 0 && globalLoaderEl) globalLoaderEl.classList.remove('active');
+  };
+
+  // ─── 8. SET FEE MODAL HANDLER ─────────────────────────────────────
+  const setFeeForm = document.getElementById('form-set-fee');
+  if (setFeeForm) {
+    setFeeForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const studentId = document.getElementById('setfee-student-id').value;
+      const amount = parseInt(document.getElementById('setfee-amount').value);
+      const statusMsg = document.getElementById('setfee-status-msg');
+      const btn = document.getElementById('btn-setfee-submit');
+
+      if (!amount || amount <= 0) {
+        statusMsg.textContent = 'Please enter a valid fee amount.';
+        statusMsg.className = 'status-msg error';
+        statusMsg.style.display = 'block';
+        return;
+      }
+
+      btn.textContent = 'Saving...';
+      btn.disabled = true;
+
+      try {
+        const { error } = await window._supabase
+          .from('student_registrations')
+          .update({ monthly_fee: amount })
+          .eq('id', studentId);
+        if (error) throw error;
+
+        statusMsg.textContent = 'Fee assigned successfully!';
+        statusMsg.className = 'status-msg success';
+        statusMsg.style.display = 'block';
+
+        // Refresh local cache
+        const student = cachedStudents.find(s => s.id.toString() === studentId.toString());
+        if (student) student.monthly_fee = amount;
+
+        setTimeout(() => {
+          document.getElementById('modal-set-fee').close();
+          renderFeeMatrix();
+        }, 800);
+      } catch (err) {
+        console.error(err);
+        statusMsg.textContent = 'Failed: ' + err.message;
+        statusMsg.className = 'status-msg error';
+        statusMsg.style.display = 'block';
+      } finally {
+        btn.textContent = 'Assign Fee';
+        btn.disabled = false;
       }
     });
   }

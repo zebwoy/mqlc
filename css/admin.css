@@ -1041,6 +1041,59 @@ body:has(dialog.admin-modal[open]) > *:not(dialog) {
     color: var(--admin-gold);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   }
+
+  /* Mobile More Popover */
+  .mobile-more-popover {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    right: -8px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 14px;
+    padding: 0.5rem;
+    min-width: 170px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+    animation: popoverIn 0.2s ease-out;
+    z-index: 2001;
+  }
+
+  @keyframes popoverIn {
+    from { opacity: 0; transform: translateY(8px) scale(0.95); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .mobile-more-item {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    width: 100%;
+    padding: 0.7rem 0.85rem;
+    background: none;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--admin-text);
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .mobile-more-item:hover,
+  .mobile-more-item:active {
+    background: var(--admin-bg);
+  }
+
+  .mobile-more-danger {
+    color: var(--admin-danger);
+  }
+
+  .mobile-more-danger:hover,
+  .mobile-more-danger:active {
+    background: #fef2f2;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1107,4 +1160,144 @@ body:has(dialog.admin-modal[open]) > *:not(dialog) {
   .kpi-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ─── Global Loader Overlay ──────────────────────────────────── */
+.global-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(245, 247, 250, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+}
+
+.global-loader.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.loader-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 20px;
+  padding: 2.5rem 3rem;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  animation: loaderCardIn 0.4s ease-out;
+}
+
+@keyframes loaderCardIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Orbital spinner ring */
+.loader-spinner {
+  width: 44px;
+  height: 44px;
+  position: relative;
+}
+
+.loader-spinner::before,
+.loader-spinner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid transparent;
+}
+
+.loader-spinner::before {
+  border-top-color: var(--admin-accent);
+  border-right-color: var(--admin-accent);
+  animation: loaderSpin 0.9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.loader-spinner::after {
+  inset: 5px;
+  border-bottom-color: var(--admin-gold);
+  border-left-color: var(--admin-gold);
+  animation: loaderSpin 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite reverse;
+}
+
+@keyframes loaderSpin {
+  to { transform: rotate(360deg); }
+}
+
+.loader-text {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--admin-muted);
+  letter-spacing: 0.02em;
+}
+
+.loader-text .loader-dots::after {
+  content: '';
+  animation: loaderDots 1.4s steps(4, end) infinite;
+}
+
+@keyframes loaderDots {
+  0%   { content: ''; }
+  25%  { content: '.'; }
+  50%  { content: '..'; }
+  75%  { content: '...'; }
+  100% { content: ''; }
+}
+
+/* ─── Set Fee Inline Button ──────────────────────────────────── */
+.btn-set-fee {
+  background: linear-gradient(135deg, var(--admin-accent), #1B4332);
+  color: white;
+  border: none;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  box-shadow: 0 2px 6px rgba(45, 106, 79, 0.25);
+}
+
+.btn-set-fee:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(45, 106, 79, 0.35);
+}
+
+/* ─── Inline Content Loader (for tab switches) ──────────────── */
+.inline-loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2.5rem 1rem;
+  color: var(--admin-muted);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.inline-loader .mini-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid var(--admin-border);
+  border-top-color: var(--admin-accent);
+  border-radius: 50%;
+  animation: loaderSpin 0.7s linear infinite;
 }
