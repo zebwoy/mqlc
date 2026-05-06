@@ -15,8 +15,15 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .tab-pane {
@@ -385,9 +392,17 @@ a {
   color: var(--admin-muted);
 }
 
-.text-accent { color: var(--admin-accent); }
-.text-gold { color: var(--admin-gold); }
-.text-primary { color: #2B5AA6; }
+.text-accent {
+  color: var(--admin-accent);
+}
+
+.text-gold {
+  color: var(--admin-gold);
+}
+
+.text-primary {
+  color: #2B5AA6;
+}
 
 .activity-feed {
   max-height: 400px;
@@ -430,9 +445,23 @@ a {
   letter-spacing: 0.05em;
 }
 
-.badge.pending { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
-.badge.approved { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
-.badge.rejected { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+.badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.badge.approved {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.badge.rejected {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
 
 .chart-card {
   display: flex;
@@ -627,7 +656,7 @@ a {
   .admin-layout {
     flex-direction: column;
   }
-  
+
   .admin-main {
     padding: 1.5rem 1rem;
   }
@@ -643,7 +672,7 @@ a {
   .chart-grid {
     grid-template-columns: 1fr !important;
   }
-  
+
   .chart-card[style*="grid-column: span 2"] {
     grid-column: span 1 !important;
   }
@@ -655,7 +684,7 @@ a {
     size: A4 portrait;
     margin: 1cm;
   }
-  
+
   body {
     background: white !important;
     font-size: 10pt;
@@ -719,16 +748,31 @@ dialog.admin-modal {
   padding: 0;
   max-width: 520px;
   width: 92vw;
-  margin: auto; /* Overrides the * { margin: 0 } reset to properly center the dialog */
+  margin: auto;
   outline: none;
   background: var(--admin-white);
-  overflow: visible; /* Changed from hidden to prevent clipping of date picker popups */
+  overflow: visible;
   animation: modalSlideIn 0.25s ease-out;
 }
 
+/* Scroll-safe layout only when open — prevents closed dialogs from rendering */
+dialog.admin-modal[open] {
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+  overflow: hidden;
+}
+
 @keyframes modalSlideIn {
-  from { opacity: 0; transform: translateY(12px) scale(0.97); }
-  to   { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 dialog.admin-modal::backdrop {
@@ -739,7 +783,7 @@ dialog.admin-modal::backdrop {
    Blurs the app layout instead of the top-layer ::backdrop 
    to prevent Chromium compositing bugs with native shadow-DOM popovers 
    like the <input type="date"> calendar widget. */
-body:has(dialog.admin-modal[open]) > *:not(dialog) {
+body:has(dialog.admin-modal[open])>*:not(dialog) {
   filter: blur(4px);
   pointer-events: none;
   transition: filter 0.3s ease;
@@ -786,6 +830,9 @@ body:has(dialog.admin-modal[open]) > *:not(dialog) {
 /* Modal Body */
 .modal-body {
   padding: 1.75rem 2rem 2rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 /* Context Card (used in payment modal, decision modal) */
@@ -805,7 +852,7 @@ body:has(dialog.admin-modal[open]) > *:not(dialog) {
   gap: 0.5rem;
 }
 
-.modal-context-row + .modal-context-row {
+.modal-context-row+.modal-context-row {
   margin-top: 0.5rem;
   padding-top: 0.5rem;
   border-top: 1px solid var(--admin-border);
@@ -822,8 +869,14 @@ body:has(dialog.admin-modal[open]) > *:not(dialog) {
   color: var(--admin-text);
 }
 
-.modal-context-value.accent { color: var(--admin-accent); }
-.modal-context-value.danger { color: #dc2626; }
+.modal-context-value.accent {
+  color: var(--admin-accent);
+}
+
+.modal-context-value.danger {
+  color: #dc2626;
+}
+
 .modal-context-name {
   font-weight: 700;
   font-size: 0.95rem;
@@ -968,7 +1021,7 @@ body:has(dialog.admin-modal[open]) > *:not(dialog) {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   z-index: 999;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -987,7 +1040,7 @@ body:has(dialog.admin-modal[open]) > *:not(dialog) {
   .app-layout {
     grid-template-columns: 1fr;
   }
-  
+
   .sidebar {
     position: fixed;
     left: -100%;
@@ -998,13 +1051,13 @@ body:has(dialog.admin-modal[open]) > *:not(dialog) {
     height: 100%;
     z-index: 1000;
     transition: left 0.3s ease;
-    box-shadow: 4px 0 10px rgba(0,0,0,0.2);
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.2);
   }
-  
+
   .sidebar.open {
     left: 0;
   }
-  
+
   .mobile-bottom-nav {
     display: flex;
     position: fixed;
@@ -1060,8 +1113,15 @@ body:has(dialog.admin-modal[open]) > *:not(dialog) {
   }
 
   @keyframes popoverIn {
-    from { opacity: 0; transform: translateY(8px) scale(0.95); }
-    to   { opacity: 1; transform: none; }
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.95);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
 
   .mobile-more-item {
@@ -1100,11 +1160,11 @@ body:has(dialog.admin-modal[open]) > *:not(dialog) {
   .main-content {
     padding: 1.5rem 1rem 100px 1rem;
   }
-  
+
   .grid-2 {
     grid-template-columns: 1fr;
   }
-  
+
   .horizontal-nav {
     width: 100%;
     overflow-x: auto;
@@ -1113,11 +1173,11 @@ body:has(dialog.admin-modal[open]) > *:not(dialog) {
     flex-wrap: nowrap !important;
     padding-bottom: 0.5rem;
   }
-  
+
   .horizontal-nav::-webkit-scrollbar {
     display: none;
   }
-  
+
   .table-responsive {
     display: block;
     width: 100%;
@@ -1125,38 +1185,38 @@ body:has(dialog.admin-modal[open]) > *:not(dialog) {
     -webkit-overflow-scrolling: touch;
     border: 0;
   }
-  
+
   .card {
     max-width: 100%;
     overflow: hidden;
   }
-  
+
   .activity-item {
     flex-direction: column;
     align-items: flex-start !important;
     gap: 1rem;
   }
-  
-  .activity-item > div {
+
+  .activity-item>div {
     width: 100%;
     justify-content: flex-start;
   }
-  
+
   .content-header {
     flex-direction: column !important;
     align-items: flex-start !important;
   }
-  
+
   .export-container {
     flex-direction: column !important;
     align-items: stretch !important;
   }
-  
+
   .modal-container {
     width: 95vw !important;
     padding: 1.5rem !important;
   }
-  
+
   .kpi-grid {
     grid-template-columns: 1fr;
   }
@@ -1202,8 +1262,15 @@ body:has(dialog.admin-modal[open]) > *:not(dialog) {
 }
 
 @keyframes loaderCardIn {
-  from { opacity: 0; transform: translateY(16px) scale(0.96); }
-  to   { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* Orbital spinner ring */
@@ -1236,7 +1303,9 @@ body:has(dialog.admin-modal[open]) > *:not(dialog) {
 }
 
 @keyframes loaderSpin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .loader-text {
@@ -1252,11 +1321,25 @@ body:has(dialog.admin-modal[open]) > *:not(dialog) {
 }
 
 @keyframes loaderDots {
-  0%   { content: ''; }
-  25%  { content: '.'; }
-  50%  { content: '..'; }
-  75%  { content: '...'; }
-  100% { content: ''; }
+  0% {
+    content: '';
+  }
+
+  25% {
+    content: '.';
+  }
+
+  50% {
+    content: '..';
+  }
+
+  75% {
+    content: '...';
+  }
+
+  100% {
+    content: '';
+  }
 }
 
 /* ─── Set Fee Inline Button ──────────────────────────────────── */
@@ -1300,4 +1383,26 @@ body:has(dialog.admin-modal[open]) > *:not(dialog) {
   border-top-color: var(--admin-accent);
   border-radius: 50%;
   animation: loaderSpin 0.7s linear infinite;
+}
+
+/* ─── Skeleton Shimmer (for KPI placeholders) ───────────────── */
+.skeleton-value {
+  display: inline-block;
+  width: 48px;
+  height: 1.2em;
+  background: linear-gradient(90deg, var(--admin-border) 25%, rgba(255, 255, 255, 0.5) 50%, var(--admin-border) 75%);
+  background-size: 200% 100%;
+  border-radius: 6px;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+  vertical-align: middle;
+}
+
+@keyframes skeletonShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }

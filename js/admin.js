@@ -510,7 +510,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const formNoInput = manualForm.querySelector('input[name="form_no"]');
       if (!formNoInput || !window._supabase) return;
 
-      formNoInput.value = "Generating...";
+      formNoInput.value = "";
+      formNoInput.placeholder = "Auto-generating...";
       const currentYear = new Date().getFullYear();
       const prefix = `MQLC-${currentYear}-`;
 
@@ -543,14 +544,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Initial call + call whenever the Manual tab pill is clicked
-    initManualFormNumber();
+    // Generate form number only when Manual Entry tab is opened
     const manualPillBtn = document.querySelector('[data-sub="sub-manual"]');
     if (manualPillBtn) {
       manualPillBtn.addEventListener('click', () => {
         // Only regenerate if the field is empty or stale
         const fi = manualForm.querySelector('input[name="form_no"]');
-        if (!fi || !fi.value || fi.value === 'Generating...') {
+        if (!fi || !fi.value) {
           initManualFormNumber();
         }
       });
@@ -748,17 +748,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ─── 3f. Dashboard & Analytics Engine ──────────────────────────
   async function hydrateDashboardAndAnalytics() {
     if (!window._supabase) return;
 
-    // Global loader only on first cold boot; inline loader for subsequent refreshes
-    const isFirstLoad = !initialLoadDone;
+    // Inline loader in activity feed — skeletons in KPI cards handle the rest
     const feedContainer = document.getElementById('ds-activity-feed');
-    if (isFirstLoad) {
-      if (typeof showLoader === 'function') showLoader('Loading dashboard');
-    } else if (feedContainer) {
-      feedContainer.innerHTML = '<div class="inline-loader"><div class="mini-spinner"></div>Refreshing data</div>';
+    if (feedContainer) {
+      feedContainer.innerHTML = '<div class="inline-loader"><div class="mini-spinner"></div>Loading students</div>';
     }
 
     try {
@@ -805,8 +801,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } catch (err) {
       console.error("Dashboard engine failed:", err);
-    } finally {
-      if (isFirstLoad && typeof hideLoader === 'function') hideLoader();
     }
   }
 
@@ -822,7 +816,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const batchCount = { 'Zuhr': 0, 'Asr': 0, 'Maghrib': 0 };
     const classCount = {};
     const timelineCount = {};
-    
+
     const ageCourseCount = {
       'Under 6 yrs': {},
       '6-8 yrs': {},
@@ -837,7 +831,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (s.gender) genderCount[s.gender] = (genderCount[s.gender] || 0) + 1;
       if (s.batch) batchCount[s.batch] = (batchCount[s.batch] || 0) + 1;
       if (s.current_class) classCount[s.current_class] = (classCount[s.current_class] || 0) + 1;
-      
+
       let ageGroup = 'Unknown';
       if (s.dob) {
         let d = new Date(s.dob);
@@ -933,7 +927,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ctxSchool) {
       const total = Object.values(classCount).reduce((a, b) => a + b, 0);
       document.getElementById('total-school').textContent = `Total: ${total}`;
-      
+
       let classKeys = Object.keys(classCount);
       // Smart Sort for classes (Nursery/KG -> 1 -> 2 -> ... -> 12)
       classKeys.sort((a, b) => {
@@ -949,7 +943,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (valA !== valB) return valA - valB;
         return a.localeCompare(b);
       });
-      
+
       const classVals = classKeys.map(k => classCount[k]);
 
       chartInstances.school = new Chart(ctxSchool, {
@@ -965,7 +959,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const labels = ['Under 6 yrs', '6-8 yrs', '9-11 yrs', '12-14 yrs', '15+ yrs', 'Unknown'];
       const allCourses = new Set();
       labels.forEach(l => Object.keys(ageCourseCount[l]).forEach(c => allCourses.add(c)));
-      
+
       const colors = ['#D4A017', '#2D6A4F', '#1E293B', '#64748B'];
       const datasets = Array.from(allCourses).map((course, idx) => ({
         label: course,
@@ -979,10 +973,10 @@ document.addEventListener('DOMContentLoaded', () => {
         labels.pop();
         datasets.forEach(ds => ds.data.pop());
       }
-      
-      const totalAge = datasets.reduce((sum, ds) => sum + ds.data.reduce((a,b)=>a+b,0), 0);
+
+      const totalAge = datasets.reduce((sum, ds) => sum + ds.data.reduce((a, b) => a + b, 0), 0);
       const elTotalAge = document.getElementById('total-age');
-      if(elTotalAge) elTotalAge.textContent = `Total: ${totalAge}`;
+      if (elTotalAge) elTotalAge.textContent = `Total: ${totalAge}`;
 
       chartInstances.age = new Chart(ctxAge, {
         type: 'bar',
@@ -1333,6 +1327,15 @@ document.addEventListener('DOMContentLoaded', () => {
   async function hydrateFeeTracker() {
     if (!window._supabase) return;
     if (feeLabel) feeLabel.textContent = feeMonthLabel(feeCurrentMonth);
+
+    // Reset KPI cards to shimmer skeleton while loading
+    const shimmer = '<span class="skeleton-value" style="width: 72px;"></span>';
+    const el = id => document.getElementById(id);
+    if (el('fee-kpi-expected'))  el('fee-kpi-expected').innerHTML = shimmer;
+    if (el('fee-kpi-collected')) el('fee-kpi-collected').innerHTML = shimmer;
+    if (el('fee-kpi-pending'))   el('fee-kpi-pending').innerHTML = shimmer;
+    if (el('fee-kpi-rate'))      el('fee-kpi-rate').innerHTML = '<span class="skeleton-value"></span>';
+    if (el('fee-kpi-rate-sub'))  el('fee-kpi-rate-sub').textContent = '';
 
     // Inline loading indicator inside the fee feed
     const feeFeed = document.getElementById('fee-matrix-feed');

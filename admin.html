@@ -276,7 +276,8 @@
           <div class="horizontal-nav"
             style="display: flex; gap: 0.5rem; background: var(--admin-white); padding: 0.4rem; border-radius: 50px; box-shadow: var(--shadow-sm); border: 1px solid var(--admin-border);">
             <button class="pill-nav" data-sub="sub-registration"
-              style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: transparent; color: var(--admin-text); font-weight: 500; cursor: pointer;">Registration</button>
+              style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: transparent; color: var(--admin-text); font-weight: 500; cursor: pointer;">Auto
+              Entry</button>
             <button class="pill-nav" data-sub="sub-manual"
               style="padding: 0.5rem 1.5rem; border: none; border-radius: 50px; background: transparent; color: var(--admin-text); font-weight: 500; cursor: pointer;">Manual
               Entry</button>
@@ -465,22 +466,23 @@
           <div class="kpi-grid" style="margin-bottom: 2rem;">
             <div class="kpi-card">
               <span class="kpi-label">Active Students</span>
-              <h3 id="ds-active-students" class="kpi-value">--</h3>
+              <h3 id="ds-active-students" class="kpi-value"><span class="skeleton-value"></span></h3>
               <span class="kpi-trend text-primary">Approved Registrations</span>
             </div>
             <div class="kpi-card">
               <span class="kpi-label">Pending Reviews</span>
-              <h3 id="ds-pending-reviews" class="kpi-value text-accent">--</h3>
+              <h3 id="ds-pending-reviews" class="kpi-value text-accent"><span class="skeleton-value"></span></h3>
               <span class="kpi-trend">Awaiting verification</span>
             </div>
             <div class="kpi-card">
               <span class="kpi-label">Est. Revenue</span>
-              <h3 id="ds-est-revenue" class="kpi-value text-gold">₹--</h3>
+              <h3 id="ds-est-revenue" class="kpi-value text-gold"><span class="skeleton-value"
+                  style="width: 72px;"></span></h3>
               <span class="kpi-trend">Monthly based on active</span>
             </div>
             <div class="kpi-card">
               <span class="kpi-label">Total Valid PINs</span>
-              <h3 id="ds-valid-pins" class="kpi-value">--</h3>
+              <h3 id="ds-valid-pins" class="kpi-value"><span class="skeleton-value"></span></h3>
               <span class="kpi-trend">Active gateways generated</span>
             </div>
           </div>
@@ -567,34 +569,64 @@
 
           <!-- Month Navigation -->
           <div class="card"
-            style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-              <button id="fee-prev-month" class="btn-secondary"
-                style="padding: 0.4rem 0.75rem; border-radius: 50px; font-size: 0.85rem;">◀</button>
-              <h3 id="fee-month-label" style="margin: 0; min-width: 160px; text-align: center;">April 2026</h3>
-              <button id="fee-next-month" class="btn-secondary"
-                style="padding: 0.4rem 0.75rem; border-radius: 50px; font-size: 0.85rem;">▶</button>
+            style="margin-bottom: 1.5rem; display: flex; justify-content: center; align-items: center; gap: 1rem;">
+            <button id="fee-prev-month" class="btn-secondary"
+              style="padding: 0.4rem 0.75rem; border-radius: 50px; font-size: 0.85rem;">◀</button>
+            <h3 id="fee-month-label" style="margin: 0; min-width: 160px; text-align: center;">April 2026</h3>
+            <button id="fee-next-month" class="btn-secondary"
+              style="padding: 0.4rem 0.75rem; border-radius: 50px; font-size: 0.85rem;">▶</button>
+          </div>
+
+          <!-- Fee KPI Cards -->
+          <div class="kpi-grid" style="margin-bottom: 2rem;">
+            <div class="kpi-card">
+              <span class="kpi-label">Expected</span>
+              <h3 id="fee-kpi-expected" class="kpi-value"><span class="skeleton-value" style="width: 72px;"></span></h3>
+              <span class="kpi-trend">Total fees due this month</span>
             </div>
-            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-              <input type="text" id="fee-filter-name" placeholder="Search by name..."
-                style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; width: 140px;">
-              <select id="fee-filter-batch"
-                style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; background: #fff; cursor: pointer;">
-                <option value="all">All Batches</option>
-                <option value="Zuhr">Zuhr</option>
-                <option value="Asr">Asr</option>
-                <option value="Maghrib">Maghrib</option>
-                <option value="unassigned">Unassigned</option>
-              </select>
-              <select id="fee-filter-status"
-                style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; background: #fff; cursor: pointer;">
-                <option value="all">All Status</option>
-                <option value="paid">Paid</option>
-                <option value="partial">Partial</option>
-                <option value="unpaid">Unpaid</option>
-              </select>
-              <div class="export-container"
-                style="position: relative; display: flex; gap: 0.5rem; align-items: center; display: contents;">
+            <div class="kpi-card">
+              <span class="kpi-label">Collected</span>
+              <h3 id="fee-kpi-collected" class="kpi-value text-accent"><span class="skeleton-value"
+                  style="width: 72px;"></span></h3>
+              <span class="kpi-trend">Actual payments received</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Pending</span>
+              <h3 id="fee-kpi-pending" class="kpi-value" style="color: #dc2626;"><span class="skeleton-value"
+                  style="width: 72px;"></span></h3>
+              <span class="kpi-trend">Outstanding balance</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Collection Rate</span>
+              <h3 id="fee-kpi-rate" class="kpi-value text-gold"><span class="skeleton-value"></span></h3>
+              <span id="fee-kpi-rate-sub" class="kpi-trend">0 of 0 students paid</span>
+            </div>
+          </div>
+
+          <!-- Fee Matrix -->
+          <div class="card">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+              <h3 style="margin: 0;">Fee Collection Matrix</h3>
+              <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <input type="text" id="fee-filter-name" placeholder="Search by name..."
+                  style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; width: 140px;">
+                <select id="fee-filter-batch"
+                  style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; background: #fff; cursor: pointer;">
+                  <option value="all">All Batches</option>
+                  <option value="Zuhr">Zuhr</option>
+                  <option value="Asr">Asr</option>
+                  <option value="Maghrib">Maghrib</option>
+                  <option value="unassigned">Unassigned</option>
+                </select>
+                <select id="fee-filter-status"
+                  style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; background: #fff; cursor: pointer;">
+                  <option value="all">All Status</option>
+                  <option value="paid">Paid</option>
+                  <option value="partial">Partial</option>
+                  <option value="unpaid">Unpaid</option>
+                </select>
+                <div style="height: 20px; width: 1px; background: var(--admin-border); margin: 0 0.25rem;"></div>
                 <input type="file" id="fee-import-file" accept=".xlsx, .xls, .csv" style="display: none;">
                 <button class="btn-secondary" id="btn-fee-import-click"
                   style="padding: 0.4rem 0.5rem; border-radius: 50px; display: flex; align-items: center; justify-content: center;"
@@ -606,69 +638,40 @@
                     <line x1="12" y1="3" x2="12" y2="15"></line>
                   </svg>
                 </button>
-                <button class="btn-secondary" id="btn-fee-export-toggle"
-                  style="padding: 0.4rem 0.5rem; border-radius: 50px; display: flex; align-items: center; justify-content: center;"
-                  title="Export Fee Report">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                  </svg>
-                </button>
-                <div id="fee-export-dropdown" class="card shadow-md"
-                  style="display: none; position: absolute; right: 0; top: calc(100% + 10px); width: 220px; padding: 0.75rem; z-index: 1000; border-radius: 12px;">
-                  <h4
-                    style="font-size: 0.75rem; text-transform: uppercase; color: var(--admin-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">
-                    Export Fee Report:</h4>
-                  <button class="export-option" id="btn-fee-export-excel"
-                    style="width: 100%; text-align: left; background: none; border: none; padding: 0.6rem 0.75rem; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; color: var(--admin-text); display: flex; align-items: center; gap: 0.75rem; transition: background 0.2s;">
-                    <span
-                      style="background: #e8f5e9; color: #2e7d32; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">X</span>
-                    Excel (.xlsx)
+                <div class="export-container" style="position: relative; display: inline-block;">
+                  <button class="btn-secondary" id="btn-fee-export-toggle"
+                    style="padding: 0.4rem 0.5rem; border-radius: 50px; display: flex; align-items: center; justify-content: center;"
+                    title="Export Fee Report">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="7 10 12 15 17 10"></polyline>
+                      <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
                   </button>
-                  <button class="export-option" id="btn-fee-export-pdf"
-                    style="width: 100%; text-align: left; background: none; border: none; padding: 0.6rem 0.75rem; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; color: var(--admin-text); display: flex; align-items: center; gap: 0.75rem; transition: background 0.2s; margin-top: 0.25rem;">
-                    <span
-                      style="background: #fff5f5; color: #c53030; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">P</span>
-                    PDF / Print
-                  </button>
+                  <div id="fee-export-dropdown" class="card shadow-md"
+                    style="display: none; position: absolute; right: 0; top: calc(100% + 10px); width: 220px; padding: 0.75rem; z-index: 1000; border-radius: 12px;">
+                    <h4
+                      style="font-size: 0.75rem; text-transform: uppercase; color: var(--admin-muted); margin-bottom: 0.5rem; letter-spacing: 0.5px;">
+                      Export Fee Report:</h4>
+                    <button class="export-option" id="btn-fee-export-excel"
+                      style="width: 100%; text-align: left; background: none; border: none; padding: 0.6rem 0.75rem; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; color: var(--admin-text); display: flex; align-items: center; gap: 0.75rem; transition: background 0.2s;">
+                      <span
+                        style="background: #e8f5e9; color: #2e7d32; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">X</span>
+                      Excel (.xlsx)
+                    </button>
+                    <button class="export-option" id="btn-fee-export-pdf"
+                      style="width: 100%; text-align: left; background: none; border: none; padding: 0.6rem 0.75rem; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; color: var(--admin-text); display: flex; align-items: center; gap: 0.75rem; transition: background 0.2s; margin-top: 0.25rem;">
+                      <span
+                        style="background: #fff5f5; color: #c53030; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 6px;">P</span>
+                      PDF / Print
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-
-          <!-- Fee KPI Cards -->
-          <div class="kpi-grid" style="margin-bottom: 2rem;">
-            <div class="kpi-card">
-              <span class="kpi-label">Expected</span>
-              <h3 id="fee-kpi-expected" class="kpi-value">₹--</h3>
-              <span class="kpi-trend">Total fees due this month</span>
-            </div>
-            <div class="kpi-card">
-              <span class="kpi-label">Collected</span>
-              <h3 id="fee-kpi-collected" class="kpi-value text-accent">₹--</h3>
-              <span class="kpi-trend">Actual payments received</span>
-            </div>
-            <div class="kpi-card">
-              <span class="kpi-label">Pending</span>
-              <h3 id="fee-kpi-pending" class="kpi-value" style="color: #dc2626;">₹--</h3>
-              <span class="kpi-trend">Outstanding balance</span>
-            </div>
-            <div class="kpi-card">
-              <span class="kpi-label">Collection Rate</span>
-              <h3 id="fee-kpi-rate" class="kpi-value text-gold">--%</h3>
-              <span id="fee-kpi-rate-sub" class="kpi-trend">0 of 0 students paid</span>
-            </div>
-          </div>
-
-          <!-- Fee Matrix -->
-          <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-              <h3 style="margin: 0;">Fee Collection Matrix</h3>
-              <span id="fee-filter-count"
-                style="font-size: 0.85rem; color: var(--admin-muted); font-weight: 600;">Showing 0 students</span>
-            </div>
+            <span id="fee-filter-count"
+              style="font-size: 0.82rem; color: var(--admin-muted); font-weight: 500; display: block; margin-bottom: 1rem;">Showing 0 students</span>
             <div class="activity-feed" id="fee-matrix-feed">
               <p class="text-muted" style="text-align: center; padding: 2rem;">Select the Fee Tracker tab to load data.
               </p>
