@@ -807,7 +807,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let chartsRendered = false;
   let chartInstances = {};
 
-  function renderCharts(approvedData) {
+  async function renderCharts(approvedData) {
     if (chartsRendered || typeof Chart === 'undefined') return;
 
     // Aggregation Logic
@@ -922,6 +922,147 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
+    // 3b. Fee Payment Status (Pie with labels on slices)
+    const feeStatusMonthSelect = document.getElementById('fee-status-month');
+    if (feeStatusMonthSelect && window._supabase) {
+      // Populate dropdown: April 2026 → latest month with data
+      if (feeStatusMonthSelect.options.length === 0) {
+        // Determine upper bound: max of current collection month and latest month with payment data
+        const now = new Date();
+        let latestMonth;
+        if (now.getDate() <= 25) {
+          const prev = new Date(now.getFullYear(), now.getMonth() - 1, 15);
+          latestMonth = prev.getFullYear() + '-' + String(prev.getMonth() + 1).padStart(2, '0');
+        } else {
+          latestMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+        }
+        // Check DB for the latest month that has payment records
+        try {
+          const { data: maxRow } = await window._supabase
+            .from('fee_payments').select('month').order('month', { ascending: false }).limit(1);
+          if (maxRow && maxRow.length && maxRow[0].month > latestMonth) {
+            latestMonth = maxRow[0].month;
+          }
+        } catch (_) { /* use fallback */ }
+
+        // Generate months from ARREARS_START to latestMonth (newest first)
+        const allMonths = [];
+        const [sy, sm] = ARREARS_START.split('-').map(Number);
+        let cur = new Date(sy, sm - 1, 15);
+        const [ly, lm] = latestMonth.split('-').map(Number);
+        const endDate = new Date(ly, lm - 1, 15);
+        while (cur <= endDate) {
+          allMonths.push(cur.getFullYear() + '-' + String(cur.getMonth() + 1).padStart(2, '0'));
+          cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 15);
+        }
+        allMonths.reverse(); // newest first
+        allMonths.forEach(m => {
+          feeStatusMonthSelect.add(new Option(feeMonthLabel(m), m));
+        });
+        feeStatusMonthSelect.addEventListener('change', () => renderFeeStatusPie(approvedData));
+      }
+      await renderFeeStatusPie(approvedData);
+    }
+
+    async function renderFeeStatusPie(students) {
+      const canvas = document.getElementById('chart-fee-status');
+      const monthSelect = document.getElementById('fee-status-month');
+      if (!canvas || !monthSelect) return;
+      const month = monthSelect.value;
+
+      try {
+        const { data: pmts } = await window._supabase
+          .from('fee_payments').select('student_id, amount').eq('month', month);
+        const payments = pmts || [];
+
+        const paidMap = {};
+        payments.forEach(p => { paidMap[p.student_id] = (paidMap[p.student_id] || 0) + (p.amount || 0); });
+
+        let totalExpected = 0, totalCollected = 0;
+        let paidCount = 0, partialCount = 0, unpaidCount = 0;
+        students.forEach(s => {
+          if (!isEnrolledForMonth(s.doj, month)) return;
+          const fee = parseInt(s.monthly_fee) || 0;
+          totalExpected += fee;
+          const paid = paidMap[s.id] || 0;
+          totalCollected += Math.min(paid, fee);
+          if (fee > 0) {
+            if (paid >= fee) paidCount++;
+            else if (paid > 0) partialCount++;
+            else unpaidCount++;
+          }
+        });
+        const totalPending = Math.max(0, totalExpected - totalCollected);
+        const totalStudents = paidCount + partialCount + unpaidCount;
+
+        // Destroy old instance
+        if (chartInstances.feeStatus) { chartInstances.feeStatus.destroy(); chartInstances.feeStatus = null; }
+
+        // Custom plugin: draw ₹ amount labels on slices
+        const sliceLabelPlugin = {
+          id: 'sliceLabels',
+          afterDraw(chart) {
+            const { ctx } = chart;
+            chart.data.datasets.forEach((dataset, i) => {
+              const meta = chart.getDatasetMeta(i);
+              meta.data.forEach((arc, idx) => {
+                const val = dataset.data[idx];
+                if (!val || val === 0) return;
+                const { x, y } = arc.tooltipPosition();
+                ctx.save();
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.fillStyle = '#fff';
+                ctx.fillText('₹' + val.toLocaleString('en-IN'), x, y);
+                ctx.restore();
+              });
+            });
+          }
+        };
+
+        const sliceLabels = [];
+        const sliceData = [];
+        const sliceColors = [];
+        if (totalCollected > 0) { sliceLabels.push('Collected'); sliceData.push(totalCollected); sliceColors.push('#2D6A4F'); }
+        if (totalPending > 0) { sliceLabels.push('Pending'); sliceData.push(totalPending); sliceColors.push('#dc2626'); }
+
+        // Tooltip student info per slice
+        const sliceTooltips = {};
+        if (totalCollected > 0) sliceTooltips['Collected'] = `${paidCount} fully paid` + (partialCount > 0 ? `, ${partialCount} partial` : '');
+        if (totalPending > 0) sliceTooltips['Pending'] = `${unpaidCount} unpaid` + (partialCount > 0 ? `, ${partialCount} partial` : '');
+
+        chartInstances.feeStatus = new Chart(canvas, {
+          type: 'pie',
+          data: {
+            labels: sliceLabels.length ? sliceLabels : ['No Data'],
+            datasets: [{
+              data: sliceData.length ? sliceData : [1],
+              backgroundColor: sliceColors.length ? sliceColors : ['#e2e8f0']
+            }]
+          },
+          plugins: [sliceLabelPlugin],
+          options: {
+            ...pieOptions,
+            plugins: {
+              ...pieOptions.plugins,
+              tooltip: {
+                callbacks: {
+                  label: function (ctx) {
+                    const count = ctx.label === 'Collected' ? paidCount : unpaidCount;
+                    const pct = totalStudents > 0 ? Math.round((count / totalStudents) * 100) : 0;
+                    return ` ${count}/${totalStudents} | ${pct}%`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      } catch (err) {
+        console.error('Fee status chart error:', err);
+      }
+    }
+
     // 4. Chart School Class
     const ctxSchool = document.getElementById('chart-school');
     if (ctxSchool) {
@@ -992,6 +1133,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     chartsRendered = true;
+
+    // Fee Revenue Analytics (needs async DB fetch, runs alongside other charts)
+    renderFeeTrendChart();
   }
 
   // Hook Dashboard rendering to pill clicks
@@ -1288,11 +1432,48 @@ document.addEventListener('DOMContentLoaded', () => {
     return now.toISOString().substring(0, 7);
   })();
   let cachedFeePayments = [];
+  let feeTrendChart = null;
 
   function feeMonthLabel(ym) {
     const [y, m] = ym.split('-');
     const d = new Date(parseInt(y), parseInt(m) - 1);
     return d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+  }
+
+  // Returns true if the student was enrolled on or before the given fee month
+  // doj = "YYYY-MM-DD", feeMonth = "YYYY-MM"
+  function isEnrolledForMonth(doj, feeMonth) {
+    if (!doj) return true; // no DOJ recorded → include by default
+    const dojMonth = doj.substring(0, 7); // "YYYY-MM"
+    return dojMonth <= feeMonth; // string comparison works for YYYY-MM
+  }
+
+  // Arrears floor — ignore all months before this
+  const ARREARS_START = '2026-04';
+
+  // Calculate outstanding from prior months (arrears)
+  function calcArrears(student, currentFeeMonth) {
+    const fee = parseInt(student.monthly_fee) || 0;
+    if (fee === 0) return 0;
+    if (currentFeeMonth <= ARREARS_START) return 0; // no prior months to check
+
+    // Effective start: max of DOJ month and ARREARS_START
+    const dojMonth = student.doj ? student.doj.substring(0, 7) : ARREARS_START;
+    const effectiveStart = dojMonth > ARREARS_START ? dojMonth : ARREARS_START;
+    if (currentFeeMonth <= effectiveStart) return 0;
+
+    // Count eligible months from effectiveStart up to (but not including) currentFeeMonth
+    const [sy, sm] = effectiveStart.split('-').map(Number);
+    const [cy, cm] = currentFeeMonth.split('-').map(Number);
+    const numMonths = (cy - sy) * 12 + (cm - sm);
+    const totalExpected = fee * numMonths;
+
+    // Sum all payments for those prior months
+    const totalPaid = cachedFeePayments
+      .filter(p => p.student_id === student.id && p.month >= effectiveStart && p.month < currentFeeMonth)
+      .reduce((sum, p) => sum + (p.amount || 0), 0);
+
+    return Math.max(0, totalExpected - totalPaid);
   }
 
   // Month navigation
@@ -1347,17 +1528,263 @@ document.addEventListener('DOMContentLoaded', () => {
         const { data } = await window._supabase.from('student_registrations').select('*');
         cachedStudents = data || [];
       }
-      // Fetch payments for this month
+      // Fetch payments from April 2026 onwards (needed for arrears calculation)
       const { data: payments, error } = await window._supabase
         .from('fee_payments')
         .select('*')
-        .eq('month', feeCurrentMonth);
+        .gte('month', ARREARS_START);
       if (error) throw error;
       cachedFeePayments = payments || [];
       renderFeeMatrix();
     } catch (err) {
       console.error('Fee tracker error:', err);
     }
+  }
+
+  // ─── Fee Revenue Analytics (Annual Scale, in Analytics Tab) ─────────
+  let feeAnalyticsPayments = null; // separate cache for analytics
+
+  async function renderFeeTrendChart() {
+    const canvas = document.getElementById('chart-fee-trend');
+    const summaryEl = document.getElementById('fee-chart-summary');
+    const yearSelect = document.getElementById('fee-chart-year');
+    if (!canvas || typeof Chart === 'undefined' || !window._supabase) return;
+
+    // Populate year selector if empty
+    if (yearSelect && yearSelect.options.length === 0) {
+      const currentYear = new Date().getFullYear();
+      for (let y = currentYear; y >= 2026; y--) {
+        yearSelect.add(new Option(y.toString(), y.toString()));
+      }
+      yearSelect.addEventListener('change', renderFeeTrendChart);
+    }
+
+    const year = yearSelect ? parseInt(yearSelect.value) : new Date().getFullYear();
+    const yearStart = `${year}-01`;
+    const yearEnd = `${year}-12`;
+
+    // Fetch all payments for the year (cache per session, refetch on year change)
+    if (!feeAnalyticsPayments || feeAnalyticsPayments._year !== year) {
+      try {
+        const { data, error } = await window._supabase
+          .from('fee_payments')
+          .select('*')
+          .gte('month', yearStart)
+          .lte('month', yearEnd);
+        if (error) throw error;
+        feeAnalyticsPayments = data || [];
+        feeAnalyticsPayments._year = year;
+      } catch (err) {
+        console.error('Fee analytics fetch error:', err);
+        if (summaryEl) summaryEl.textContent = 'Error loading data';
+        return;
+      }
+    }
+
+    // Use cachedStudents (already loaded by analytics)
+    const approved = (cachedStudents || []).filter(s => s.status === 'approved');
+
+    // Generate months for the year — up to current month or latest data month, whichever is later
+    const now = new Date();
+    let maxMonth = (year === now.getFullYear()) ? now.getMonth() + 1 : 12;
+    // Extend to latest month that has payment data in this year
+    if (feeAnalyticsPayments && feeAnalyticsPayments.length) {
+      feeAnalyticsPayments.forEach(p => {
+        if (p.month && p.month.startsWith(year + '-')) {
+          const m = parseInt(p.month.split('-')[1]);
+          if (m > maxMonth) maxMonth = m;
+        }
+      });
+    }
+    const months = [];
+    for (let m = 1; m <= Math.min(maxMonth, 12); m++) {
+      months.push(`${year}-${String(m).padStart(2, '0')}`);
+    }
+    // Only show from ARREARS_START month onwards for the start year
+    const activeMonths = months.filter(m => m >= ARREARS_START);
+    if (activeMonths.length === 0) {
+      if (summaryEl) summaryEl.textContent = 'No data for this year';
+      return;
+    }
+
+    const expectedData = [];
+    const onTimeData = [];     // collections matching the current month
+    const arrearsData = [];    // collections for prior months (arrears recovery)
+    const rateData = [];
+
+    activeMonths.forEach(month => {
+      // Expected: sum of monthly_fee for enrolled students
+      let exp = 0;
+      approved.forEach(s => {
+        if (isEnrolledForMonth(s.doj, month)) {
+          exp += parseInt(s.monthly_fee) || 0;
+        }
+      });
+
+      // All payments tagged to this month
+      const monthPayments = feeAnalyticsPayments.filter(p => p.month === month);
+      const totalCol = monthPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+
+      // Separate on-time vs arrears recovered
+      // Collection window for month M: 25th of M → 24th of M+1
+      // "On-time" = paid_on falls on or before 24th of the next month
+      // "Arrears" = paid_on falls after the 24th of the next month
+      const [my, mm] = month.split('-').map(Number);
+      const cutoffDate = new Date(my, mm, 24); // 24th of M+1 (mm is already 1-based, so new Date(y, mm, 24) = next month 24th)
+      const cutoffStr = cutoffDate.getFullYear() + '-' + String(cutoffDate.getMonth() + 1).padStart(2, '0') + '-' + String(cutoffDate.getDate()).padStart(2, '0');
+
+      let onTime = 0, arrearsRecov = 0;
+      monthPayments.forEach(p => {
+        if (p.paid_on) {
+          if (p.paid_on <= cutoffStr) {
+            onTime += p.amount || 0;
+          } else {
+            arrearsRecov += p.amount || 0;
+          }
+        } else {
+          onTime += p.amount || 0; // no date recorded → assume on-time
+        }
+      });
+
+      const pct = exp > 0 ? Math.round((totalCol / exp) * 100) : 0;
+
+      expectedData.push(exp);
+      onTimeData.push(onTime);
+      arrearsData.push(arrearsRecov);
+      rateData.push(pct);
+    });
+
+    // Labels
+    const labels = activeMonths.map(m => {
+      const [, mo] = m.split('-');
+      return new Date(year, parseInt(mo) - 1).toLocaleDateString('en-IN', { month: 'short' });
+    });
+
+    // Summary badge
+    const totalOnTime = onTimeData.reduce((a, b) => a + b, 0);
+    const totalArrears = arrearsData.reduce((a, b) => a + b, 0);
+    const totalCol = totalOnTime + totalArrears;
+    const totalExp = expectedData.reduce((a, b) => a + b, 0);
+    const avgRate = rateData.length > 0 ? Math.round(rateData.reduce((a, b) => a + b, 0) / rateData.length) : 0;
+    if (summaryEl) {
+      summaryEl.textContent = `Collected: ₹${totalCol.toLocaleString('en-IN')} of ₹${totalExp.toLocaleString('en-IN')} · Avg: ${avgRate}%`;
+    }
+
+    // Destroy previous chart instance
+    if (feeTrendChart) { feeTrendChart.destroy(); feeTrendChart = null; }
+
+    const ctx = canvas.getContext('2d');
+
+    feeTrendChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'On-Time (₹)',
+            data: onTimeData,
+            backgroundColor: '#2D6A4F',
+            borderRadius: { topLeft: 4, topRight: 4 },
+            stack: 'collections',
+            order: 2
+          },
+          {
+            label: 'Arrears Recovered (₹)',
+            data: arrearsData,
+            backgroundColor: '#b45309',
+            borderRadius: { topLeft: 4, topRight: 4 },
+            stack: 'collections',
+            order: 3
+          },
+          {
+            type: 'line',
+            label: 'Expected (₹)',
+            data: expectedData,
+            borderColor: '#94a3b8',
+            borderWidth: 2,
+            borderDash: [6, 4],
+            backgroundColor: 'transparent',
+            pointBackgroundColor: '#94a3b8',
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            tension: 0.3,
+            yAxisID: 'y',
+            order: 1
+          },
+          {
+            type: 'line',
+            label: 'Collection Rate (%)',
+            data: rateData,
+            borderColor: '#7c3aed',
+            borderWidth: 2,
+            backgroundColor: 'transparent',
+            pointBackgroundColor: '#7c3aed',
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            pointStyle: 'rectRot',
+            tension: 0.3,
+            yAxisID: 'y1',
+            order: 0
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { usePointStyle: true, padding: 16, font: { size: 11 }, boxWidth: 12 }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            titleFont: { size: 12, weight: '600' },
+            bodyFont: { size: 11 },
+            padding: 12,
+            cornerRadius: 8,
+            callbacks: {
+              label: function (ctx) {
+                if (ctx.dataset.yAxisID === 'y1') return ` ${ctx.dataset.label}: ${ctx.parsed.y}%`;
+                return ` ${ctx.dataset.label}: ₹${ctx.parsed.y.toLocaleString('en-IN')}`;
+              },
+              afterBody: function (items) {
+                const idx = items[0].dataIndex;
+                const total = onTimeData[idx] + arrearsData[idx];
+                const exp = expectedData[idx];
+                const gap = Math.max(0, exp - total);
+                if (gap > 0) return [`  ──────────`, `  Shortfall: ₹${gap.toLocaleString('en-IN')}`];
+                return [];
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { font: { size: 11 } }
+          },
+          y: {
+            beginAtZero: true,
+            position: 'left',
+            title: { display: true, text: 'Amount (₹)', font: { size: 11 } },
+            ticks: {
+              font: { size: 10 },
+              callback: v => '₹' + v.toLocaleString('en-IN')
+            },
+            grid: { color: 'rgba(0,0,0,0.06)' }
+          },
+          y1: {
+            beginAtZero: true,
+            max: 100,
+            position: 'right',
+            title: { display: true, text: 'Rate (%)', font: { size: 11 } },
+            ticks: { font: { size: 10 }, callback: v => v + '%' },
+            grid: { drawOnChartArea: false }
+          }
+        }
+      }
+    });
   }
 
   function renderFeeMatrix() {
@@ -1369,7 +1796,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusFilter = feeStatusFilter ? feeStatusFilter.value : 'all';
     const nameFilter = feeNameFilter ? feeNameFilter.value.toLowerCase().trim() : '';
 
-    let students = cachedStudents.filter(s => s.status === 'approved');
+    let students = cachedStudents.filter(s => s.status === 'approved' && isEnrolledForMonth(s.doj, feeCurrentMonth));
 
     // Apply Filters (Name, Batch, Status)
     students = students.filter(s => {
@@ -1383,7 +1810,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (statusFilter !== 'all') {
         const fee = parseInt(s.monthly_fee) || 0;
-        const paid = cachedFeePayments.filter(p => p.student_id === s.id).reduce((sum, p) => sum + (p.amount || 0), 0);
+        const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
         let status = 'unpaid';
         if (paid >= fee && fee > 0) status = 'paid';
         else if (paid > 0) status = 'partial';
@@ -1414,7 +1841,7 @@ document.addEventListener('DOMContentLoaded', () => {
     students.forEach(s => {
       const fee = parseInt(s.monthly_fee) || 0;
       totalExpected += fee;
-      const paid = cachedFeePayments.filter(p => p.student_id === s.id).reduce((sum, p) => sum + (p.amount || 0), 0);
+      const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
       totalCollected += paid;
       if (paid >= fee && fee > 0) paidCount++;
     });
@@ -1446,9 +1873,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       batch.forEach(s => {
         const fee = parseInt(s.monthly_fee) || 0;
-        const payments = cachedFeePayments.filter(p => p.student_id === s.id);
-        const paid = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+        const curPayments = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeCurrentMonth);
+        const paid = curPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
         const remaining = Math.max(0, fee - paid);
+        const arrears = calcArrears(s, feeCurrentMonth);
+        const totalOutstanding = remaining + arrears;
 
         let statusBadge, statusClass;
         if (fee === 0) { statusBadge = 'No Fee Set'; statusClass = 'pending'; }
@@ -1456,8 +1885,8 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (paid > 0) { statusBadge = '⚠️ Partial'; statusClass = 'pending'; }
         else { statusBadge = 'Unpaid'; statusClass = 'rejected'; }
 
-        const showRecord = fee > 0 && paid < fee;
-        const showUndo = payments.length > 0;
+        const showRecord = fee > 0 && (paid < fee || arrears > 0);
+        const showUndo = curPayments.length > 0;
 
         let relation = 'child';
         if (s.gender === 'Male') relation = 'son';
@@ -1467,11 +1896,18 @@ document.addEventListener('DOMContentLoaded', () => {
           parentSubtext = ` <span style="font-size: 0.8rem; font-weight: 500; color: var(--admin-muted);">(${relation} of ${s.father_name})</span>`;
         }
 
+        // Arrears subtext
+        let arrearsLine = '';
+        if (arrears > 0) {
+          arrearsLine = `<p style="font-size: 0.75rem; margin: 0; color: #b45309;">⚠ ₹${arrears.toLocaleString('en-IN')} overdue from past months · <strong style="color: #dc2626;">Total due: ₹${totalOutstanding.toLocaleString('en-IN')}</strong></p>`;
+        }
+
         feed.innerHTML += `
         <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
           <div class="activity-detail" style="flex: 1; min-width: 180px;">
             <h4 style="margin-bottom: 0.25rem;">${s.student_name}${parentSubtext}</h4>
-            <p style="font-size: 0.8rem; margin-bottom: 0.25rem;">₹${paid.toLocaleString('en-IN')} / ₹${fee.toLocaleString('en-IN')}${remaining > 0 && paid > 0 ? ` · <span style="color:#dc2626;">₹${remaining.toLocaleString('en-IN')} due</span>` : ''}</p>
+            <p style="font-size: 0.8rem; margin-bottom: 0.15rem;">₹${paid.toLocaleString('en-IN')} / ₹${fee.toLocaleString('en-IN')}${remaining > 0 && paid > 0 ? ` · <span style="color:#dc2626;">₹${remaining.toLocaleString('en-IN')} due</span>` : ''}</p>
+            ${arrearsLine}
           </div>
           <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
             <span class="badge ${statusClass}" style="font-size: 0.75rem;">${statusBadge}</span>
@@ -1506,10 +1942,87 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ─── Payment Modal ─────────
+  // ─── Payment Modal (Smart Split Multi-Month) ─────────
+  // Generate a list of YYYY-MM strings: 6 months back → 5 months forward from a given month
+  function generateMonthOptions(centerMonth) {
+    const [cy, cm] = centerMonth.split('-').map(Number);
+    const options = [];
+    for (let i = -6; i <= 5; i++) {
+      const d = new Date(cy, cm - 1 + i, 15);
+      const ym = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      options.push(ym);
+    }
+    return options;
+  }
+
+  // Given a month range and total amount, compute per-month split (oldest first)
+  function computeSplit(fromMonth, toMonth, totalAmount, monthlyFee) {
+    const months = [];
+    const [fy, fm] = fromMonth.split('-').map(Number);
+    const [ty, tm] = toMonth.split('-').map(Number);
+    let cur = new Date(fy, fm - 1, 15);
+    const end = new Date(ty, tm - 1, 15);
+    while (cur <= end) {
+      months.push(cur.getFullYear() + '-' + String(cur.getMonth() + 1).padStart(2, '0'));
+      cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 15);
+    }
+    // Fill oldest month first
+    let remaining = totalAmount;
+    const result = months.map(m => {
+      const alloc = Math.min(remaining, monthlyFee);
+      remaining -= alloc;
+      return { month: m, amount: Math.max(0, alloc) };
+    });
+    // If there's leftover (overpayment), add it to the last month
+    if (remaining > 0 && result.length > 0) {
+      result[result.length - 1].amount += remaining;
+    }
+    return result.filter(r => r.amount > 0);
+  }
+
+  // Render the live breakdown preview
+  function updateSplitPreview() {
+    const preview = document.getElementById('pay-split-preview');
+    const fromEl = document.getElementById('pay-month-from');
+    const toEl = document.getElementById('pay-month-to');
+    const amountEl = document.getElementById('pay-amount');
+    if (!preview || !fromEl || !toEl || !amountEl) return;
+
+    const from = fromEl.value;
+    const to = toEl.value;
+    const amount = parseInt(amountEl.value) || 0;
+    const fee = parseInt(document.getElementById('pay-student-id').dataset.fee) || 0;
+
+    if (!from || !to || amount <= 0) { preview.style.display = 'none'; return; }
+    if (to < from) { preview.style.display = 'none'; return; }
+
+    // Single month → no need for breakdown
+    if (from === to) { preview.style.display = 'none'; return; }
+
+    const split = computeSplit(from, to, amount, fee);
+    if (split.length <= 1) { preview.style.display = 'none'; return; }
+
+    let html = '<div style="font-weight: 600; margin-bottom: 0.4rem; color: var(--admin-text);">Per-Month Breakdown</div>';
+    split.forEach(s => {
+      const label = feeMonthLabel(s.month);
+      const isFull = fee > 0 && s.amount >= fee;
+      const color = isFull ? '#2e7d32' : '#b45309';
+      const tag = isFull ? '✓ Full' : 'Partial';
+      html += `<div style="display: flex; justify-content: space-between; padding: 0.2rem 0; border-bottom: 1px solid var(--admin-border);">
+        <span>${label}</span>
+        <span style="font-weight: 600;">₹${s.amount.toLocaleString('en-IN')} <span style="font-size: 0.72rem; color: ${color}; font-weight: 500;">${tag}</span></span>
+      </div>`;
+    });
+    preview.innerHTML = html;
+    preview.style.display = 'block';
+  }
+
   function openPaymentModal(studentId, name, fee, paid) {
     const remaining = Math.max(0, fee - paid);
-    document.getElementById('pay-student-id').value = studentId;
+    const sidEl = document.getElementById('pay-student-id');
+    sidEl.value = studentId;
+    sidEl.dataset.fee = fee; // store for split calculations
+
     document.getElementById('pay-month').value = feeCurrentMonth;
     document.getElementById('pay-student-name').textContent = name;
     document.getElementById('pay-month-label').textContent = feeMonthLabel(feeCurrentMonth);
@@ -1518,21 +2031,44 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('pay-remaining').textContent = '₹' + remaining.toLocaleString('en-IN');
     document.getElementById('pay-amount').value = remaining;
 
+    // Populate month selectors
+    const months = generateMonthOptions(feeCurrentMonth);
+    const fromEl = document.getElementById('pay-month-from');
+    const toEl = document.getElementById('pay-month-to');
+    [fromEl, toEl].forEach(sel => {
+      sel.innerHTML = months.map(m =>
+        `<option value="${m}" ${m === feeCurrentMonth ? 'selected' : ''}>${feeMonthLabel(m)}</option>`
+      ).join('');
+    });
+
+    // Set today's date
     const d = new Date();
     document.getElementById('pay-date').value = String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
 
     document.getElementById('pay-notes').value = '';
     document.getElementById('pay-status-msg').style.display = 'none';
+    document.getElementById('pay-split-preview').style.display = 'none';
     document.getElementById('modal-record-payment').showModal();
+
+    // Trigger initial preview
+    updateSplitPreview();
   }
+
+  // Wire live preview updates
+  const payFromEl = document.getElementById('pay-month-from');
+  const payToEl = document.getElementById('pay-month-to');
+  const payAmountEl = document.getElementById('pay-amount');
+  if (payFromEl) payFromEl.addEventListener('change', updateSplitPreview);
+  if (payToEl) payToEl.addEventListener('change', updateSplitPreview);
+  if (payAmountEl) payAmountEl.addEventListener('input', updateSplitPreview);
 
   // Auto-format DD/MM/YYYY logic
   const payDateInput = document.getElementById('pay-date');
   if (payDateInput) {
     payDateInput.addEventListener('input', function (e) {
-      if (e.inputType === 'deleteContentBackward') return; // Allow natural backspace
-      let v = this.value.replace(/\D/g, ''); // Strip non-digits
-      if (v.length > 8) v = v.substring(0, 8); // Max 8 digits
+      if (e.inputType === 'deleteContentBackward') return;
+      let v = this.value.replace(/\D/g, '');
+      if (v.length > 8) v = v.substring(0, 8);
 
       if (v.length >= 5) {
         this.value = `${v.substring(0, 2)}/${v.substring(2, 4)}/${v.substring(4)}`;
@@ -1552,8 +2088,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const btn = document.getElementById('btn-pay-submit');
 
       const studentId = document.getElementById('pay-student-id').value;
-      const month = document.getElementById('pay-month').value;
-      const amount = parseInt(document.getElementById('pay-amount').value);
+      const fee = parseInt(document.getElementById('pay-student-id').dataset.fee) || 0;
+      const fromMonth = document.getElementById('pay-month-from').value;
+      const toMonth = document.getElementById('pay-month-to').value;
+      const totalAmount = parseInt(document.getElementById('pay-amount').value);
+
+      // Validate month range
+      if (toMonth < fromMonth) {
+        statusMsg.textContent = '"To" month cannot be before "From" month.';
+        statusMsg.className = 'status-msg error';
+        statusMsg.style.display = 'block';
+        return;
+      }
 
       // Parse DD/MM/YYYY back to YYYY-MM-DD for Supabase
       const rawDate = document.getElementById('pay-date').value;
@@ -1568,7 +2114,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const notes = document.getElementById('pay-notes').value.trim();
 
-      if (!amount || amount <= 0) {
+      if (!totalAmount || totalAmount <= 0) {
         statusMsg.textContent = 'Please enter a valid amount.';
         statusMsg.className = 'status-msg error';
         statusMsg.style.display = 'block';
@@ -1579,22 +2125,31 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.disabled = true;
 
       try {
-        // Get admin email
         let adminEmail = 'admin';
         const { data: { session } } = await window._supabase.auth.getSession();
         if (session?.user?.email) adminEmail = session.user.email;
 
-        const { error } = await window._supabase.from('fee_payments').insert([{
+        // Compute split and create one record per month
+        const split = computeSplit(fromMonth, toMonth, totalAmount, fee);
+        const isSingleMonth = split.length === 1;
+        const payload = split.map(s => ({
           student_id: studentId,
-          month,
-          amount,
+          month: s.month,
+          amount: s.amount,
           paid_on: paidOn,
           recorded_by: adminEmail,
-          notes: notes || null
-        }]);
+          notes: isSingleMonth
+            ? (notes || null)
+            : (notes ? `${notes} (split: ${feeMonthLabel(fromMonth)} → ${feeMonthLabel(toMonth)})` : `Split payment: ${feeMonthLabel(fromMonth)} → ${feeMonthLabel(toMonth)}`)
+        }));
+
+        const { error } = await window._supabase.from('fee_payments').insert(payload);
         if (error) throw error;
 
-        statusMsg.textContent = 'Payment recorded successfully!';
+        const msg = isSingleMonth
+          ? 'Payment recorded successfully!'
+          : `₹${totalAmount.toLocaleString('en-IN')} split across ${split.length} months successfully!`;
+        statusMsg.textContent = msg;
         statusMsg.className = 'status-msg success';
         statusMsg.style.display = 'block';
 
@@ -1618,7 +2173,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function undoLastPayment(studentId, name) {
     if (!confirm(`Undo the last payment for ${name} in ${feeMonthLabel(feeCurrentMonth)}?`)) return;
     try {
-      const payments = cachedFeePayments.filter(p => p.student_id === studentId).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      const payments = cachedFeePayments.filter(p => p.student_id === studentId && p.month === feeCurrentMonth).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
       if (!payments.length) return;
       const { error } = await window._supabase.from('fee_payments').delete().eq('id', payments[0].id);
       if (error) throw error;
@@ -1686,7 +2241,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function getFeeExportData() {
     const batchFilter = feeBatchFilter ? feeBatchFilter.value : 'all';
-    let students = cachedStudents.filter(s => s.status === 'approved');
+    let students = cachedStudents.filter(s => s.status === 'approved' && isEnrolledForMonth(s.doj, feeCurrentMonth));
     if (batchFilter !== 'all') {
       if (batchFilter === 'unassigned') {
         students = students.filter(s => !s.batch || s.batch === '' || s.batch === 'null' || s.batch === 'undefined');
@@ -1696,7 +2251,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     let rows = students.map(s => {
       const fee = parseInt(s.monthly_fee) || 0;
-      const paid = cachedFeePayments.filter(p => p.student_id === s.id).reduce((sum, p) => sum + (p.amount || 0), 0);
+      const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
       const remaining = Math.max(0, fee - paid);
       let status = fee === 0 ? 'No Fee' : paid >= fee ? 'Paid' : paid > 0 ? 'Partial' : 'Unpaid';
       return { Name: s.student_name, Batch: s.batch || '', Course: s.course_applying || '', 'Expected (₹)': fee, 'Paid (₹)': paid, 'Remaining (₹)': remaining, Status: status };

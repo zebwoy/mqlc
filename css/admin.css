@@ -1212,6 +1212,15 @@ body:has(dialog.admin-modal[open])>*:not(dialog) {
     align-items: stretch !important;
   }
 
+  /* Fix for misaligned, squished, and transparent dropdowns on mobile */
+  .export-container .card {
+    max-width: none !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    left: 0 !important;
+    right: auto !important;
+  }
+
   .modal-container {
     width: 95vw !important;
     padding: 1.5rem !important;

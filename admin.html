@@ -737,6 +737,19 @@
               </div>
             </div>
 
+            <!-- Fee Payment Status -->
+            <div class="card chart-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="margin: 0;">Fee Status</h3>
+                <select id="fee-status-month"
+                  style="padding: 0.3rem 0.6rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.8rem; background: #fff; cursor: pointer;">
+                </select>
+              </div>
+              <div class="chart-container" style="position: relative; height: 280px; width: 100%;">
+                <canvas id="chart-fee-status"></canvas>
+              </div>
+            </div>
+
             <!-- School Class Distribution -->
             <div class="card chart-card" style="grid-column: span 2;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
@@ -760,6 +773,23 @@
               </div>
               <div class="chart-container" style="position: relative; height: 320px; width: 100%;">
                 <canvas id="chart-age"></canvas>
+              </div>
+            </div>
+
+            <!-- Fee Revenue Analytics (Annual) -->
+            <div class="card chart-card" style="grid-column: span 2;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+                <h3 style="margin: 0;">Fee Revenue Analytics</h3>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <select id="fee-chart-year"
+                    style="padding: 0.3rem 0.6rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.8rem; background: #fff; cursor: pointer;">
+                  </select>
+                  <span id="fee-chart-summary"
+                    style="font-size: 0.75rem; background: var(--admin-bg); padding: 2px 10px; border-radius: 4px; font-weight: 600; color: var(--admin-muted);">Loading...</span>
+                </div>
+              </div>
+              <div class="chart-container" style="position: relative; height: 340px; width: 100%;">
+                <canvas id="chart-fee-trend"></canvas>
               </div>
             </div>
 
@@ -1117,9 +1147,24 @@
         <input type="hidden" id="pay-student-id">
         <input type="hidden" id="pay-month">
 
+        <!-- Month Range -->
         <div class="modal-field">
-          <label class="modal-label">Amount (₹)</label>
+          <label class="modal-label">Months Covered</label>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <select id="pay-month-from" class="modal-input" style="flex: 1;"></select>
+            <span style="color: var(--admin-muted); font-weight: 600;">→</span>
+            <select id="pay-month-to" class="modal-input" style="flex: 1;"></select>
+          </div>
+        </div>
+
+        <div class="modal-field">
+          <label class="modal-label">Total Amount (₹)</label>
           <input type="number" id="pay-amount" required min="1" class="modal-input lg">
+        </div>
+
+        <!-- Live Breakdown Preview -->
+        <div id="pay-split-preview"
+          style="display: none; background: var(--admin-bg); border-radius: 8px; padding: 0.6rem 0.8rem; margin-bottom: 1rem; font-size: 0.82rem;">
         </div>
 
         <div class="modal-field">
@@ -1130,7 +1175,7 @@
 
         <div class="modal-field">
           <label class="modal-label">Notes <span class="optional">(optional)</span></label>
-          <input type="text" id="pay-notes" placeholder="e.g. Remaining ₹200 with next month" class="modal-input">
+          <input type="text" id="pay-notes" placeholder="e.g. Combined payment for 2 months" class="modal-input">
         </div>
 
         <div id="pay-status-msg" class="status-msg" style="margin-bottom: 1rem;"></div>
