@@ -625,6 +625,7 @@
                   <option value="paid">Paid</option>
                   <option value="partial">Partial</option>
                   <option value="unpaid">Unpaid</option>
+                  <option value="exempt">Exempt</option>
                 </select>
                 <div style="height: 20px; width: 1px; background: var(--admin-border); margin: 0 0.25rem;"></div>
                 <input type="file" id="fee-import-file" accept=".xlsx, .xls, .csv" style="display: none;">
@@ -927,48 +928,91 @@
         <header class="content-header">
           <div>
             <h2>Namaz Jamat Timings</h2>
-            <p>Update congregational prayer timings. Time automatically formats on the homepage.</p>
+            <p>Update congregational prayer timings. Changes reflect instantly on the public homepage.</p>
           </div>
         </header>
 
-        <div class="card">
-          <form id="jamat-form" class="multi-grid-form">
-            <div class="form-section">
-              <h4>Update Timings (24-Hour Format)</h4>
-              <div class="grid-2">
-                <div class="input-group">
-                  <label>Fajr</label>
-                  <input type="time" name="namaz_fajr" id="cfg-fajr" required>
-                </div>
-                <div class="input-group">
-                  <label>Zuhr</label>
-                  <input type="time" name="namaz_zuhr" id="cfg-zuhr" required>
-                </div>
-                <div class="input-group">
-                  <label>Asr</label>
-                  <input type="time" name="namaz_asr" id="cfg-asr" required>
-                </div>
-                <div class="input-group">
-                  <label>Maghrib (being automatically handled by API)</label>
-                  <input disabled style="background-color: lightgray;" type="time" name="namaz_maghrib" id="cfg-maghrib"
-                    required>
-                </div>
-                <div class="input-group">
-                  <label>Isha</label>
-                  <input type="time" name="namaz_isha" id="cfg-isha" required>
-                </div>
+        <form id="jamat-form">
+          <div class="jamat-admin-grid">
+            <!-- Fajr -->
+            <div class="jamat-admin-card">
+              <div class="jamat-admin-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M12 3v1m0 16v1m-9-9h1m16 0h1m-2.636-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707.707"/>
+                  <circle cx="12" cy="12" r="4"/>
+                </svg>
               </div>
+              <span class="jamat-admin-name">Fajr</span>
+              <span class="jamat-admin-period">Dawn</span>
+              <input type="time" name="namaz_fajr" id="cfg-fajr" required class="jamat-admin-input">
             </div>
 
-            <div id="jamat-status" class="status-msg"></div>
-
-            <div class="form-actions">
-              <button type="submit" id="btn-submit-jamat" class="btn-primary">
-                Save Timings
-              </button>
+            <!-- Zuhr -->
+            <div class="jamat-admin-card">
+              <div class="jamat-admin-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <circle cx="12" cy="12" r="5"/>
+                  <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                  <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+              </div>
+              <span class="jamat-admin-name">Zuhr</span>
+              <span class="jamat-admin-period">Midday</span>
+              <input type="time" name="namaz_zuhr" id="cfg-zuhr" required class="jamat-admin-input">
             </div>
-          </form>
-        </div>
+
+            <!-- Asr -->
+            <div class="jamat-admin-card">
+              <div class="jamat-admin-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <circle cx="12" cy="12" r="5"/>
+                  <path d="M12 1v2m0 18v2m-8.66-3.34l1.41-1.41M19.24 4.76l1.41-1.41M1 12h2m18 0h2M4.34 4.34l1.41 1.41m12.49 12.49l1.41 1.41"/>
+                </svg>
+              </div>
+              <span class="jamat-admin-name">Asr</span>
+              <span class="jamat-admin-period">Afternoon</span>
+              <input type="time" name="namaz_asr" id="cfg-asr" required class="jamat-admin-input">
+            </div>
+
+            <!-- Maghrib -->
+            <div class="jamat-admin-card jamat-card-auto">
+              <div class="jamat-admin-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+              </div>
+              <span class="jamat-admin-name">Maghrib</span>
+              <span class="jamat-admin-period">Sunset</span>
+              <input type="time" name="namaz_maghrib" id="cfg-maghrib" disabled class="jamat-admin-input">
+              <span class="jamat-auto-badge">⚡ API Synced</span>
+            </div>
+
+            <!-- Isha -->
+            <div class="jamat-admin-card">
+              <div class="jamat-admin-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                  <circle cx="8" cy="8" r="0.5" fill="currentColor"/>
+                  <circle cx="15" cy="14" r="0.5" fill="currentColor"/>
+                  <circle cx="10" cy="16" r="0.5" fill="currentColor"/>
+                </svg>
+              </div>
+              <span class="jamat-admin-name">Isha</span>
+              <span class="jamat-admin-period">Night</span>
+              <input type="time" name="namaz_isha" id="cfg-isha" required class="jamat-admin-input">
+            </div>
+          </div>
+
+          <div id="jamat-status" class="status-msg"></div>
+
+          <div class="form-actions" style="margin-top: 1.5rem;">
+            <button type="submit" id="btn-submit-jamat" class="btn-primary">
+              Save Timings
+            </button>
+          </div>
+        </form>
       </section>
 
       <!-- ──────────────────────────────────────────────────────────
@@ -1169,8 +1213,24 @@
 
         <div class="modal-field">
           <label class="modal-label">Date</label>
-          <input type="text" id="pay-date" placeholder="DD/MM/YYYY" maxlength="10" inputmode="numeric" required
-            class="modal-input">
+          <input type="hidden" id="pay-date">
+          <div class="inline-datepicker" id="pay-datepicker">
+            <button type="button" class="datepicker-trigger" id="pay-date-trigger">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span id="pay-date-display">Select date</span>
+            </button>
+            <div class="datepicker-dropdown" id="pay-date-dropdown" style="display:none;">
+              <div class="datepicker-nav">
+                <button type="button" id="dp-prev-month">‹</button>
+                <span id="dp-month-label"></span>
+                <button type="button" id="dp-next-month">›</button>
+              </div>
+              <div class="datepicker-grid" id="dp-grid"></div>
+              <div class="datepicker-footer">
+                <button type="button" id="dp-today-btn" class="dp-quick-btn">Today</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="modal-field">
@@ -1239,6 +1299,40 @@
           <button type="submit" id="btn-setfee-submit" class="btn-primary">Assign Fee</button>
           <button type="button" onclick="document.getElementById('modal-set-fee').close()"
             class="btn-secondary">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Exempt Student Modal -->
+  <dialog id="modal-exempt" class="admin-modal" style="max-width: 420px;">
+    <div class="modal-header">
+      <h3>Exempt Student</h3>
+      <button onclick="document.getElementById('modal-exempt').close()" class="modal-close-btn">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-context-card">
+        <div class="modal-context-row">
+          <span class="modal-context-name" id="exempt-student-name">Student Name</span>
+          <span class="modal-context-sub" id="exempt-month-label">Month</span>
+        </div>
+      </div>
+      <form id="form-exempt">
+        <input type="hidden" id="exempt-student-id">
+        <div class="modal-field">
+          <label class="modal-label">Reason</label>
+          <select id="exempt-reason" class="modal-input" style="padding: 0.5rem 0.75rem;">
+            <option value="On leave">On leave</option>
+            <option value="Medical">Medical</option>
+            <option value="Family emergency">Family emergency</option>
+            <option value="Travel">Travel</option>
+            <option value="Ramadan break">Ramadan break</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="submit" id="btn-exempt-submit" class="btn-primary">Confirm Exemption</button>
+          <button type="button" onclick="document.getElementById('modal-exempt').close()" class="btn-secondary">Cancel</button>
         </div>
       </form>
     </div>

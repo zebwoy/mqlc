@@ -970,6 +970,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!canvas || !monthSelect) return;
       const month = monthSelect.value;
 
+      // Ensure exemptions are loaded (may not be if analytics loaded before fee tracker)
+      if (!cachedFeeExemptions.length && window._supabase) {
+        try {
+          const { data: ex } = await window._supabase.from('fee_exemptions').select('*');
+          cachedFeeExemptions = ex || [];
+        } catch (_) { /* table may not exist yet */ }
+      }
+
       try {
         const { data: pmts } = await window._supabase
           .from('fee_payments').select('student_id, amount').eq('month', month);
@@ -981,16 +989,14 @@ document.addEventListener('DOMContentLoaded', () => {
         let totalExpected = 0, totalCollected = 0;
         let paidCount = 0, partialCount = 0, unpaidCount = 0;
         students.forEach(s => {
-          if (!isEnrolledForMonth(s.doj, month)) return;
-          const fee = parseInt(s.monthly_fee) || 0;
-          totalExpected += fee;
+          const expFee = getExpectedFee(s, month);
+          if (expFee === 0) return; // skip exempt, unenrolled, or no-fee students
+          totalExpected += expFee;
           const paid = paidMap[s.id] || 0;
-          totalCollected += Math.min(paid, fee);
-          if (fee > 0) {
-            if (paid >= fee) paidCount++;
-            else if (paid > 0) partialCount++;
-            else unpaidCount++;
-          }
+          totalCollected += Math.min(paid, expFee);
+          if (paid >= expFee) paidCount++;
+          else if (paid > 0) partialCount++;
+          else unpaidCount++;
         });
         const totalPending = Math.max(0, totalExpected - totalCollected);
         const totalStudents = paidCount + partialCount + unpaidCount;
@@ -1432,6 +1438,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return now.toISOString().substring(0, 7);
   })();
   let cachedFeePayments = [];
+  let cachedFeeExemptions = [];
   let feeTrendChart = null;
 
   function feeMonthLabel(ym) {
@@ -1451,22 +1458,71 @@ document.addEventListener('DOMContentLoaded', () => {
   // Arrears floor — ignore all months before this
   const ARREARS_START = '2026-04';
 
+  // Check if a student is exempted for a given month
+  function isExemptForMonth(studentId, month) {
+    return cachedFeeExemptions.some(e => e.student_id === studentId && e.month === month);
+  }
+
+  // Get the exemption record for a student in a given month (or null)
+  function getExemption(studentId, month) {
+    return cachedFeeExemptions.find(e => e.student_id === studentId && e.month === month) || null;
+  }
+
+  // Slab-based pro-rata expected fee for a student in a given month
+  // Handles: enrollment check, exemption check, joining-month carry-forward
+  // Slabs: DOJ day 1-10 → full fee that month
+  //        DOJ day 11-20 → ₹0 that month, next month = fee + half (carry-forward)
+  //        DOJ day 21+   → ₹0 that month, next month = normal fee
+  function getExpectedFee(student, month) {
+    const fee = parseInt(student.monthly_fee) || 0;
+    if (fee === 0) return 0;
+    if (!isEnrolledForMonth(student.doj, month)) return 0;
+    if (isExemptForMonth(student.id, month)) return 0;
+
+    if (student.doj) {
+      const dojMonth = student.doj.substring(0, 7);
+      const day = parseInt(student.doj.substring(8, 10)) || 1;
+
+      // Joining month: only charge if joined on or before 10th
+      if (dojMonth === month) {
+        if (day > 10) return 0;
+      }
+
+      // Month after joining: carry forward half fee if joined 11th-20th
+      if (day > 10 && day <= 20) {
+        const [dy, dm] = dojMonth.split('-').map(Number);
+        const nd = new Date(dy, dm, 15); // next month (dm is 1-based → Date treats as 0-based+1 = next)
+        const nextMonth = nd.getFullYear() + '-' + String(nd.getMonth() + 1).padStart(2, '0');
+        if (month === nextMonth) {
+          return fee + Math.round(fee / 2); // e.g. ₹300 + ₹150 = ₹450
+        }
+      }
+    }
+    return fee;
+  }
+
   // Calculate outstanding from prior months (arrears)
   function calcArrears(student, currentFeeMonth) {
     const fee = parseInt(student.monthly_fee) || 0;
     if (fee === 0) return 0;
-    if (currentFeeMonth <= ARREARS_START) return 0; // no prior months to check
+    if (currentFeeMonth <= ARREARS_START) return 0;
 
     // Effective start: max of DOJ month and ARREARS_START
     const dojMonth = student.doj ? student.doj.substring(0, 7) : ARREARS_START;
     const effectiveStart = dojMonth > ARREARS_START ? dojMonth : ARREARS_START;
     if (currentFeeMonth <= effectiveStart) return 0;
 
-    // Count eligible months from effectiveStart up to (but not including) currentFeeMonth
+    // Iterate month-by-month to respect pro-rata and exemptions
     const [sy, sm] = effectiveStart.split('-').map(Number);
     const [cy, cm] = currentFeeMonth.split('-').map(Number);
-    const numMonths = (cy - sy) * 12 + (cm - sm);
-    const totalExpected = fee * numMonths;
+    let totalExpected = 0;
+    let cur = new Date(sy, sm - 1, 15);
+    const end = new Date(cy, cm - 1, 15);
+    while (cur < end) {
+      const ym = cur.getFullYear() + '-' + String(cur.getMonth() + 1).padStart(2, '0');
+      totalExpected += getExpectedFee(student, ym);
+      cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 15);
+    }
 
     // Sum all payments for those prior months
     const totalPaid = cachedFeePayments
@@ -1535,6 +1591,14 @@ document.addEventListener('DOMContentLoaded', () => {
         .gte('month', ARREARS_START);
       if (error) throw error;
       cachedFeePayments = payments || [];
+
+      // Fetch exemptions
+      try {
+        const { data: exemptions } = await window._supabase
+          .from('fee_exemptions').select('*');
+        cachedFeeExemptions = exemptions || [];
+      } catch (_) { cachedFeeExemptions = []; /* table may not exist yet */ }
+
       renderFeeMatrix();
     } catch (err) {
       console.error('Fee tracker error:', err);
@@ -1584,6 +1648,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Use cachedStudents (already loaded by analytics)
     const approved = (cachedStudents || []).filter(s => s.status === 'approved');
 
+    // Ensure exemptions are loaded
+    if (!cachedFeeExemptions.length && window._supabase) {
+      try {
+        const { data: ex } = await window._supabase.from('fee_exemptions').select('*');
+        cachedFeeExemptions = ex || [];
+      } catch (_) { /* table may not exist yet */ }
+    }
+
     // Generate months for the year — up to current month or latest data month, whichever is later
     const now = new Date();
     let maxMonth = (year === now.getFullYear()) ? now.getMonth() + 1 : 12;
@@ -1613,12 +1685,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const rateData = [];
 
     activeMonths.forEach(month => {
-      // Expected: sum of monthly_fee for enrolled students
+      // Expected: sum of pro-rata expected fees for enrolled, non-exempt students
       let exp = 0;
       approved.forEach(s => {
-        if (isEnrolledForMonth(s.doj, month)) {
-          exp += parseInt(s.monthly_fee) || 0;
-        }
+        exp += getExpectedFee(s, month);
       });
 
       // All payments tagged to this month
@@ -1809,10 +1879,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
       if (statusFilter !== 'all') {
-        const fee = parseInt(s.monthly_fee) || 0;
+        if (statusFilter === 'exempt') {
+          return isExemptForMonth(s.id, feeCurrentMonth);
+        }
+        if (isExemptForMonth(s.id, feeCurrentMonth)) return false;
+        const expFee = getExpectedFee(s, feeCurrentMonth);
+        if (expFee === 0) return false; // N/A students don't belong in any payment status filter
         const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
         let status = 'unpaid';
-        if (paid >= fee && fee > 0) status = 'paid';
+        if (paid >= expFee) status = 'paid';
         else if (paid > 0) status = 'partial';
         if (status !== statusFilter) return false;
       }
@@ -1836,14 +1911,16 @@ document.addEventListener('DOMContentLoaded', () => {
       groups[k].push(s);
     });
 
-    // KPI calculations
-    let totalExpected = 0, totalCollected = 0, paidCount = 0;
+    // KPI calculations (exclude exempt students)
+    let totalExpected = 0, totalCollected = 0, paidCount = 0, activeStudentCount = 0;
     students.forEach(s => {
-      const fee = parseInt(s.monthly_fee) || 0;
-      totalExpected += fee;
+      if (isExemptForMonth(s.id, feeCurrentMonth)) return; // skip exempt
+      const expFee = getExpectedFee(s, feeCurrentMonth);
+      totalExpected += expFee;
       const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
       totalCollected += paid;
-      if (paid >= fee && fee > 0) paidCount++;
+      if (paid >= expFee && expFee > 0) paidCount++;
+      if (expFee > 0) activeStudentCount++;
     });
     const totalPending = Math.max(0, totalExpected - totalCollected);
     const rate = totalExpected > 0 ? Math.round((totalCollected / totalExpected) * 100) : 0;
@@ -1853,7 +1930,7 @@ document.addEventListener('DOMContentLoaded', () => {
     el('fee-kpi-collected', '₹' + totalCollected.toLocaleString('en-IN'));
     el('fee-kpi-pending', '₹' + totalPending.toLocaleString('en-IN'));
     el('fee-kpi-rate', rate + '%');
-    el('fee-kpi-rate-sub', `${paidCount} of ${students.length} students fully paid`);
+    el('fee-kpi-rate-sub', `${paidCount} of ${activeStudentCount} students fully paid`);
     if (countEl) countEl.textContent = `Showing ${students.length} student${students.length === 1 ? '' : 's'}`;
 
     // Render matrix
@@ -1872,20 +1949,25 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>`;
 
       batch.forEach(s => {
-        const fee = parseInt(s.monthly_fee) || 0;
+        const rawFee = parseInt(s.monthly_fee) || 0;
+        const expFee = getExpectedFee(s, feeCurrentMonth);
+        const exempt = isExemptForMonth(s.id, feeCurrentMonth);
+        const exemptRec = exempt ? getExemption(s.id, feeCurrentMonth) : null;
         const curPayments = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeCurrentMonth);
         const paid = curPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
-        const remaining = Math.max(0, fee - paid);
+        const remaining = Math.max(0, expFee - paid);
         const arrears = calcArrears(s, feeCurrentMonth);
         const totalOutstanding = remaining + arrears;
 
         let statusBadge, statusClass;
-        if (fee === 0) { statusBadge = 'No Fee Set'; statusClass = 'pending'; }
-        else if (paid >= fee) { statusBadge = '✅ Paid'; statusClass = 'approved'; }
+        if (exempt) { statusBadge = '⏸ Exempt'; statusClass = 'pending'; }
+        else if (rawFee === 0) { statusBadge = 'No Fee Set'; statusClass = 'pending'; }
+        else if (expFee === 0) { statusBadge = 'N/A'; statusClass = 'pending'; }
+        else if (paid >= expFee) { statusBadge = '✅ Paid'; statusClass = 'approved'; }
         else if (paid > 0) { statusBadge = '⚠️ Partial'; statusClass = 'pending'; }
         else { statusBadge = 'Unpaid'; statusClass = 'rejected'; }
 
-        const showRecord = fee > 0 && (paid < fee || arrears > 0);
+        const showRecord = !exempt && expFee > 0 && (paid < expFee || arrears > 0);
         const showUndo = curPayments.length > 0;
 
         let relation = 'child';
@@ -1896,24 +1978,51 @@ document.addEventListener('DOMContentLoaded', () => {
           parentSubtext = ` <span style="font-size: 0.8rem; font-weight: 500; color: var(--admin-muted);">(${relation} of ${s.father_name})</span>`;
         }
 
+        // Pro-rata indicator
+        let proRataNote = '';
+        if (!exempt && rawFee > 0 && expFee > 0 && expFee > rawFee) {
+          const carryAmt = expFee - rawFee;
+          proRataNote = `<span style="font-size: 0.7rem; background: #ede9fe; color: #7c3aed; padding: 1px 6px; border-radius: 4px; margin-left: 4px;">incl. ₹${carryAmt.toLocaleString('en-IN')} carry‑forward</span>`;
+        }
+
+        // Fee line
+        let feeLine = '';
+        if (exempt) {
+          feeLine = `<p style="font-size: 0.8rem; margin-bottom: 0.15rem; color: var(--admin-muted); font-style: italic;">Exempt — ${exemptRec ? exemptRec.reason : 'No reason'}</p>`;
+        } else if (expFee > 0) {
+          feeLine = `<p style="font-size: 0.8rem; margin-bottom: 0.15rem;">₹${paid.toLocaleString('en-IN')} / ₹${expFee.toLocaleString('en-IN')}${proRataNote}${remaining > 0 && paid > 0 ? ` · <span style="color:#dc2626;">₹${remaining.toLocaleString('en-IN')} due</span>` : ''}</p>`;
+        } else if (rawFee === 0) {
+          feeLine = `<p style="font-size: 0.8rem; margin-bottom: 0.15rem; color: var(--admin-muted);">No fee assigned</p>`;
+        } else {
+          feeLine = `<p style="font-size: 0.8rem; margin-bottom: 0.15rem; color: var(--admin-muted);">Not applicable this month</p>`;
+        }
+
         // Arrears subtext
         let arrearsLine = '';
-        if (arrears > 0) {
+        if (!exempt && arrears > 0) {
           arrearsLine = `<p style="font-size: 0.75rem; margin: 0; color: #b45309;">⚠ ₹${arrears.toLocaleString('en-IN')} overdue from past months · <strong style="color: #dc2626;">Total due: ₹${totalOutstanding.toLocaleString('en-IN')}</strong></p>`;
         }
 
+        // Exempt toggle button
+        const exemptBtn = rawFee > 0
+          ? (exempt
+            ? `<button class="btn-fee-unexempt btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px; color: #7c3aed;" title="Remove exemption">▶ Restore</button>`
+            : `<button class="btn-fee-exempt btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="Exempt this month">⏸ Exempt</button>`)
+          : '';
+
         feed.innerHTML += `
-        <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+        <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;${exempt ? ' opacity: 0.65;' : ''}">
           <div class="activity-detail" style="flex: 1; min-width: 180px;">
             <h4 style="margin-bottom: 0.25rem;">${s.student_name}${parentSubtext}</h4>
-            <p style="font-size: 0.8rem; margin-bottom: 0.15rem;">₹${paid.toLocaleString('en-IN')} / ₹${fee.toLocaleString('en-IN')}${remaining > 0 && paid > 0 ? ` · <span style="color:#dc2626;">₹${remaining.toLocaleString('en-IN')} due</span>` : ''}</p>
+            ${feeLine}
             ${arrearsLine}
           </div>
           <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
             <span class="badge ${statusClass}" style="font-size: 0.75rem;">${statusBadge}</span>
-            ${fee === 0 ? `<button class="btn-set-fee" data-sid="${s.id}" data-name="${s.student_name}">✎ Set Fee</button>` : ''}
-            ${showRecord ? `<button class="btn-fee-record btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" data-fee="${fee}" data-paid="${paid}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;">💰 Record</button>` : ''}
+            ${rawFee === 0 ? `<button class="btn-set-fee" data-sid="${s.id}" data-name="${s.student_name}">✎ Set Fee</button>` : ''}
+            ${showRecord ? `<button class="btn-fee-record btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" data-fee="${expFee}" data-rawfee="${rawFee}" data-paid="${paid}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;">💰 Record</button>` : ''}
             ${showUndo ? `<button class="btn-fee-undo btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="Undo last payment">⟳</button>` : ''}
+            ${exemptBtn}
             <button class="btn-fee-history btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="View history">📋</button>
           </div>
         </div>
@@ -1932,13 +2041,35 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
     feed.querySelectorAll('.btn-fee-record').forEach(btn => {
-      btn.addEventListener('click', () => openPaymentModal(btn.dataset.sid, btn.dataset.name, parseInt(btn.dataset.fee), parseInt(btn.dataset.paid)));
+      btn.addEventListener('click', () => openPaymentModal(btn.dataset.sid, btn.dataset.name, parseInt(btn.dataset.fee), parseInt(btn.dataset.paid), parseInt(btn.dataset.rawfee || btn.dataset.fee)));
     });
     feed.querySelectorAll('.btn-fee-undo').forEach(btn => {
       btn.addEventListener('click', () => undoLastPayment(btn.dataset.sid, btn.dataset.name));
     });
     feed.querySelectorAll('.btn-fee-history').forEach(btn => {
       btn.addEventListener('click', () => toggleHistory(btn.dataset.sid));
+    });
+
+    // Exempt / Un-exempt buttons
+    feed.querySelectorAll('.btn-fee-exempt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.getElementById('exempt-student-id').value = btn.dataset.sid;
+        document.getElementById('exempt-student-name').textContent = btn.dataset.name;
+        document.getElementById('exempt-month-label').textContent = feeMonthLabel(feeCurrentMonth);
+        document.getElementById('exempt-reason').value = 'On leave';
+        document.getElementById('modal-exempt').showModal();
+      });
+    });
+    feed.querySelectorAll('.btn-fee-unexempt').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm(`Remove exemption for ${btn.dataset.name} for ${feeMonthLabel(feeCurrentMonth)}?`)) return;
+        try {
+          await window._supabase.from('fee_exemptions')
+            .delete().eq('student_id', btn.dataset.sid).eq('month', feeCurrentMonth);
+          cachedFeeExemptions = cachedFeeExemptions.filter(e => !(e.student_id === btn.dataset.sid && e.month === feeCurrentMonth));
+          renderFeeMatrix();
+        } catch (err) { console.error('Un-exempt error:', err); alert('Failed to remove exemption.'); }
+      });
     });
   }
 
@@ -2017,11 +2148,13 @@ document.addEventListener('DOMContentLoaded', () => {
     preview.style.display = 'block';
   }
 
-  function openPaymentModal(studentId, name, fee, paid) {
+  function openPaymentModal(studentId, name, fee, paid, rawFee) {
+    rawFee = rawFee || fee;
     const remaining = Math.max(0, fee - paid);
     const sidEl = document.getElementById('pay-student-id');
     sidEl.value = studentId;
-    sidEl.dataset.fee = fee; // store for split calculations
+    sidEl.dataset.fee = rawFee; // use raw monthly fee for split calculations
+    sidEl.dataset.expfee = fee; // store expected fee for display
 
     document.getElementById('pay-month').value = feeCurrentMonth;
     document.getElementById('pay-student-name').textContent = name;
@@ -2041,9 +2174,9 @@ document.addEventListener('DOMContentLoaded', () => {
       ).join('');
     });
 
-    // Set today's date
-    const d = new Date();
-    document.getElementById('pay-date').value = String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + d.getFullYear();
+    // Set today's date using inline datepicker
+    dpSelectDate(new Date());
+    document.getElementById('pay-date-dropdown').style.display = 'none';
 
     document.getElementById('pay-notes').value = '';
     document.getElementById('pay-status-msg').style.display = 'none';
@@ -2054,6 +2187,90 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSplitPreview();
   }
 
+  // ─── Inline Date Picker Engine ───
+  let dpViewYear, dpViewMonth; // currently viewed month in the calendar
+
+  function dpFormatDisplay(date) {
+    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function dpToISO(date) {
+    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+  }
+
+  function dpSelectDate(date) {
+    document.getElementById('pay-date').value = dpToISO(date);
+    document.getElementById('pay-date-display').textContent = dpFormatDisplay(date);
+    dpViewYear = date.getFullYear();
+    dpViewMonth = date.getMonth();
+    dpRenderGrid();
+  }
+
+  function dpRenderGrid() {
+    const grid = document.getElementById('dp-grid');
+    const label = document.getElementById('dp-month-label');
+    if (!grid || !label) return;
+
+    const viewDate = new Date(dpViewYear, dpViewMonth, 1);
+    label.textContent = viewDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
+    const today = new Date();
+    const selectedVal = document.getElementById('pay-date').value;
+    const firstDay = viewDate.getDay(); // 0=Sun
+    const daysInMonth = new Date(dpViewYear, dpViewMonth + 1, 0).getDate();
+
+    let html = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+      .map(d => `<span class="dp-head">${d}</span>`).join('');
+
+    // Blanks for days before 1st
+    for (let i = 0; i < firstDay; i++) {
+      html += `<span></span>`;
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const iso = dpToISO(new Date(dpViewYear, dpViewMonth, day));
+      const isToday = (day === today.getDate() && dpViewMonth === today.getMonth() && dpViewYear === today.getFullYear());
+      const isSelected = (iso === selectedVal);
+      const cls = `dp-day${isToday ? ' dp-today' : ''}${isSelected ? ' dp-selected' : ''}`;
+      html += `<button type="button" class="${cls}" data-date="${iso}">${day}</button>`;
+    }
+
+    grid.innerHTML = html;
+
+    // Bind day clicks
+    grid.querySelectorAll('.dp-day').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const [y, m, d] = btn.dataset.date.split('-').map(Number);
+        dpSelectDate(new Date(y, m - 1, d));
+        document.getElementById('pay-date-dropdown').style.display = 'none';
+      });
+    });
+  }
+
+  // Toggle calendar
+  const dpTrigger = document.getElementById('pay-date-trigger');
+  const dpDropdown = document.getElementById('pay-date-dropdown');
+  if (dpTrigger && dpDropdown) {
+    dpTrigger.addEventListener('click', () => {
+      const isOpen = dpDropdown.style.display !== 'none';
+      dpDropdown.style.display = isOpen ? 'none' : 'block';
+      if (!isOpen) dpRenderGrid();
+    });
+  }
+
+  // Prev / Next month
+  const dpPrev = document.getElementById('dp-prev-month');
+  const dpNext = document.getElementById('dp-next-month');
+  if (dpPrev) dpPrev.addEventListener('click', () => { dpViewMonth--; if (dpViewMonth < 0) { dpViewMonth = 11; dpViewYear--; } dpRenderGrid(); });
+  if (dpNext) dpNext.addEventListener('click', () => { dpViewMonth++; if (dpViewMonth > 11) { dpViewMonth = 0; dpViewYear++; } dpRenderGrid(); });
+
+  // Today button
+  const dpTodayBtn = document.getElementById('dp-today-btn');
+  if (dpTodayBtn) dpTodayBtn.addEventListener('click', () => {
+    dpSelectDate(new Date());
+    document.getElementById('pay-date-dropdown').style.display = 'none';
+  });
+
   // Wire live preview updates
   const payFromEl = document.getElementById('pay-month-from');
   const payToEl = document.getElementById('pay-month-to');
@@ -2061,25 +2278,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (payFromEl) payFromEl.addEventListener('change', updateSplitPreview);
   if (payToEl) payToEl.addEventListener('change', updateSplitPreview);
   if (payAmountEl) payAmountEl.addEventListener('input', updateSplitPreview);
-
-  // Auto-format DD/MM/YYYY logic
-  const payDateInput = document.getElementById('pay-date');
-  if (payDateInput) {
-    payDateInput.addEventListener('input', function (e) {
-      if (e.inputType === 'deleteContentBackward') return;
-      let v = this.value.replace(/\D/g, '');
-      if (v.length > 8) v = v.substring(0, 8);
-
-      if (v.length >= 5) {
-        this.value = `${v.substring(0, 2)}/${v.substring(2, 4)}/${v.substring(4)}`;
-      } else if (v.length >= 3) {
-        this.value = `${v.substring(0, 2)}/${v.substring(2)}`;
-      } else {
-        this.value = v;
-      }
-    });
-  }
-
   const payForm = document.getElementById('form-record-payment');
   if (payForm) {
     payForm.addEventListener('submit', async (e) => {
@@ -2101,16 +2299,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Parse DD/MM/YYYY back to YYYY-MM-DD for Supabase
-      const rawDate = document.getElementById('pay-date').value;
-      const dateParts = rawDate.split('/');
-      if (dateParts.length !== 3 || dateParts[2].length !== 4) {
-        statusMsg.textContent = 'Please enter a valid complete date (DD/MM/YYYY).';
+      // Native date input already returns YYYY-MM-DD
+      const paidOn = document.getElementById('pay-date').value;
+      if (!paidOn) {
+        statusMsg.textContent = 'Please select a valid date.';
         statusMsg.className = 'status-msg error';
         statusMsg.style.display = 'block';
         return;
       }
-      const paidOn = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
 
       const notes = document.getElementById('pay-notes').value.trim();
 
@@ -2250,15 +2446,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     let rows = students.map(s => {
-      const fee = parseInt(s.monthly_fee) || 0;
+      const expFee = getExpectedFee(s, feeCurrentMonth);
+      const exempt = isExemptForMonth(s.id, feeCurrentMonth);
       const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
-      const remaining = Math.max(0, fee - paid);
-      let status = fee === 0 ? 'No Fee' : paid >= fee ? 'Paid' : paid > 0 ? 'Partial' : 'Unpaid';
-      return { Name: s.student_name, Batch: s.batch || '', Course: s.course_applying || '', 'Expected (₹)': fee, 'Paid (₹)': paid, 'Remaining (₹)': remaining, Status: status };
+      const remaining = Math.max(0, expFee - paid);
+      let status = exempt ? 'Exempt' : expFee === 0 ? 'No Fee' : paid >= expFee ? 'Paid' : paid > 0 ? 'Partial' : 'Unpaid';
+      return { Name: s.student_name, Batch: s.batch || '', Course: s.course_applying || '', 'Expected (₹)': expFee, 'Paid (₹)': paid, 'Remaining (₹)': remaining, Status: status };
     });
 
     // Smart Sort: Group by status priority, then alphabetical by name
-    const statusPriority = { 'Unpaid': 1, 'Partial': 2, 'Paid': 3, 'No Fee': 4 };
+    const statusPriority = { 'Unpaid': 1, 'Partial': 2, 'Paid': 3, 'Exempt': 4, 'No Fee': 5 };
     rows.sort((a, b) => {
       const pA = statusPriority[a.Status] || 99;
       const pB = statusPriority[b.Status] || 99;
@@ -2497,12 +2694,19 @@ document.addEventListener('DOMContentLoaded', () => {
             if (item.setting_key === 'monthly_fee') document.getElementById('cfg-fee').value = item.setting_value;
             if (item.setting_key === 'active_programs') document.getElementById('cfg-programs').value = item.setting_value;
 
-            // Jamat fields
-            if (item.setting_key === 'namaz_fajr') { const e = document.getElementById('cfg-fajr'); if (e) e.value = item.setting_value; }
-            if (item.setting_key === 'namaz_zuhr') { const e = document.getElementById('cfg-zuhr'); if (e) e.value = item.setting_value; }
-            if (item.setting_key === 'namaz_asr') { const e = document.getElementById('cfg-asr'); if (e) e.value = item.setting_value; }
-            if (item.setting_key === 'namaz_maghrib') { const e = document.getElementById('cfg-maghrib'); if (e) e.value = item.setting_value; }
-            if (item.setting_key === 'namaz_isha') { const e = document.getElementById('cfg-isha'); if (e) e.value = item.setting_value; }
+            // Jamat fields — normalize to HH:MM for type="time" inputs
+            const jamatFields = { namaz_fajr: 'cfg-fajr', namaz_zuhr: 'cfg-zuhr', namaz_asr: 'cfg-asr', namaz_maghrib: 'cfg-maghrib', namaz_isha: 'cfg-isha' };
+            if (jamatFields[item.setting_key]) {
+              const el = document.getElementById(jamatFields[item.setting_key]);
+              if (el && item.setting_value) {
+                // Strip AM/PM and whitespace, then zero-pad
+                const clean = item.setting_value.replace(/[a-zA-Z\s]/g, '').trim();
+                const parts = clean.split(':');
+                if (parts.length === 2) {
+                  el.value = parts[0].padStart(2, '0') + ':' + parts[1].padStart(2, '0');
+                }
+              }
+            }
           });
         }
       } catch (err) {
@@ -2773,6 +2977,41 @@ document.addEventListener('DOMContentLoaded', () => {
         statusMsg.style.display = 'block';
       } finally {
         btn.textContent = 'Assign Fee';
+        btn.disabled = false;
+      }
+    });
+  }
+
+  // ─── Exemption Form Handler ─────────
+  const exemptForm = document.getElementById('form-exempt');
+  if (exemptForm) {
+    exemptForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const studentId = document.getElementById('exempt-student-id').value;
+      const reason = document.getElementById('exempt-reason').value;
+      const btn = document.getElementById('btn-exempt-submit');
+
+      btn.textContent = 'Saving...';
+      btn.disabled = true;
+
+      try {
+        const { data, error } = await window._supabase
+          .from('fee_exemptions')
+          .upsert({ student_id: studentId, month: feeCurrentMonth, reason: reason }, { onConflict: 'student_id,month' })
+          .select();
+        if (error) throw error;
+
+        // Update local cache
+        cachedFeeExemptions = cachedFeeExemptions.filter(e => !(e.student_id === studentId && e.month === feeCurrentMonth));
+        if (data && data.length) cachedFeeExemptions.push(data[0]);
+
+        document.getElementById('modal-exempt').close();
+        renderFeeMatrix();
+      } catch (err) {
+        console.error('Exemption error:', err);
+        alert('Failed to create exemption: ' + err.message);
+      } finally {
+        btn.textContent = 'Confirm Exemption';
         btn.disabled = false;
       }
     });

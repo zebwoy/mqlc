@@ -112,29 +112,56 @@ The project was brought from a blank canvas to a fully operational administrativ
 
 - [x] **Partial Payment Support:** The system supports multiple partial payments per student per month (e.g., ₹300 now, ₹200 later), aggregating them via `SUM(amount)` to determine the overall fee status.
 
-- [x] **Real-Time Fee KPI Dashboard:** Four live KPI cards — Expected, Collected, Pending, and Collection Rate — update instantly based on the selected month and batch filter.
+- [x] **Real-Time Fee KPI Dashboard:** Four live KPI cards — Expected, Collected, Pending, and Collection Rate — update instantly based on the selected month and batch filter. KPIs are pro-rata and exemption-aware.
 
-- [x] **Fee Collection Matrix:** A batch-grouped student list showing paid/partial/unpaid status with color-coded badges (✅ Paid, ⚠️ Partial, ⬜ Unpaid) and remaining balance calculations.
+- [x] **Fee Collection Matrix:** A batch-grouped student list showing paid/partial/unpaid/exempt status with color-coded badges (✅ Paid, ⚠️ Partial, ⬜ Unpaid, ⏸ Exempt, N/A) and remaining balance calculations.
 
-- [x] **Record Payment Modal:** A context-aware dialog pre-populated with the student's expected fee, already-paid total, and remaining balance — the admin just confirms and submits.
+- [x] **Smart Split Multi-Month Payments:** A payment recording modal with "From Month → To Month" selectors. Amounts are automatically allocated oldest-month-first with a live per-month breakdown preview, enabling parents to make bulk payments that get split across multiple months.
 
+- [x] **Record Payment Modal:** A context-aware dialog pre-populated with the student's expected fee (including carry-forward), already-paid total, and remaining balance — the admin just confirms and submits.
+
+- [x] **Custom Inline Date Picker:** A hand-built calendar widget rendered inside the modal DOM to bypass Chromium's `<dialog>` stacking-context bug that traps native date pickers behind the backdrop. Features a 7-column month grid with prev/next navigation, today highlight, selected-day fill, and a one-click "Today" shortcut.
 - [x] **Payment Undo & Audit Trail:** Each payment entry records the admin's email and timestamp. The most recent payment can be undone with a single click and confirmation dialog.
 
 - [x] **Student Fee History:** An inline expandable accordion per student showing all payment records across all months — amount, date, and notes — fetched directly from the database.
 
+- [x] **DOJ-Based Enrollment Filtering:** The fee matrix only shows students whose Date of Joining falls on or before the selected fee month, preventing ghost billing for students who hadn't yet enrolled.
+
+- [x] **Intelligent Arrears Tracking:** From April 2026 onward, unpaid balances from prior months are automatically aggregated and displayed as arrears ("⚠ ₹X overdue from past months · Total due: ₹Y"). The arrears engine iterates month-by-month and respects pro-rata and exemption rules.
+
+- [x] **Redefined Collection Window:** The billing cycle is formally defined as the 25th of month M to the 24th of month M+1. Payments within this window are classified as "On-Time"; payments after are flagged as "Arrears Recovered."
+
+### 🧮 Fee Intelligence
+
+- [x] **Slab-Based Pro-Rata with Carry-Forward:** Mid-month joiners are automatically prorated using a clean 3-slab rule — DOJ day 1–10: full fee, day 11–20: half fee carried forward to the next month, day 21+: starts fresh next month. No manual calculations required; derives entirely from the DOJ date.
+
+- [x] **Carry-Forward Visualization:** When a student's first real billing month includes a pro-rata carry-forward, the student card displays the combined expected amount with a purple `incl. ₹X carry‑forward` badge for full transparency.
+
+- [x] **Monthly Fee Exemptions:** Admins can exempt any student from a specific month's fee via a reason-tagged dialog (On leave, Medical, Family emergency, Travel, Ramadan break, Other). Exempt students are visually dimmed, excluded from all KPI/arrears/chart calculations, and can be restored with a single click.
+
+- [x] **Exemption-Aware Ecosystem:** Exemptions propagate seamlessly across the entire system — KPIs, arrears engine, Fee Status pie chart, Revenue Analytics chart, export data, and all status filters — via the centralized `getExpectedFee()` function.
+
+- [x] **Smart Status Filters:** The fee status dropdown (Paid / Partial / Unpaid / Exempt) intelligently excludes N/A students (no fee obligation) from payment-status filters, showing only students with genuine financial obligations.
+
+- [x] **Data-Driven Month Detection:** Both the Fee Status pie chart dropdown and the Revenue Analytics chart automatically extend their month range based on actual payment data in the database, ensuring dummy or advance entries always appear.
+
 ### 📊 Visual Analytics & Exports
 
-- [x] **Real-Time Chart Dashboard:** Four Chart.js visualizations — Enrollment Growth Timeline (line), Course Distribution (doughnut), Batch Distribution (doughnut), Gender Demographics (pie), and School Class Distribution (bar) — all rendered from live database aggregations.
+- [x] **Real-Time Chart Dashboard:** Six Chart.js visualizations — Enrollment Growth Timeline (line), Course Distribution (doughnut), Batch Distribution (doughnut), Gender Demographics (pie), School Class Distribution (bar), Fee Payment Status (pie), and Fee Revenue Analytics (mixed bar+line) — all rendered from live database aggregations.
 
-- [x] **Professional Excel Exports:** One-click `.xlsx` generation via SheetJS with structured columns for both student data and fee reports, respecting the currently active filters.
+- [x] **Fee Revenue Analytics (Annual Scale):** A dual-axis mixed chart showing monthly stacked bars (On-Time vs. Arrears Recovered), a dashed Expected Revenue line, and a Collection Efficiency % line with diamond markers. Includes a year selector dropdown and a summary badge ("Collected: ₹X of ₹Y · Avg: Z%").
+
+- [x] **Fee Status Pie Chart:** A monetary-focused pie chart visualizing Collected vs. Pending amounts for any selectable month. Features custom on-slice ₹ amount labels and tooltips showing student count/percentage with colored indicators.
+
+- [x] **Professional Excel Exports:** One-click `.xlsx` generation via SheetJS with structured columns for both student data and fee reports, respecting the currently active filters. Fee exports now include "Exempt" as a status category.
 
 - [x] **Institution-Branded PDF/Print:** Print-optimized layouts with the MQLC logo, title, and audit timestamp — hidden from the UI but auto-injected before `window.print()` for professional hardcopy directories.
 
-- [x] **Fee Report Export:** Dedicated export functionality for fee data (separate from student exports) with columns for Expected, Paid, Remaining, and Status — filterable by batch.
+- [x] **Fee Report Export:** Dedicated export functionality for fee data (separate from student exports) with columns for Expected, Paid, Remaining, and Status — filterable by batch and pro-rata/exemption-aware.
 
 ### 🔒 Security & Infrastructure
 
-- [x] **Row-Level Security (RLS):** Supabase RLS policies restrict anonymous access to `otp_pins` (SELECT/UPDATE only) and `quiz_leaderboard` (INSERT/SELECT only), while `fee_payments` is admin-only via authenticated policies.
+- [x] **Row-Level Security (RLS):** Supabase RLS policies restrict anonymous access to `otp_pins` (SELECT/UPDATE only) and `quiz_leaderboard` (INSERT/SELECT only), while `fee_payments` and `fee_exemptions` are admin-only via authenticated policies.
 
 - [x] **Cloudinary Media Pipeline:** Serverless API routes (`/api/get-bulletin`, `/api/get-updates`) fetch resources from Cloudinary using server-side credentials, never exposing API keys to the client.
 
