@@ -2003,12 +2003,12 @@ document.addEventListener('DOMContentLoaded', () => {
           arrearsLine = `<p style="font-size: 0.75rem; margin: 0; color: #b45309;">⚠ ₹${arrears.toLocaleString('en-IN')} overdue from past months · <strong style="color: #dc2626;">Total due: ₹${totalOutstanding.toLocaleString('en-IN')}</strong></p>`;
         }
 
-        // Exempt toggle button
-        const exemptBtn = rawFee > 0
-          ? (exempt
-            ? `<button class="btn-fee-unexempt btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px; color: #7c3aed;" title="Remove exemption">▶ Restore</button>`
-            : `<button class="btn-fee-exempt btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="Exempt this month">⏸ Exempt</button>`)
-          : '';
+        // Exempt toggle button — only show for unpaid students or to restore exemptions
+        const exemptBtn = exempt
+          ? `<button class="btn-fee-unexempt btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px; color: #7c3aed;" title="Remove exemption">▶ Restore</button>`
+          : (rawFee > 0 && paid === 0 && expFee > 0)
+            ? `<button class="btn-fee-exempt btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="Exempt this month">⏸ Exempt</button>`
+            : '';
 
         feed.innerHTML += `
         <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;${exempt ? ' opacity: 0.65;' : ''}">
