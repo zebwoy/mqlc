@@ -100,6 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     stageActive.classList.add('active');
     currentQIndex = 0;
     score = 0;
+    timeBank = 0; // Reset Time Bank on fresh start
     quizStartTime = Date.now();
     renderQuestion(currentQIndex);
   }
@@ -194,7 +195,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (el) {
       if (timeBank > 0) {
         const lang = localStorage.getItem('mqlc_lang') || 'en';
-        el.innerHTML = `<span style="color: var(--gold); opacity: 0.85;">⏱ +${localizeNum(timeBank, lang)}s banked</span>`;
+        const num = localizeNum(timeBank, lang);
+        const textMap = {
+          'en': `⏱ +${num}s banked`,
+          'ur': `⏱ +${num} سیکنڈ جمع کیے گئے`,
+          'mr': `⏱ +${num} सेकंद जमा केले`,
+          'hi': `⏱ +${num} सेकंड जमा किए गए`
+        };
+        el.innerHTML = `<span style="color: var(--gold); opacity: 0.85;">${textMap[lang] || textMap['en']}</span>`;
         el.style.opacity = '1';
       } else {
         el.innerHTML = '';
@@ -580,6 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!isAnswered) {
         const sMap = { 'en': 's', 'ur': ' سیکنڈ', 'mr': 'से', 'hi': 'से' };
         document.getElementById('q-timer').innerHTML = `${localizeNum(timeRemaining, lang)}${sMap[lang] || 's'}`;
+        updateBankIndicator();
       }
     }
 
