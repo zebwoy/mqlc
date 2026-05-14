@@ -315,6 +315,12 @@ h2, h3 {
   letter-spacing: 0.5px;
 }
 
+.timer-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
 #q-timer {
   font-size: 1.2rem;
 }
