@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Read quiz source from sessionStorage (primary) or URL param (fallback)
   const qParam = new URLSearchParams(window.location.search).get('q');
   let rawUrl = sessionStorage.getItem('mqlc_quiz_src');
-  
+
   if (rawUrl) {
     sessionStorage.removeItem('mqlc_quiz_src'); // Clean up after reading
   } else if (qParam) {
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     rawUrl = `https://res.cloudinary.com/dlcowjk3q/raw/upload/home/mqlc/bulletin/${qParam}`;
     // Fallback to appending .json if the public_id from parameter doesn't already have it
     if (!rawUrl.endsWith('.json')) {
-        rawUrl += '.json';
+      rawUrl += '.json';
     }
   } else {
     // Legacy support for '?src='
@@ -19,9 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ─── Numeral Localization Utility ─────────────────────────────
   const NUMERAL_MAP = {
-    'ur': ['۰','۱','۲','۳','۴','۵','۶','۷','۸','۹'],
-    'hi': ['०','१','२','३','४','५','६','७','८','९'],
-    'mr': ['०','१','२','३','४','५','६','७','८','९']
+    'ur': ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'],
+    'hi': ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'],
+    'mr': ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९']
   };
 
   function localizeNum(num, lang) {
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentQIndex = 0;
   let score = 0;
   let timerInterval = null;
-  let timeRemaining = 20;
+  let timeRemaining = 30;
   let isAnswered = false;
   let quizStartTime = 0;
   let timeTaken = 0;
@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const currentLang = localStorage.getItem('mqlc_lang') || 'en';
       let titleText = quizData.topic && quizData.topic[currentLang] ? quizData.topic[currentLang] : "Pop Quiz";
       document.getElementById('inst-topic').innerText = titleText;
-      
+
       document.getElementById('inst-no').innerHTML = quizData.quiz_no ? `Quiz #<bdi>${localizeNum(quizData.quiz_no, currentLang)}</bdi>` : 'Live Quiz';
       document.getElementById('inst-date').innerHTML = `<bdi>${quizData.lecture_date || new Date().toLocaleDateString()}</bdi>`;
 
@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderQuestion(index) {
     // Reset state
     isAnswered = false;
-    timeRemaining = 20;
+    timeRemaining = 30;
 
     // UI state for buttons: Show Skip, Hide Next
     document.getElementById('action-row').style.display = 'flex';
@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const q = questions[index];
     const currentLang = localStorage.getItem('mqlc_lang') || 'en';
-    
+
     const qCounter = document.getElementById('q-counter');
     const qNum = localizeNum(index + 1, currentLang);
     const qTotal = localizeNum(questions.length, currentLang);
@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const lang = localStorage.getItem('mqlc_lang') || 'en';
       timerText.innerHTML = `${localizeNum(timeRemaining, lang)}${sMap[lang] || 's'}`;
 
-      const percentage = (timeRemaining / 20) * 100;
+      const percentage = (timeRemaining / 30) * 100;
       timerBar.style.width = `${percentage}%`;
 
       if (timeRemaining <= 7) {
@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function handleTimeout() {
     lockAllOptions();
-    
+
     const q = questions[currentQIndex];
     const btns = document.querySelectorAll('.q-option');
     btns.forEach(b => {
@@ -280,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const lScore = localizeNum(score, currentLang);
     const lTotal = localizeNum(questions.length, currentLang);
     document.getElementById('final-score-num').innerText = lScore;
-    
+
     const denMap = {
       'en': `out of ${lTotal} correct`,
       'ur': `${lTotal} میں سے درست`,
@@ -420,11 +420,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Obfuscate to preserve privacy: Name from Area
         const displayName = `${row.player_name.trim().split(' ')[0]} ${fromWord} ${row.area}`;
         const isCurrent = (row.player_name === currentPlayerName && row.score === score);
-        
+
         const tr = document.createElement('tr');
         if (isCurrent) tr.classList.add('current-player');
         tr.classList.add(`rank-${rank}`);
-        
+
         const lTimeTaken = row.time_taken ? localizeNum(row.time_taken, currentLang) : '';
         const sLabel = currentLang === 'ur' ? ' سیکنڈ' : 's';
         const tt = row.time_taken ? `<span class="lb-time">(${lTimeTaken}${sLabel})</span>` : '';
@@ -458,7 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         canvas.toBlob(async (blob) => {
           if (!blob) throw new Error("Canvas Blob failed");
-          
+
           if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'leaderboard.png', { type: 'image/png' })] })) {
             const file = new File([blob], 'mqlc_leaderboard.png', { type: 'image/png' });
             await navigator.share({
@@ -499,56 +499,56 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('onLanguageChange', (e) => {
     if (!questions || questions.length === 0) return;
     const lang = e.detail.lang;
-    
+
     // Update Stage 1 (Introduction)
     if (stageStart.classList.contains('active') && quizData) {
-       let titleText = quizData.topic && quizData.topic[lang] ? quizData.topic[lang] : "Pop Quiz";
-       document.getElementById('inst-topic').innerText = titleText;
+      let titleText = quizData.topic && quizData.topic[lang] ? quizData.topic[lang] : "Pop Quiz";
+      document.getElementById('inst-topic').innerText = titleText;
     }
-    
+
     // Update Active Stage (Timer, Question, Mutated Options)
     if (stageActive.classList.contains('active')) {
-       const q = questions[currentQIndex];
-       
-       const qCounter = document.getElementById('q-counter');
-       const qN = localizeNum(currentQIndex + 1, lang);
-       const qT = localizeNum(questions.length, lang);
-       if (lang === 'ur') {
-         qCounter.innerHTML = `سوال ${qN} از ${qT}`;
-       } else if (lang === 'mr') {
-         qCounter.innerHTML = `प्रश्न ${qN} पैकी ${qT}`;
-       } else if (lang === 'hi') {
-         qCounter.innerHTML = `प्रश्न ${qN} / ${qT}`;
-       } else {
-         qCounter.innerHTML = `Question ${qN} of ${qT}`;
-       }
+      const q = questions[currentQIndex];
 
-       document.getElementById('q-text').innerText = (q.question && q.question[lang]) ? q.question[lang] : q.question['en'];
-       
-       const rawOpts = (q.options && q.options[lang]) ? q.options[lang] : q.options['en'];
-       document.querySelectorAll('.q-option').forEach(btn => {
-         const idx = btn.dataset.optIndex;
-         if (idx !== undefined) btn.innerText = rawOpts[idx];
-       });
-       
-       if (!isAnswered) {
-         const sMap = { 'en': 's', 'ur': ' سیکنڈ', 'mr': 'से', 'hi': 'से' };
-         document.getElementById('q-timer').innerHTML = `${localizeNum(timeRemaining, lang)}${sMap[lang] || 's'}`;
-       }
+      const qCounter = document.getElementById('q-counter');
+      const qN = localizeNum(currentQIndex + 1, lang);
+      const qT = localizeNum(questions.length, lang);
+      if (lang === 'ur') {
+        qCounter.innerHTML = `سوال ${qN} از ${qT}`;
+      } else if (lang === 'mr') {
+        qCounter.innerHTML = `प्रश्न ${qN} पैकी ${qT}`;
+      } else if (lang === 'hi') {
+        qCounter.innerHTML = `प्रश्न ${qN} / ${qT}`;
+      } else {
+        qCounter.innerHTML = `Question ${qN} of ${qT}`;
+      }
+
+      document.getElementById('q-text').innerText = (q.question && q.question[lang]) ? q.question[lang] : q.question['en'];
+
+      const rawOpts = (q.options && q.options[lang]) ? q.options[lang] : q.options['en'];
+      document.querySelectorAll('.q-option').forEach(btn => {
+        const idx = btn.dataset.optIndex;
+        if (idx !== undefined) btn.innerText = rawOpts[idx];
+      });
+
+      if (!isAnswered) {
+        const sMap = { 'en': 's', 'ur': ' سیکنڈ', 'mr': 'से', 'hi': 'से' };
+        document.getElementById('q-timer').innerHTML = `${localizeNum(timeRemaining, lang)}${sMap[lang] || 's'}`;
+      }
     }
-    
+
     // Update Stage 3 (Results Strings & Format Mapping)
     if (stageResult.classList.contains('active')) {
-       showResults(); 
-       
-       if (document.getElementById('leaderboard-panel').style.display === 'block') {
-         let titleText = quizData.topic && quizData.topic[lang] ? quizData.topic[lang] : "Quiz Leaderboard";
-         document.getElementById('lb-quiz-title').innerText = titleText;
-         // Retranslate leaderboard!
-         const quizId = quizData.quiz_no ? `Quiz-${quizData.quiz_no}` : 'unknown';
-         const currentPlayerName = document.getElementById('demo-name').value;
-         generateLeaderboard(quizId, currentPlayerName);
-       }
+      showResults();
+
+      if (document.getElementById('leaderboard-panel').style.display === 'block') {
+        let titleText = quizData.topic && quizData.topic[lang] ? quizData.topic[lang] : "Quiz Leaderboard";
+        document.getElementById('lb-quiz-title').innerText = titleText;
+        // Retranslate leaderboard!
+        const quizId = quizData.quiz_no ? `Quiz-${quizData.quiz_no}` : 'unknown';
+        const currentPlayerName = document.getElementById('demo-name').value;
+        generateLeaderboard(quizId, currentPlayerName);
+      }
     }
   });
 
