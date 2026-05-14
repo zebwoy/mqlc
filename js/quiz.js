@@ -44,10 +44,16 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentQIndex = 0;
   let score = 0;
   let timerInterval = null;
-  let timeRemaining = 30;
+  let timeRemaining = 20;
   let isAnswered = false;
   let quizStartTime = 0;
   let timeTaken = 0;
+
+  // ─── Time Bank System ───
+  const BASE_TIME = 20;   // base seconds per question
+  const MAX_TIME = 30;    // hard cap per question
+  let timeBank = 0;       // banked seconds from fast answers
+  let allocatedTime = 20; // actual time given to current question
 
   // Supabase Configuration
   let supabaseClient = null;
@@ -113,7 +119,15 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderQuestion(index) {
     // Reset state
     isAnswered = false;
-    timeRemaining = 30;
+
+    // Time Bank: allocate time for this question
+    allocatedTime = Math.min(BASE_TIME + timeBank, MAX_TIME);
+    const bankUsed = allocatedTime - BASE_TIME; // how much we drew from bank
+    timeBank -= bankUsed;                       // deduct what we used
+    timeRemaining = allocatedTime;
+
+    // Update bank indicator
+    updateBankIndicator();
 
     // UI state for buttons: Show Skip, Hide Next
     document.getElementById('action-row').style.display = 'flex';
@@ -164,6 +178,31 @@ document.addEventListener('DOMContentLoaded', () => {
     startTimer();
   }
 
+  // ─── Bank Indicator UI ───
+  function updateBankIndicator() {
+    let el = document.getElementById('time-bank-indicator');
+    if (!el) {
+      // Create indicator element next to timer if it doesn't exist
+      const timerWrap = document.querySelector('.timer-section');
+      if (timerWrap) {
+        el = document.createElement('div');
+        el.id = 'time-bank-indicator';
+        el.style.cssText = 'text-align:center; font-size:0.75rem; font-weight:600; margin-top:0.25rem; min-height:1.2em; transition: opacity 0.3s;';
+        timerWrap.appendChild(el);
+      }
+    }
+    if (el) {
+      if (timeBank > 0) {
+        const lang = localStorage.getItem('mqlc_lang') || 'en';
+        el.innerHTML = `<span style="color: var(--gold); opacity: 0.85;">⏱ +${localizeNum(timeBank, lang)}s banked</span>`;
+        el.style.opacity = '1';
+      } else {
+        el.innerHTML = '';
+        el.style.opacity = '0';
+      }
+    }
+  }
+
   function startTimer() {
     const sMap = { 'en': 's', 'ur': ' سیکنڈ', 'mr': 'से', 'hi': 'से' };
 
@@ -191,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const lang = localStorage.getItem('mqlc_lang') || 'en';
       timerText.innerHTML = `${localizeNum(timeRemaining, lang)}${sMap[lang] || 's'}`;
 
-      const percentage = (timeRemaining / 30) * 100;
+      const percentage = (timeRemaining / allocatedTime) * 100;
       timerBar.style.width = `${percentage}%`;
 
       if (timeRemaining <= 7) {
@@ -218,17 +257,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function handleTimeout() {
     lockAllOptions();
+    // Timeout: no leftover, nothing banked
 
     const q = questions[currentQIndex];
     const btns = document.querySelectorAll('.q-option');
     btns.forEach(b => {
       if (parseInt(b.dataset.optIndex) === q.answer_index) b.classList.add('correct');
     });
+    updateBankIndicator();
   }
 
   function handleAnswer(selectedIdx, correctIdx, clickedBtn) {
     if (isAnswered) return;
     lockAllOptions();
+
+    // Time Bank: deposit leftover seconds
+    timeBank += timeRemaining;
+    updateBankIndicator();
 
     const btns = document.querySelectorAll('.q-option');
 
@@ -254,10 +299,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Skip Button Logic
+  // Skip Button Logic — skipping forfeits any banked time that was allocated to this question
   document.getElementById('btn-skip').addEventListener('click', () => {
     if (isAnswered) return; // Prevent skip if already answered
     clearInterval(timerInterval);
+    // No leftover banked on skip — the remaining time is forfeited
     currentQIndex++;
     if (currentQIndex < questions.length) {
       renderQuestion(currentQIndex);
