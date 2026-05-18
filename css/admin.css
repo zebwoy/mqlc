@@ -681,7 +681,7 @@ a {
 /* ─── Professional Print Layout ────────────────────────────── */
 @media print {
   @page {
-    size: A4 portrait;
+    size: A4 landscape;
     margin: 1cm;
   }
 

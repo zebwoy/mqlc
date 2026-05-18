@@ -1347,8 +1347,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <th style="${thStyle}">Student Name</th>
               <th style="${thStyle}">Father Name</th>
               <th style="${thStyle}">Course</th>
-              <th style="${thStyle}">Status</th>
-              <th style="${thStyle}">Gender</th>
+              <th style="${thStyle}">Date of Joining</th>
               <th style="${thStyle}">Contact</th>
               <th style="${thStyle}">Aadhar No.</th>
             </tr>
@@ -1358,6 +1357,17 @@ document.addEventListener('DOMContentLoaded', () => {
       students.forEach((s, i) => {
         const bgColor = i % 2 === 0 ? '#fff' : '#f8f9fa';
         const contact = s.contact_father || s.contact_mother || 'N/A';
+        // Format date of joining as dd Mon yyyy
+        let dojFormatted = '';
+        if (s.doj) {
+          const d = new Date(s.doj);
+          if (!isNaN(d)) {
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mon = d.toLocaleString('en-US', { month: 'short' });
+            const yyyy = d.getFullYear();
+            dojFormatted = `${dd} ${mon} ${yyyy}`;
+          }
+        }
         tableHTML += `
             <tr style="background:${bgColor};">
               <td style="${tdStyle}">${i + 1}</td>
@@ -1365,8 +1375,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <td style="${tdStyle}font-weight:600;">${s.student_name || ''}</td>
               <td style="${tdStyle}">${s.father_name || ''}</td>
               <td style="${tdStyle}">${s.course_applying || ''}</td>
-              <td style="${tdStyle}text-transform:capitalize;">${s.status || ''}</td>
-              <td style="${tdStyle}">${s.gender || ''}</td>
+              <td style="${tdStyle}">${dojFormatted || 'N/A'}</td>
               <td style="${tdStyle}">${contact}</td>
               <td style="${tdStyle}">${s.aadhar_no || ''}</td>
             </tr>`;
