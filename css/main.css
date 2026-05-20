@@ -43,9 +43,13 @@
 /* Urdu Base Dynamic Override */
 [lang="ur"] {
   --mb-form-group: 0.8rem;
-  /* Contract margin to account for nastaliq height */
   --mb-title: 1.0rem;
-  /* Contract margin to account for nastaliq height */
+  --lh-body: 2.15;
+  --lh-heading: 1.85;
+  font-size: 94%;
+  /* Nastaliq glyphs are inherently taller — increase line-height and
+     slightly reduce font-size globally to prevent overlap without
+     needing per-element margin/padding adjustments. */
 }
 
 /* ─── Reset ─────────────────────────────────────────────────── */
@@ -166,8 +170,7 @@ p {
 [lang="ur"] li,
 [lang="ur"] div {
   font-family: var(--font-urdu) !important;
-  /* Force override */
-  /* line-height: var(--lh-urdu); Nastaliq balanced bound */
+  line-height: var(--lh-body);
 }
 
 [lang="ur"] h1,
@@ -176,14 +179,26 @@ p {
 [lang="ur"] h4,
 [lang="ur"] .reg-title {
   font-family: var(--font-urdu) !important;
-  line-height: 1.85;
-  /* Refined bounds to prevent severe gaps */
+  line-height: var(--lh-heading);
 }
 
-/* Explicit Exception for Arabic Calligraphy Blocks */
+/* Explicit Exception for Arabic Calligraphy / Quranic Blocks */
+/* Use class="arabic-text" on any element containing Quranic verses
+   or Arabic passages to preserve the Arabic (Amiri) font regardless
+   of the active UI language. */
+.arabic-text,
 [lang="ur"] .hero-ar,
-[lang="ur"] .ayah-playable {
+[lang="ur"] .ayah-playable,
+[lang="ur"] .arabic-text,
+[lang="ur"] .hadith-arabic,
+[lang="hi"] .arabic-text,
+[lang="hi"] .hadith-arabic,
+[lang="mr"] .arabic-text,
+[lang="mr"] .hadith-arabic {
   font-family: var(--font-arabic) !important;
+  direction: rtl;
+  unicode-bidi: embed;
+  line-height: 1.8;
 }
 
 /* Hindi / Marathi (Devanagari Script) */

@@ -822,8 +822,15 @@
 }
 
 @keyframes dlPulse {
-  0%, 100% { box-shadow: 0 4px 14px rgba(45, 106, 79, 0.35); }
-  50% { box-shadow: 0 4px 24px rgba(212, 160, 23, 0.5); }
+
+  0%,
+  100% {
+    box-shadow: 0 4px 14px rgba(45, 106, 79, 0.35);
+  }
+
+  50% {
+    box-shadow: 0 4px 24px rgba(212, 160, 23, 0.5);
+  }
 }
 
 /* Make expandable cards clickable */
@@ -851,7 +858,7 @@
   object-position: top;
   margin-top: 0.5rem;
   background: #f8f9fa;
-  border: 1px solid rgba(0,0,0,0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 /* ─── Responsive ─────────────────────────────────────────────── */
@@ -1639,4 +1646,62 @@
   border-radius: 10px;
   font-weight: 600;
   transition: all 0.3s ease;
+}
+
+/* ─── Urdu (Nastaliq) Component Overrides ────────────────────── */
+/* Nastaliq glyphs are ~40% taller than Latin and have slanted baselines.
+   These overrides increase line-height and padding on components that
+   use hardcoded values, preventing text overlap when Urdu is active. */
+
+/* Program / Course Cards */
+[lang="ur"] .program-card {
+  padding: 2.5rem 2rem 2rem;
+}
+
+[lang="ur"] .program-card p {
+  line-height: 2.2;
+  font-size: 0.88rem;
+}
+
+[lang="ur"] .program-card h3 {
+  line-height: 2;
+  margin-bottom: 0.5rem;
+}
+
+/* Feature / Facilities Cards */
+[lang="ur"] .feature-card {
+  padding: 1.5rem 1rem 1.75rem;
+}
+
+[lang="ur"] .feature-card h4 {
+  line-height: 2.1;
+  font-size: 0.95rem;
+  margin-top: 0.25rem;
+}
+
+/* Section Headers */
+[lang="ur"] .features-header h2,
+[lang="ur"] .programs-header h2 {
+  line-height: 2;
+  padding-bottom: 0.5rem;
+}
+
+/* Bulletin Card Text */
+[lang="ur"] .bulletin-title {
+  line-height: 2;
+}
+
+[lang="ur"] .bulletin-desc {
+  line-height: 2.2;
+}
+
+/* Jamat Timing Cards (Homepage) */
+[lang="ur"] .jamat-name {
+  line-height: 2;
+}
+
+/* Generic paragraph safety net */
+[lang="ur"] .section-label {
+  line-height: 2;
+  letter-spacing: 0.05em;
 }

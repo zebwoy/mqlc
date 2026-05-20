@@ -126,7 +126,7 @@
 }
 
 .hero-ar {
-  font-family: var(--font-arabic);
+  font-family: var(--font-arabic) !important;
   font-size: clamp(1.1rem, 2.5vw, 1.5rem);
   color: rgba(240, 192, 64, 0.85);
   direction: rtl;
