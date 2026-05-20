@@ -1581,7 +1581,7 @@ body:has(dialog.admin-modal[open])>*:not(dialog) {
 /* ─── Jamat Admin Card Grid ─── */
 .jamat-admin-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
 }
 
@@ -1679,22 +1679,10 @@ body:has(dialog.admin-modal[open])>*:not(dialog) {
   margin-top: 0.15rem;
 }
 
-@media (max-width: 768px) {
-  .jamat-admin-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
 @media (max-width: 480px) {
   .jamat-admin-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
-  }
-
-  .jamat-admin-card:last-child:nth-child(odd) {
-    grid-column: 1 / -1;
-    max-width: 55%;
-    justify-self: center;
   }
 
   .jamat-admin-card {

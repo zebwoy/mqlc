@@ -2705,7 +2705,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (item.setting_key === 'active_programs') document.getElementById('cfg-programs').value = item.setting_value;
 
             // Jamat fields — normalize to HH:MM for type="time" inputs
-            const jamatFields = { namaz_fajr: 'cfg-fajr', namaz_zuhr: 'cfg-zuhr', namaz_asr: 'cfg-asr', namaz_maghrib: 'cfg-maghrib', namaz_isha: 'cfg-isha' };
+            const jamatFields = { namaz_fajr: 'cfg-fajr', namaz_zuhr: 'cfg-zuhr', namaz_asr: 'cfg-asr', namaz_maghrib: 'cfg-maghrib', namaz_isha: 'cfg-isha', namaz_jummah: 'cfg-jummah' };
             if (jamatFields[item.setting_key]) {
               const el = document.getElementById(jamatFields[item.setting_key]);
               if (el && item.setting_value) {
@@ -2713,7 +2713,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const clean = item.setting_value.replace(/[a-zA-Z\s]/g, '').trim();
                 const parts = clean.split(':');
                 if (parts.length === 2) {
-                  el.value = parts[0].padStart(2, '0') + ':' + parts[1].padStart(2, '0');
+                  const timeVal = parts[0].padStart(2, '0') + ':' + parts[1].padStart(2, '0');
+                  // Use Flatpickr API if available, otherwise set directly
+                  if (el._flatpickr) {
+                    el._flatpickr.setDate(timeVal, true);
+                  } else {
+                    el.value = timeVal;
+                  }
                 }
               }
             }
@@ -2724,12 +2730,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Call load when either Settings or Jamat tab is clicked
-    const settingsTabBtn = document.querySelector('[data-target="tab-settings"]');
-    if (settingsTabBtn) settingsTabBtn.addEventListener('click', loadSettings);
-
-    const jamatTabBtn = document.querySelector('[data-target="tab-jamat"]');
-    if (jamatTabBtn) jamatTabBtn.addEventListener('click', loadSettings);
+    // Call load when either Settings or Jamat tab is clicked (desktop sidebar + mobile nav)
+    document.querySelectorAll('[data-target="tab-settings"]').forEach(btn =>
+      btn.addEventListener('click', loadSettings)
+    );
+    document.querySelectorAll('[data-target="tab-jamat"]').forEach(btn =>
+      btn.addEventListener('click', loadSettings)
+    );
 
     // Save Data
     settingsForm.addEventListener('submit', async (e) => {
@@ -2791,7 +2798,8 @@ document.addEventListener('DOMContentLoaded', () => {
           { setting_key: 'namaz_zuhr', setting_value: document.getElementById('cfg-zuhr').value },
           { setting_key: 'namaz_asr', setting_value: document.getElementById('cfg-asr').value },
           { setting_key: 'namaz_maghrib', setting_value: document.getElementById('cfg-maghrib').value },
-          { setting_key: 'namaz_isha', setting_value: document.getElementById('cfg-isha').value }
+          { setting_key: 'namaz_isha', setting_value: document.getElementById('cfg-isha').value },
+          { setting_key: 'namaz_jummah', setting_value: document.getElementById('cfg-jummah').value }
         ];
 
         const { error } = await window._supabase.from('site_settings').upsert(payload);
