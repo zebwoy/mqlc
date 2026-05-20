@@ -1578,11 +1578,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // Reset KPI cards to shimmer skeleton while loading
     const shimmer = '<span class="skeleton-value" style="width: 72px;"></span>';
     const el = id => document.getElementById(id);
-    if (el('fee-kpi-expected'))  el('fee-kpi-expected').innerHTML = shimmer;
+    if (el('fee-kpi-expected')) el('fee-kpi-expected').innerHTML = shimmer;
     if (el('fee-kpi-collected')) el('fee-kpi-collected').innerHTML = shimmer;
-    if (el('fee-kpi-pending'))   el('fee-kpi-pending').innerHTML = shimmer;
-    if (el('fee-kpi-rate'))      el('fee-kpi-rate').innerHTML = '<span class="skeleton-value"></span>';
-    if (el('fee-kpi-rate-sub'))  el('fee-kpi-rate-sub').textContent = '';
+    if (el('fee-kpi-pending')) el('fee-kpi-pending').innerHTML = shimmer;
+    if (el('fee-kpi-rate')) el('fee-kpi-rate').innerHTML = '<span class="skeleton-value"></span>';
+    if (el('fee-kpi-rate-sub')) el('fee-kpi-rate-sub').textContent = '';
 
     // Inline loading indicator inside the fee feed
     const feeFeed = document.getElementById('fee-matrix-feed');
@@ -2496,9 +2496,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const btnFeePDF = document.getElementById('btn-fee-export-pdf');
-  if (btnFeePDF) {
-    btnFeePDF.addEventListener('click', () => {
+  // ─── Fee Summary Report (PDF) — All students, grouped by status ───
+  const btnFeePDFSummary = document.getElementById('btn-fee-export-pdf-summary');
+  if (btnFeePDFSummary) {
+    btnFeePDFSummary.addEventListener('click', () => {
       feeExportDropdown.style.display = 'none';
       const rows = getFeeExportData();
       if (!rows.length) return alert('No data to export.');
@@ -2512,7 +2513,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const totalPen = Math.max(0, totalExp - totalCol);
       const colRate = totalExp > 0 ? Math.round((totalCol / totalExp) * 100) : 0;
 
-      let tableHTML = `<h3 style="margin-bottom:0.5rem;">Fee Collection Report — ${feeMonthLabel(feeCurrentMonth)}</h3>`;
+      let tableHTML = `<h3 style="margin-bottom:0.5rem;">Fee Summary Report — ${feeMonthLabel(feeCurrentMonth)}</h3>`;
       tableHTML += `
       <div style="display:flex; justify-content:space-between; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 15px; margin-bottom:1.5rem; font-size:0.85rem;">
         <div><strong>Expected:</strong> ₹${totalExp.toLocaleString('en-IN')}</div>
@@ -2534,6 +2535,194 @@ document.addEventListener('DOMContentLoaded', () => {
         tableHTML += `<tr><td style="padding:6px 8px; border:1px solid #ddd;">${r.Name}</td><td style="padding:6px 8px; border:1px solid #ddd;">${r.Batch}</td><td style="padding:6px 8px; border:1px solid #ddd; text-align:right;">₹${r['Expected (₹)']}</td><td style="padding:6px 8px; border:1px solid #ddd; text-align:right;">₹${r['Paid (₹)']}</td><td style="padding:6px 8px; border:1px solid #ddd; text-align:right;">₹${r['Remaining (₹)']}</td><td style="padding:6px 8px; border:1px solid #ddd;">${r.Status}</td></tr>`;
       });
       tableHTML += '</tbody></table>';
+      if (printTable) printTable.innerHTML = tableHTML;
+      if (printBranding) printBranding.style.display = 'block';
+      if (printTable) printTable.style.display = 'block';
+      window.print();
+      setTimeout(() => {
+        if (printBranding) printBranding.style.display = 'none';
+        if (printTable) printTable.style.display = 'none';
+      }, 500);
+    });
+  }
+
+  // ─── Fee Collection Sheet (PDF) — Teacher's action list, per batch ───
+  const btnFeePDF = document.getElementById('btn-fee-export-pdf');
+  if (btnFeePDF) {
+    btnFeePDF.addEventListener('click', () => {
+      feeExportDropdown.style.display = 'none';
+
+      // ─── Gather student data with arrears ───
+      const batchFilter = feeBatchFilter ? feeBatchFilter.value : 'all';
+      let students = cachedStudents.filter(s => s.status === 'approved' && isEnrolledForMonth(s.doj, feeCurrentMonth));
+      if (batchFilter !== 'all') {
+        if (batchFilter === 'unassigned') {
+          students = students.filter(s => !s.batch || s.batch === '' || s.batch === 'null' || s.batch === 'undefined');
+        } else {
+          students = students.filter(s => s.batch === batchFilter);
+        }
+      }
+      if (!students.length) return alert('No data to export.');
+
+      // Enrich each student with fee calculations
+      const enriched = students.map(s => {
+        const expFee = getExpectedFee(s, feeCurrentMonth);
+        const exempt = isExemptForMonth(s.id, feeCurrentMonth);
+        const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
+        const remaining = Math.max(0, expFee - paid);
+        const arrears = calcArrears(s, feeCurrentMonth);
+        const totalDue = remaining + arrears;
+        let status = exempt ? 'Exempt' : expFee === 0 ? 'No Fee' : paid >= expFee ? 'Paid' : paid > 0 ? 'Partial' : 'Unpaid';
+        return {
+          student: s,
+          expFee, paid, remaining, arrears, totalDue, status,
+          contact: s.contact_father || s.contact_mother || '—'
+        };
+      });
+
+      // Group by batch
+      const groups = {};
+      enriched.forEach(e => {
+        const batch = e.student.batch || 'Unassigned';
+        if (!groups[batch]) groups[batch] = [];
+        groups[batch].push(e);
+      });
+
+      const batchOrder = ['Fajr', 'Zuhr', 'Asr', 'Maghrib', 'Isha'];
+      const orderedBatches = Object.keys(groups).sort((a, b) => {
+        const iA = batchOrder.indexOf(a), iB = batchOrder.indexOf(b);
+        return (iA === -1 ? 999 : iA) - (iB === -1 ? 999 : iB);
+      });
+
+      // ─── Styles ───
+      const thStyle = 'padding:6px 8px;text-align:left;border:1px solid #ccc;font-size:8pt;font-weight:700;background:#2D6A4F;color:#fff;';
+      const thStyleR = thStyle + 'text-align:right;';
+      const thStyleC = thStyle + 'text-align:center;';
+      const tdStyle = 'padding:5px 8px;border:1px solid #ddd;font-size:8pt;';
+      const tdStyleR = tdStyle + 'text-align:right;';
+      const tdStyleC = tdStyle + 'text-align:center;';
+
+      // ─── Build HTML ───
+      let tableHTML = '';
+
+      orderedBatches.forEach((batchName, bIdx) => {
+        const batchStudents = groups[batchName];
+        const pending = batchStudents.filter(e => e.status === 'Unpaid' || e.status === 'Partial');
+        const paidList = batchStudents.filter(e => e.status === 'Paid');
+        const exemptList = batchStudents.filter(e => e.status === 'Exempt' || e.status === 'No Fee');
+        const totalToCollect = pending.reduce((s, e) => s + e.totalDue, 0);
+        const pageBreak = bIdx > 0 ? 'page-break-before:always;' : '';
+
+        // Sort pending: Unpaid first, then Partial, then alphabetical
+        pending.sort((a, b) => {
+          if (a.status !== b.status) return a.status === 'Unpaid' ? -1 : 1;
+          return (a.student.student_name || '').localeCompare(b.student.student_name || '');
+        });
+
+        // Batch header
+        tableHTML += `
+          <div style="${pageBreak}margin-bottom:1.5rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#2D6A4F;color:#fff;padding:8px 14px;border-radius:6px;margin-bottom:3px;font-family:'Inter',sans-serif;">
+              <div style="font-size:11pt;font-weight:700;">${batchName} Batch — Fee Collection Sheet</div>
+              <div style="font-size:9pt;">${feeMonthLabel(feeCurrentMonth)}</div>
+            </div>
+            <div style="display:flex;gap:1.5rem;background:#f0fdf4;padding:6px 14px;border-radius:0 0 6px 6px;border:1px solid #d1fae5;font-size:8pt;font-family:'Inter',sans-serif;margin-bottom:10px;">
+              <span><strong>Total Students:</strong> ${batchStudents.length}</span>
+              <span><strong>Pending:</strong> <span style="color:#dc2626;font-weight:700;">${pending.length}</span></span>
+              <span><strong>Paid:</strong> <span style="color:#16a34a;font-weight:700;">${paidList.length}</span></span>
+              <span><strong>To Collect:</strong> <span style="color:#dc2626;font-weight:700;">₹${totalToCollect.toLocaleString('en-IN')}</span></span>
+            </div>`;
+
+        // Main table — Pending students
+        if (pending.length > 0) {
+          tableHTML += `
+            <table style="width:100%;border-collapse:collapse;font-family:'Inter',sans-serif;margin-bottom:8px;">
+              <thead>
+                <tr>
+                  <th style="${thStyleC}width:4%;">#</th>
+                  <th style="${thStyle}width:18%;">Student Name</th>
+                  <th style="${thStyle}width:14%;">Father's Name</th>
+                  <th style="${thStyle}width:12%;">Contact</th>
+                  <th style="${thStyleR}width:10%;">This Month</th>
+                  <th style="${thStyleR}width:10%;">Arrears</th>
+                  <th style="${thStyleR}width:11%;">Total Due</th>
+                  <th style="${thStyleC}width:8%;">Status</th>
+                  <th style="${thStyleC}width:6%;">☐</th>
+                </tr>
+              </thead>
+              <tbody>`;
+
+          pending.forEach((e, i) => {
+            const bg = i % 2 === 0 ? '#fff' : '#fafafa';
+            const statusColor = e.status === 'Unpaid' ? '#dc2626' : '#d97706';
+            const statusBg = e.status === 'Unpaid' ? '#fef2f2' : '#fffbeb';
+            tableHTML += `
+                <tr style="background:${bg};">
+                  <td style="${tdStyleC}">${i + 1}</td>
+                  <td style="${tdStyle}font-weight:600;">${e.student.student_name || ''}</td>
+                  <td style="${tdStyle}">${e.student.father_name || '—'}</td>
+                  <td style="${tdStyle}">${e.contact}</td>
+                  <td style="${tdStyleR}">₹${e.remaining.toLocaleString('en-IN')}</td>
+                  <td style="${tdStyleR}${e.arrears > 0 ? 'color:#dc2626;font-weight:600;' : ''}">${e.arrears > 0 ? '₹' + e.arrears.toLocaleString('en-IN') : '—'}</td>
+                  <td style="${tdStyleR}font-weight:700;">₹${e.totalDue.toLocaleString('en-IN')}</td>
+                  <td style="${tdStyleC}"><span style="background:${statusBg};color:${statusColor};padding:2px 6px;border-radius:4px;font-size:7pt;font-weight:600;">${e.status}</span></td>
+                  <td style="${tdStyleC}font-size:12pt;">☐</td>
+                </tr>`;
+          });
+
+          // Total row
+          const totalRemaining = pending.reduce((s, e) => s + e.remaining, 0);
+          const totalArrears = pending.reduce((s, e) => s + e.arrears, 0);
+          tableHTML += `
+                <tr style="background:#f0f0f0;font-weight:700;">
+                  <td colspan="4" style="${tdStyle}text-align:right;font-size:8pt;">TOTAL</td>
+                  <td style="${tdStyleR}">₹${totalRemaining.toLocaleString('en-IN')}</td>
+                  <td style="${tdStyleR}color:#dc2626;">₹${totalArrears.toLocaleString('en-IN')}</td>
+                  <td style="${tdStyleR}">₹${totalToCollect.toLocaleString('en-IN')}</td>
+                  <td colspan="2" style="${tdStyleC}"></td>
+                </tr>
+              </tbody>
+            </table>`;
+        } else {
+          tableHTML += `<p style="font-size:8.5pt;color:#16a34a;font-style:italic;margin:6px 0;font-family:'Inter',sans-serif;">✓ All students in this batch have paid for ${feeMonthLabel(feeCurrentMonth)}.</p>`;
+        }
+
+        // Compact reference — Paid students
+        if (paidList.length > 0) {
+          const paidNames = paidList.map(e => e.student.student_name).sort().join(', ');
+          tableHTML += `<p style="font-size:7.5pt;color:#6b7280;margin:4px 0;font-family:'Inter',sans-serif;"><strong style="color:#16a34a;">✓ Paid (${paidList.length}):</strong> ${paidNames}</p>`;
+        }
+
+        // Compact reference — Exempt students
+        if (exemptList.length > 0) {
+          const exemptNames = exemptList.map(e => e.student.student_name).sort().join(', ');
+          tableHTML += `<p style="font-size:7.5pt;color:#6b7280;margin:2px 0;font-family:'Inter',sans-serif;"><strong style="color:#7c3aed;">⊘ Exempt/No Fee (${exemptList.length}):</strong> ${exemptNames}</p>`;
+        }
+
+        // Signature line
+        tableHTML += `
+            <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:16px;padding-top:16px;border-top:1.5px solid #d1d5db;font-size:8pt;color:#6b7280;font-family:'Inter',sans-serif;">
+              <div style="text-align:center; margin-top:40px;">
+                <div style="width:180px;border-bottom:1px solid #9ca3af;margin-bottom:4px;">&nbsp;</div>
+                Teacher's Signature
+              </div>
+              <div style="text-align:center; margin-top:40px;">
+                <div style="width:180px;border-bottom:1px solid #9ca3af;margin-bottom:4px;">&nbsp;</div>
+                Trustee's Signature
+              </div>
+              <div style="text-align:center; margin-top:40px;">
+                <div style="width:140px;border-bottom:1px solid #9ca3af;margin-bottom:4px;">&nbsp;</div>
+                Date
+              </div>
+            </div>
+          </div>`;
+      });
+
+      // ─── Render & Print ───
+      const printBranding = document.getElementById('print-branding');
+      const printTable = document.getElementById('print-table-container');
+      const ts = document.getElementById('print-timestamp');
+      if (ts) ts.textContent = 'Date: ' + new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
       if (printTable) printTable.innerHTML = tableHTML;
       if (printBranding) printBranding.style.display = 'block';
       if (printTable) printTable.style.display = 'block';
