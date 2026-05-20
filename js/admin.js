@@ -1331,12 +1331,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let tableHTML = filterSummary;
 
-    orderedKeys.forEach(batchName => {
+    orderedKeys.forEach((batchName, bIdx) => {
       const students = groups[batchName];
+      const pageBreak = bIdx > 0 ? 'page-break-before:always;' : '';
 
       // Batch section header
       tableHTML += `
-        <div style="margin-top:14pt;margin-bottom:6pt;padding:5pt 8pt;background:#2D6A4F;color:#fff;border-radius:4pt;font-size:9pt;font-weight:700;font-family:'Inter',sans-serif;">
+        <div style="${pageBreak}margin-top:14pt;margin-bottom:6pt;padding:5pt 8pt;background:#2D6A4F;color:#fff;border-radius:4pt;font-size:9pt;font-weight:700;font-family:'Inter',sans-serif;">
           ${batchName} Batch &mdash; ${students.length} student${students.length === 1 ? '' : 's'}
         </div>
         <table style="width:100%;border-collapse:collapse;font-size:8.5pt;font-family:'Inter',sans-serif;margin-bottom:4pt;">
