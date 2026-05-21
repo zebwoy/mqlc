@@ -790,7 +790,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (pendEl) pendEl.textContent = pending.length;
 
       const revEl = document.getElementById('ds-est-revenue');
-      if (revEl) revEl.textContent = '₹' + (approved.length * fee).toLocaleString();
+      if (revEl) revEl.textContent = '₹' + approved.reduce((sum, s) => sum + (parseInt(s.monthly_fee) || 0), 0).toLocaleString();
 
       const pinEl = document.getElementById('ds-valid-pins');
       if (pinEl) pinEl.textContent = pinCount || 0;
@@ -1921,16 +1921,17 @@ document.addEventListener('DOMContentLoaded', () => {
       groups[k].push(s);
     });
 
-    // KPI calculations (exclude exempt students)
+    // KPI calculations (exclude exempt students, include arrears)
     let totalExpected = 0, totalCollected = 0, paidCount = 0, activeStudentCount = 0;
     students.forEach(s => {
       if (isExemptForMonth(s.id, feeCurrentMonth)) return; // skip exempt
       const expFee = getExpectedFee(s, feeCurrentMonth);
-      totalExpected += expFee;
+      const arrears = calcArrears(s, feeCurrentMonth);
+      totalExpected += expFee + arrears;
       const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
       totalCollected += paid;
-      if (paid >= expFee && expFee > 0) paidCount++;
-      if (expFee > 0) activeStudentCount++;
+      if (paid >= expFee && expFee > 0 && arrears === 0) paidCount++;
+      if (expFee > 0 || arrears > 0) activeStudentCount++;
     });
     const totalPending = Math.max(0, totalExpected - totalCollected);
     const rate = totalExpected > 0 ? Math.round((totalCollected / totalExpected) * 100) : 0;
@@ -2576,7 +2577,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return {
           student: s,
           expFee, paid, remaining, arrears, totalDue, status,
-          contact: s.contact_father || s.contact_mother || '—'
+          contact: [s.contact_father, s.contact_mother].filter(Boolean).join(' / ') || '—'
         };
       });
 
@@ -2623,7 +2624,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tableHTML += `
           <div style="${pageBreak}margin-bottom:1.5rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;background:#2D6A4F;color:#fff;padding:8px 14px;border-radius:6px;margin-bottom:3px;font-family:'Inter',sans-serif;">
-              <div style="font-size:11pt;font-weight:700;">${batchName} Batch — Fee Collection Sheet</div>
+              <div style="font-size:11pt;font-weight:700;">${batchName} Batch — Fee Collection Report</div>
               <div style="font-size:9pt;">${feeMonthLabel(feeCurrentMonth)}</div>
             </div>
             <div style="display:flex;gap:1.5rem;background:#f0fdf4;padding:6px 14px;border-radius:0 0 6px 6px;border:1px solid #d1fae5;font-size:8pt;font-family:'Inter',sans-serif;margin-bottom:10px;">
