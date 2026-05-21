@@ -1466,7 +1466,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Arrears floor — ignore all months before this
-  const ARREARS_START = '2026-04';
+  const ARREARS_START = '2026-03';
 
   // Check if a student is exempted for a given month
   function isExemptForMonth(studentId, month) {
