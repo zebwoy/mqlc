@@ -2648,7 +2648,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   <th style="${thStyleR}width:10%;">Arrears</th>
                   <th style="${thStyleR}width:11%;">Total Due</th>
                   <th style="${thStyleC}width:8%;">Status</th>
-                  <th style="${thStyleC}width:6%;">☐</th>
+                  <th style="${thStyleC}width:10%;">Fees Collected ✅</th>
                 </tr>
               </thead>
               <tbody>`;
@@ -2727,8 +2727,11 @@ document.addEventListener('DOMContentLoaded', () => {
       if (printTable) printTable.innerHTML = tableHTML;
       if (printBranding) printBranding.style.display = 'block';
       if (printTable) printTable.style.display = 'block';
+      const originalTitle = document.title;
+      document.title = `MQLC_Fee_Collection_Sheet_${feeMonthLabel(feeCurrentMonth).replace(/\s+/g, '_')}`;
       window.print();
       setTimeout(() => {
+        document.title = originalTitle;
         if (printBranding) printBranding.style.display = 'none';
         if (printTable) printTable.style.display = 'none';
       }, 500);
