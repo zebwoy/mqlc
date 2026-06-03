@@ -593,7 +593,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle Course Filter
     if (courseFilter !== 'all') {
-      filtered = filtered.filter(s => s.course_applying === courseFilter);
+      if (courseFilter === 'unassigned') {
+        filtered = filtered.filter(s => !s.course_applying || s.course_applying === '' || s.course_applying === 'null' || s.course_applying === 'undefined');
+      } else {
+        filtered = filtered.filter(s => s.course_applying === courseFilter);
+      }
     }
 
     // Handle Text Filter
@@ -1188,8 +1192,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let filtered = [...(cachedStudents || [])];
     if (statusFilter !== 'all') filtered = filtered.filter(s => s.status === statusFilter);
-    if (batchFilter !== 'all') filtered = filtered.filter(s => s.batch === batchFilter);
-    if (courseFilter !== 'all') filtered = filtered.filter(s => s.course_applying === courseFilter);
+    if (batchFilter !== 'all') {
+      if (batchFilter === 'unassigned') {
+        filtered = filtered.filter(s => !s.batch || s.batch === '' || s.batch === 'null' || s.batch === 'undefined');
+      } else {
+        filtered = filtered.filter(s => s.batch === batchFilter);
+      }
+    }
+    if (courseFilter !== 'all') {
+      if (courseFilter === 'unassigned') {
+        filtered = filtered.filter(s => !s.course_applying || s.course_applying === '' || s.course_applying === 'null' || s.course_applying === 'undefined');
+      } else {
+        filtered = filtered.filter(s => s.course_applying === courseFilter);
+      }
+    }
     if (searchTerm) {
       filtered = filtered.filter(s =>
         (s.student_name || '').toLowerCase().includes(searchTerm) ||
@@ -1282,7 +1298,13 @@ document.addEventListener('DOMContentLoaded', () => {
         filtered = filtered.filter(s => s.batch === batchFilter);
       }
     }
-    if (courseFilter !== 'all') filtered = filtered.filter(s => s.course_applying === courseFilter);
+    if (courseFilter !== 'all') {
+      if (courseFilter === 'unassigned') {
+        filtered = filtered.filter(s => !s.course_applying || s.course_applying === '' || s.course_applying === 'null' || s.course_applying === 'undefined');
+      } else {
+        filtered = filtered.filter(s => s.course_applying === courseFilter);
+      }
+    }
     if (searchTerm) {
       filtered = filtered.filter(s =>
         (s.student_name || '').toLowerCase().includes(searchTerm) ||
