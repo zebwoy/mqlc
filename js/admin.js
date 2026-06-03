@@ -593,7 +593,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle Course Filter
     if (courseFilter !== 'all') {
-      if (courseFilter === 'unassigned') {
+      if (courseFilter === 'Unassigned') {
         filtered = filtered.filter(s => !s.course_applying || s.course_applying === '' || s.course_applying === 'null' || s.course_applying === 'undefined');
       } else {
         filtered = filtered.filter(s => s.course_applying === courseFilter);
