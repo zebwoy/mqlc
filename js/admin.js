@@ -432,31 +432,46 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Collect Data
-      const payload = {
-        doj: fd.get('doj') || null,
-        form_no: fd.get('form_no') || null,
-        course_applying: 'Unassigned',
-        student_name: fd.get('student_name') || null,
-        father_name: fd.get('father_name') || null,
-        gender: fd.get('gender') || null,
-        dob: fd.get('dob') || null,
-        aadhar_no: fd.get('aadhar_no') || null,
-        address: fd.get('address') || null,
-        contact_father: fd.get('contact_father') || null,
-        contact_mother: fd.get('contact_mother') || null,
-        current_class: fd.get('current_class') || null,
-        school_name: 'N/A',
-        school_days: 'N/A',
-        school_time: 'N/A',
-        batch: fd.get('batch') || null,
-        status: 'approved' // explicitly bypass queue and auto-approve manual entries
-      };
-
       try {
         const btn = document.getElementById('btn-submit-reg');
         btn.textContent = 'Saving Record...';
         btn.disabled = true;
+
+        // Fetch global monthly fee setting
+        let feeVal = 0;
+        try {
+          const { data: settingData } = await window._supabase
+            .from('site_settings')
+            .select('setting_value')
+            .eq('setting_key', 'monthly_fee')
+            .single();
+          if (settingData && settingData.setting_value) {
+            feeVal = parseInt(settingData.setting_value, 10) || 0;
+          }
+        } catch (feeErr) {
+          console.warn("Failed to retrieve global monthly fee:", feeErr);
+        }
+
+        const payload = {
+          doj: fd.get('doj') || null,
+          form_no: fd.get('form_no') || null,
+          course_applying: fd.get('course_applying') || 'Unassigned',
+          student_name: fd.get('student_name') || null,
+          father_name: fd.get('father_name') || null,
+          gender: fd.get('gender') || null,
+          dob: fd.get('dob') || null,
+          aadhar_no: fd.get('aadhar_no') || null,
+          address: fd.get('address') || null,
+          contact_father: fd.get('contact_father') || null,
+          contact_mother: fd.get('contact_mother') || null,
+          current_class: fd.get('current_class') || null,
+          school_name: 'N/A',
+          school_days: 'N/A',
+          school_time: 'N/A',
+          batch: fd.get('batch') || null,
+          monthly_fee: feeVal,
+          status: 'approved' // explicitly bypass queue and auto-approve manual entries
+        };
 
         const { data, error } = await window._supabase
           .from('student_registrations')
@@ -593,8 +608,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle Course Filter
     if (courseFilter !== 'all') {
-      if (courseFilter === 'Unassigned') {
-        filtered = filtered.filter(s => !s.course_applying || s.course_applying === '' || s.course_applying === 'null' || s.course_applying === 'undefined');
+      if (courseFilter.toLowerCase() === 'unassigned') {
+        filtered = filtered.filter(s => !s.course_applying || s.course_applying === '' || s.course_applying === 'null' || s.course_applying === 'undefined' || s.course_applying.toLowerCase() === 'unassigned');
       } else {
         filtered = filtered.filter(s => s.course_applying === courseFilter);
       }
@@ -1200,8 +1215,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     if (courseFilter !== 'all') {
-      if (courseFilter === 'unassigned') {
-        filtered = filtered.filter(s => !s.course_applying || s.course_applying === '' || s.course_applying === 'null' || s.course_applying === 'undefined');
+      if (courseFilter.toLowerCase() === 'unassigned') {
+        filtered = filtered.filter(s => !s.course_applying || s.course_applying === '' || s.course_applying === 'null' || s.course_applying === 'undefined' || s.course_applying.toLowerCase() === 'unassigned');
       } else {
         filtered = filtered.filter(s => s.course_applying === courseFilter);
       }
@@ -1299,8 +1314,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     if (courseFilter !== 'all') {
-      if (courseFilter === 'unassigned') {
-        filtered = filtered.filter(s => !s.course_applying || s.course_applying === '' || s.course_applying === 'null' || s.course_applying === 'undefined');
+      if (courseFilter.toLowerCase() === 'unassigned') {
+        filtered = filtered.filter(s => !s.course_applying || s.course_applying === '' || s.course_applying === 'null' || s.course_applying === 'undefined' || s.course_applying.toLowerCase() === 'unassigned');
       } else {
         filtered = filtered.filter(s => s.course_applying === courseFilter);
       }
@@ -1457,6 +1472,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initial hydration is now triggered by auth.js via window.hydrateDashboardAndAnalytics()
   // when the dashboard becomes visible, eliminating the blind 1s delay.
   window.hydrateDashboardAndAnalytics = hydrateDashboardAndAnalytics;
+
+  // Safeguard: If the dashboard is already made visible by auth.js before admin.js loaded, run hydration now
+  const dashView = document.getElementById('dashboard-view');
+  if (dashView && dashView.style.display === 'grid') {
+    hydrateDashboardAndAnalytics();
+  }
 
   // ─── 3g. FEE TRACKER ENGINE ─────────────────────────────────────
   // Show previous month by default until 25th, then current month (collection starts post-25th)
