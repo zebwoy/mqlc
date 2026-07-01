@@ -728,14 +728,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const exitReasonVal = student.exit_reason || '';
     const exitNotesVal = student.exit_notes || '';
 
-    const dateInput = document.getElementById('edit-exit-date');
-    if (dateInput) {
-      if (dateInput._flatpickr) {
-        dateInput._flatpickr.setDate(exitDateVal, false);
-      } else {
-        dateInput.value = exitDateVal;
-      }
-    }
+    const dateVal = exitDateVal ? new Date(exitDateVal) : new Date();
+    exitDpSelectDate(dateVal);
+    const input = document.getElementById('edit-exit-date');
+    if (input) input.value = exitDateVal; // set actual database value
+    const display = document.getElementById('exit-date-display');
+    if (display) display.textContent = exitDateVal ? exitDpFormatDisplay(dateVal) : 'Select date';
+
     const reasonInput = document.getElementById('edit-exit-reason');
     if (reasonInput) reasonInput.value = exitReasonVal;
     const notesInput = document.getElementById('edit-exit-notes');
@@ -756,6 +755,92 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('modal-edit-student').showModal();
   }
 
+  // ─── Inline Date Picker Engine for Student Exit ───
+  let exitDpViewYear = new Date().getFullYear();
+  let exitDpViewMonth = new Date().getMonth();
+
+  function exitDpFormatDisplay(date) {
+    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function exitDpToISO(date) {
+    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+  }
+
+  function exitDpSelectDate(date) {
+    const input = document.getElementById('edit-exit-date');
+    const display = document.getElementById('exit-date-display');
+    if (input) input.value = exitDpToISO(date);
+    if (display) display.textContent = exitDpFormatDisplay(date);
+    exitDpViewYear = date.getFullYear();
+    exitDpViewMonth = date.getMonth();
+    exitDpRenderGrid();
+  }
+
+  function exitDpRenderGrid() {
+    const grid = document.getElementById('exit-dp-grid');
+    const label = document.getElementById('exit-dp-month-label');
+    if (!grid || !label) return;
+
+    const viewDate = new Date(exitDpViewYear, exitDpViewMonth, 1);
+    label.textContent = viewDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
+    const today = new Date();
+    const selectedVal = document.getElementById('edit-exit-date')?.value || '';
+    const firstDay = viewDate.getDay();
+    const daysInMonth = new Date(exitDpViewYear, exitDpViewMonth + 1, 0).getDate();
+
+    let html = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
+      .map(d => `<span class="dp-head">${d}</span>`).join('');
+
+    for (let i = 0; i < firstDay; i++) {
+      html += `<span></span>`;
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const iso = exitDpToISO(new Date(exitDpViewYear, exitDpViewMonth, day));
+      const isToday = (day === today.getDate() && exitDpViewMonth === today.getMonth() && exitDpViewYear === today.getFullYear());
+      const isSelected = (iso === selectedVal);
+      const cls = `dp-day${isToday ? ' dp-today' : ''}${isSelected ? ' dp-selected' : ''}`;
+      html += `<button type="button" class="${cls}" data-date="${iso}">${day}</button>`;
+    }
+
+    grid.innerHTML = html;
+
+    grid.querySelectorAll('.dp-day').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const [y, m, d] = btn.dataset.date.split('-').map(Number);
+        exitDpSelectDate(new Date(y, m - 1, d));
+        const dropdown = document.getElementById('exit-date-dropdown');
+        if (dropdown) dropdown.style.display = 'none';
+      });
+    });
+  }
+
+  // Toggle calendar
+  const exitDpTrigger = document.getElementById('exit-date-trigger');
+  const exitDpDropdown = document.getElementById('exit-date-dropdown');
+  if (exitDpTrigger && exitDpDropdown) {
+    exitDpTrigger.addEventListener('click', () => {
+      const isOpen = exitDpDropdown.style.display !== 'none';
+      exitDpDropdown.style.display = isOpen ? 'none' : 'block';
+      if (!isOpen) exitDpRenderGrid();
+    });
+  }
+
+  // Prev / Next month
+  const exitDpPrev = document.getElementById('exit-dp-prev-month');
+  const exitDpNext = document.getElementById('exit-dp-next-month');
+  if (exitDpPrev) exitDpPrev.addEventListener('click', () => { exitDpViewMonth--; if (exitDpViewMonth < 0) { exitDpViewMonth = 11; exitDpViewYear--; } exitDpRenderGrid(); });
+  if (exitDpNext) exitDpNext.addEventListener('click', () => { exitDpViewMonth++; if (exitDpViewMonth > 11) { exitDpViewMonth = 0; exitDpViewYear++; } exitDpRenderGrid(); });
+
+  // Today button
+  const exitDpTodayBtn = document.getElementById('exit-dp-today-btn');
+  if (exitDpTodayBtn) exitDpTodayBtn.addEventListener('click', () => {
+    exitDpSelectDate(new Date());
+    if (exitDpDropdown) exitDpDropdown.style.display = 'none';
+  });
+
   // Change listener to show/hide exit audit section dynamically
   const editStatusSelect = document.getElementById('edit-student-status');
   const editExitSection = document.getElementById('edit-exit-audit-section');
@@ -768,10 +853,7 @@ document.addEventListener('DOMContentLoaded', () => {
         editExitSection.style.display = 'block';
         if (editExitReason) editExitReason.required = true;
         if (editExitDate && !editExitDate.value) {
-          editExitDate.value = new Date().toISOString().split('T')[0];
-          if (editExitDate._flatpickr) {
-            editExitDate._flatpickr.setDate(editExitDate.value, false);
-          }
+          exitDpSelectDate(new Date());
         }
       } else {
         editExitSection.style.display = 'none';
