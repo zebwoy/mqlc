@@ -682,7 +682,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <h4 style="margin-bottom: 0.25rem;">${app.student_name}${parentSubtext}</h4>
             <p style="font-size: 0.8rem; margin-bottom: 0.25rem;">${app.course_applying} | Form: ${app.form_no || 'N/A'}</p>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-              ${app.status === 'left' ? `<span style="font-size: 0.7rem; background: #fde8e8; color: #c53030; padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase;">Inactive</span>` : ''}
+              ${app.status === 'left' ? `
+                <span style="font-size: 0.7rem; background: #fde8e8; color: #c53030; padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase;">Inactive</span>
+                ${app.exit_reason ? `<span style="font-size: 0.7rem; background: #f3f4f6; color: #4b5563; padding: 2px 6px; border-radius: 4px; font-weight: 500;">Reason: ${app.exit_reason}</span>` : ''}
+              ` : ''}
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 0.75rem;">
@@ -716,10 +719,65 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('edit-student-father').value = student.father_name;
     document.getElementById('edit-student-batch').value = student.batch || 'Zuhr';
     document.getElementById('edit-student-course').value = student.course_applying || 'Noorani Qaida';
-    document.getElementById('edit-student-status').value = student.status || 'approved';
-    document.getElementById('edit-status-msg').style.display = 'none';
+    
+    const statusVal = student.status || 'approved';
+    document.getElementById('edit-student-status').value = statusVal;
 
+    // Set exit audit values
+    const exitDateVal = student.exit_date || '';
+    const exitReasonVal = student.exit_reason || '';
+    const exitNotesVal = student.exit_notes || '';
+
+    const dateInput = document.getElementById('edit-exit-date');
+    if (dateInput) {
+      if (dateInput._flatpickr) {
+        dateInput._flatpickr.setDate(exitDateVal, false);
+      } else {
+        dateInput.value = exitDateVal;
+      }
+    }
+    const reasonInput = document.getElementById('edit-exit-reason');
+    if (reasonInput) reasonInput.value = exitReasonVal;
+    const notesInput = document.getElementById('edit-exit-notes');
+    if (notesInput) notesInput.value = exitNotesVal;
+
+    const exitSection = document.getElementById('edit-exit-audit-section');
+    if (exitSection && reasonInput) {
+      if (statusVal === 'left') {
+        exitSection.style.display = 'block';
+        reasonInput.required = true;
+      } else {
+        exitSection.style.display = 'none';
+        reasonInput.required = false;
+      }
+    }
+
+    document.getElementById('edit-status-msg').style.display = 'none';
     document.getElementById('modal-edit-student').showModal();
+  }
+
+  // Change listener to show/hide exit audit section dynamically
+  const editStatusSelect = document.getElementById('edit-student-status');
+  const editExitSection = document.getElementById('edit-exit-audit-section');
+  const editExitDate = document.getElementById('edit-exit-date');
+  const editExitReason = document.getElementById('edit-exit-reason');
+
+  if (editStatusSelect && editExitSection) {
+    editStatusSelect.addEventListener('change', () => {
+      if (editStatusSelect.value === 'left') {
+        editExitSection.style.display = 'block';
+        if (editExitReason) editExitReason.required = true;
+        if (editExitDate && !editExitDate.value) {
+          editExitDate.value = new Date().toISOString().split('T')[0];
+          if (editExitDate._flatpickr) {
+            editExitDate._flatpickr.setDate(editExitDate.value, false);
+          }
+        }
+      } else {
+        editExitSection.style.display = 'none';
+        if (editExitReason) editExitReason.required = false;
+      }
+    });
   }
 
   const editForm = document.getElementById('form-edit-student');
@@ -728,14 +786,33 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const id = document.getElementById('edit-student-id').value;
       const statusMsg = document.getElementById('edit-status-msg');
+      const statusVal = document.getElementById('edit-student-status').value;
 
       const payload = {
         student_name: document.getElementById('edit-student-name').value,
         father_name: document.getElementById('edit-student-father').value,
         batch: document.getElementById('edit-student-batch').value,
         course_applying: document.getElementById('edit-student-course').value,
-        status: document.getElementById('edit-student-status').value
+        status: statusVal
       };
+
+      if (statusVal === 'left') {
+        let adminEmail = 'admin';
+        try {
+          const { data: { session } } = await window._supabase.auth.getSession();
+          if (session?.user?.email) adminEmail = session.user.email;
+        } catch (_) {}
+
+        payload.exit_date = document.getElementById('edit-exit-date')?.value || new Date().toISOString().split('T')[0];
+        payload.exit_reason = document.getElementById('edit-exit-reason')?.value || 'Other';
+        payload.exit_notes = document.getElementById('edit-exit-notes')?.value || '';
+        payload.exit_recorded_by = adminEmail;
+      } else {
+        payload.exit_date = null;
+        payload.exit_reason = null;
+        payload.exit_notes = null;
+        payload.exit_recorded_by = null;
+      }
 
       try {
         statusMsg.textContent = 'Updating...';

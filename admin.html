@@ -1191,6 +1191,36 @@
           </select>
         </div>
 
+        <!-- Exit Audit Section (Visible only when status is 'left') -->
+        <div id="edit-exit-audit-section" class="exit-audit-section" style="display: none; border-top: 1px dashed var(--admin-border); margin-top: 1rem; padding-top: 1rem;">
+          <h4 style="font-size: 0.9rem; color: var(--admin-danger); margin-bottom: 1rem;">Student Exit Audit</h4>
+          
+          <div class="modal-field">
+            <label class="modal-label">Exit Date</label>
+            <input type="date" id="edit-exit-date" class="modal-input">
+          </div>
+
+          <div class="modal-field">
+            <label class="modal-label">Reason for Leaving</label>
+            <select id="edit-exit-reason" class="modal-select">
+              <option value="" disabled selected>Select a reason...</option>
+              <option value="Completed Course">Completed Course</option>
+              <option value="Relocation">Relocation</option>
+              <option value="Time Conflict">Time Conflict / Schedule Change</option>
+              <option value="Financial Constraints">Financial Constraints</option>
+              <option value="Irregular Attendance">Irregular Attendance</option>
+              <option value="Personal / Family Reasons">Personal / Family Reasons</option>
+              <option value="Behavioral / Discipline Issues">Behavioral / Discipline Issues</option>
+              <option value="Other">Other (Specify in notes)</option>
+            </select>
+          </div>
+
+          <div class="modal-field">
+            <label class="modal-label">Exit Notes / Remarks</label>
+            <textarea id="edit-exit-notes" rows="2" placeholder="e.g. Relocated to another city with family. Nazra course incomplete." class="modal-textarea"></textarea>
+          </div>
+        </div>
+
         <div id="edit-status-msg" class="status-msg" style="margin-bottom: 1rem;"></div>
 
         <div class="modal-actions">
