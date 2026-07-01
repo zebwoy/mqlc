@@ -60,6 +60,9 @@
   <!-- Print-Only Student Table (Hidden from UI, injected by JS before print) -->
   <div id="print-table-container" style="display: none;"></div>
 
+  <!-- Print-Only Receipt (Hidden from UI, visible on print via class override) -->
+  <div id="print-receipt-container" style="display: none;"></div>
+
   <!-- ═══════════════════════════════════════════════════════════
        LOGIN STATE (Visible initially until session is verified)
   ════════════════════════════════════════════════════════════ -->
@@ -812,6 +815,32 @@
               </div>
             </div>
 
+            <!-- Churn Demographics (Dropout Reasons) -->
+            <div class="card chart-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="margin: 0;">Dropout Reasons</h3>
+                <span id="total-churn"
+                  style="font-size: 0.75rem; background: var(--admin-bg); padding: 2px 8px; border-radius: 4px; font-weight: 600; color: var(--admin-muted);">Total:
+                  --</span>
+              </div>
+              <div class="chart-container" style="position: relative; height: 280px; width: 100%;">
+                <canvas id="chart-churn"></canvas>
+              </div>
+            </div>
+
+            <!-- Departure Timeline -->
+            <div class="card chart-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h3 style="margin: 0;">Departure Timeline</h3>
+                <span id="total-departures"
+                  style="font-size: 0.75rem; background: var(--admin-bg); padding: 2px 8px; border-radius: 4px; font-weight: 600; color: var(--admin-muted);">Total:
+                  --</span>
+              </div>
+              <div class="chart-container" style="position: relative; height: 280px; width: 100%;">
+                <canvas id="chart-departures"></canvas>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
@@ -1252,6 +1281,24 @@
             class="btn-secondary">Cancel</button>
         </div>
       </form>
+    </div>
+  </dialog>
+
+  <!-- Student Profile Modal -->
+  <dialog id="modal-student-profile" class="admin-modal" style="max-width: 680px;">
+    <div class="modal-header">
+      <h3 id="profile-student-title">Student Profile</h3>
+      <button onclick="document.getElementById('modal-student-profile').close()" class="modal-close-btn">✕</button>
+    </div>
+    <div class="modal-body" style="padding: 1.5rem 2rem;">
+      <div id="profile-modal-content">
+        <!-- Dynamically loaded layout -->
+      </div>
+      <div class="modal-actions" style="margin-top: 1.5rem; justify-content: flex-end; border-top: 1px solid var(--admin-border); padding-top: 1.25rem; gap: 0.75rem;">
+        <button id="btn-profile-edit" class="btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.85rem; border-radius: 50px;">✎ Edit Info</button>
+        <button id="btn-profile-pay" class="btn-primary" style="padding: 0.5rem 1.25rem; font-size: 0.85rem; border-radius: 50px;">💰 Record Payment</button>
+        <button onclick="document.getElementById('modal-student-profile').close()" class="btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.85rem; border-radius: 50px;">Close</button>
+      </div>
     </div>
   </dialog>
 

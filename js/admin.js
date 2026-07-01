@@ -690,6 +690,12 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
           <div style="display: flex; align-items: center; gap: 0.75rem;">
             <span class="badge ${stClass}">${app.status}</span>
+            <button class="btn-view-profile" data-id="${app.id}" style="background: none; border: none; cursor: pointer; color: var(--admin-muted); display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 4px; transition: background 0.2s;" title="View Student Profile">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
+                <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8zm8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/>
+              </svg>
+            </button>
             <button class="btn-edit-student" data-id="${app.id}" style="background: none; border: none; cursor: pointer; color: var(--admin-muted); display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 4px; transition: background 0.2s;">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                 <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
@@ -705,6 +711,14 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.addEventListener('click', (e) => {
         const id = e.currentTarget.getAttribute('data-id');
         openEditModal(id);
+      });
+    });
+
+    // Hook up View Profile buttons
+    document.querySelectorAll('.btn-view-profile').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        openProfileModal(id);
       });
     });
   }
@@ -894,6 +908,46 @@ document.addEventListener('DOMContentLoaded', () => {
         payload.exit_reason = null;
         payload.exit_notes = null;
         payload.exit_recorded_by = null;
+      }
+
+      // Optimistic Concurrency Control Check
+      const original = cachedStudents.find(s => s.id.toString() === id.toString());
+      if (original) {
+        try {
+          const { data: latest, error: checkError } = await window._supabase
+            .from('student_registrations')
+            .select('student_name, father_name, batch, course_applying, status')
+            .eq('id', id);
+          
+          if (!checkError && latest && latest.length > 0) {
+            const currentDb = latest[0];
+            const changes = [];
+            
+            if (currentDb.student_name !== original.student_name) changes.push(`Name: "${currentDb.student_name}" (you saw "${original.student_name}")`);
+            if (currentDb.father_name !== original.father_name) changes.push(`Father's Name: "${currentDb.father_name}" (you saw "${original.father_name}")`);
+            if (currentDb.batch !== original.batch) changes.push(`Batch: "${currentDb.batch}" (you saw "${original.batch}")`);
+            if (currentDb.course_applying !== original.course_applying) changes.push(`Course: "${currentDb.course_applying}" (you saw "${original.course_applying}")`);
+            if (currentDb.status !== original.status) changes.push(`Status: "${currentDb.status}" (you saw "${original.status}")`);
+            
+            if (changes.length > 0) {
+              const confirmMsg = `Conflict Warning:\n\nAnother administrator has modified this student's record while you were editing it:\n\n` + 
+                changes.map(c => `• ${c}`).join('\n') + 
+                `\n\nDo you want to OVERWRITE their changes and save anyway? Click 'OK' to overwrite, or 'Cancel' to reload the latest details.`;
+              if (!confirm(confirmMsg)) {
+                statusMsg.textContent = 'Edit canceled. Reloading...';
+                statusMsg.className = 'status-msg error';
+                statusMsg.style.display = 'block';
+                await hydrateDashboardAndAnalytics();
+                setTimeout(() => {
+                  document.getElementById('modal-edit-student').close();
+                }, 1000);
+                return;
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('OCC check failed, skipping check:', err);
+        }
       }
 
       try {
@@ -1311,6 +1365,69 @@ document.addEventListener('DOMContentLoaded', () => {
           scales: {
             x: { stacked: true },
             y: { stacked: true }
+          }
+        }
+      });
+    }
+
+    // Dropout & Churn Analytics
+    const leftStudents = cachedStudents.filter(s => s.status === 'left');
+    const churnCount = {};
+    leftStudents.forEach(s => {
+      const reason = s.exit_reason || 'Unspecified';
+      churnCount[reason] = (churnCount[reason] || 0) + 1;
+    });
+
+    const departureTimeline = {};
+    leftStudents.forEach(s => {
+      if (s.exit_date) {
+        const month = s.exit_date.substring(0, 7);
+        departureTimeline[month] = (departureTimeline[month] || 0) + 1;
+      }
+    });
+
+    const ctxChurn = document.getElementById('chart-churn');
+    if (ctxChurn) {
+      const totalChurn = Object.values(churnCount).reduce((a, b) => a + b, 0);
+      document.getElementById('total-churn').textContent = `Total: ${totalChurn}`;
+      chartInstances.churn = new Chart(ctxChurn, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(churnCount).length ? Object.keys(churnCount) : ['None'],
+          datasets: [{
+            data: Object.keys(churnCount).length ? Object.values(churnCount) : [1],
+            backgroundColor: ['#dc2626', '#d97706', '#2563eb', '#16a34a', '#4f46e5', '#64748b']
+          }]
+        },
+        options: pieOptions
+      });
+    }
+
+    const ctxDepartures = document.getElementById('chart-departures');
+    if (ctxDepartures) {
+      const monthsExited = Object.keys(departureTimeline).sort();
+      const depData = monthsExited.map(m => departureTimeline[m]);
+      const totalDep = depData.reduce((a, b) => a + b, 0);
+      document.getElementById('total-departures').textContent = `Total: ${totalDep}`;
+      chartInstances.departures = new Chart(ctxDepartures, {
+        type: 'bar',
+        data: {
+          labels: monthsExited.length ? monthsExited : ['No Data'],
+          datasets: [{
+            label: 'Students Exited',
+            data: depData.length ? depData : [0],
+            backgroundColor: '#dc2626',
+            borderColor: '#b91c1c',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          ...commonOptions,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 1 }
+            }
           }
         }
       });
@@ -2624,14 +2741,22 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       let html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">';
-      html += '<thead><tr style="border-bottom: 1px solid var(--admin-border);"><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Month</th><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Amount</th><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Date</th><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Notes</th></tr></thead><tbody>';
+      html += '<thead><tr style="border-bottom: 1px solid var(--admin-border);"><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Month</th><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Amount</th><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Date</th><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Notes</th><th style="text-align: right; padding: 4px 8px; color: var(--admin-muted);">Action</th></tr></thead><tbody>';
       Object.keys(byMonth).sort().reverse().forEach(month => {
         byMonth[month].forEach(p => {
-          html += `<tr style="border-bottom: 1px solid var(--admin-bg);"><td style="padding: 4px 8px;">${feeMonthLabel(month)}</td><td style="padding: 4px 8px; font-weight: 600;">₹${p.amount.toLocaleString('en-IN')}</td><td style="padding: 4px 8px;">${p.paid_on || '—'}</td><td style="padding: 4px 8px; color: var(--admin-muted);">${p.notes || '—'}</td></tr>`;
+          html += `<tr style="border-bottom: 1px solid var(--admin-bg);"><td style="padding: 4px 8px;">${feeMonthLabel(month)}</td><td style="padding: 4px 8px; font-weight: 600;">₹${p.amount.toLocaleString('en-IN')}</td><td style="padding: 4px 8px;">${p.paid_on || '—'}</td><td style="padding: 4px 8px; color: var(--admin-muted);">${p.notes || '—'}</td><td style="padding: 4px 8px; text-align: right;"><button class="btn-print-receipt btn-secondary" data-pid="${p.id}" style="padding: 2px 8px; font-size: 0.72rem; border-radius: 50px;">📄 Receipt</button></td></tr>`;
         });
       });
       html += '</tbody></table>';
       panel.innerHTML = html;
+
+      // Bind print receipt buttons
+      panel.querySelectorAll('.btn-print-receipt').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const pid = e.currentTarget.getAttribute('data-pid');
+          printReceipt(pid);
+        });
+      });
     } catch (err) {
       panel.innerHTML = '<em style="color: #dc2626;">Error loading history.</em>';
     }
@@ -3427,7 +3552,342 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.textContent = 'Confirm Exemption';
         btn.disabled = false;
       }
-    });
+    // ─── Student Profile View Controller ─────────────────
+    async function openProfileModal(studentId) {
+      const student = cachedStudents.find(s => s.id.toString() === studentId.toString());
+      if (!student) return;
+
+      const modal = document.getElementById('modal-student-profile');
+      const content = document.getElementById('profile-modal-content');
+      if (!modal || !content) return;
+
+      document.getElementById('profile-student-title').textContent = `${student.student_name}'s Profile`;
+      content.innerHTML = '<div style="text-align: center; padding: 2rem;"><span class="loader-dots" style="font-size: 1.5rem;">Loading profile details...</span></div>';
+      modal.showModal();
+
+      let payments = [];
+      if (window._supabase) {
+        try {
+          const { data, error } = await window._supabase
+            .from('fee_payments')
+            .select('*')
+            .eq('student_id', studentId)
+            .order('month', { ascending: false });
+          if (!error && data) payments = data;
+        } catch (err) {
+          console.error('Error fetching payments for profile:', err);
+        }
+      }
+
+      let age = 'N/A';
+      if (student.dob) {
+        const d = new Date(student.dob);
+        if (!isNaN(d)) {
+          age = Math.floor((new Date() - d) / (1000 * 60 * 60 * 24 * 365.25)) + ' years';
+        }
+      }
+
+      const initials = student.student_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+      let avatarClass = student.gender === 'Female' ? 'female' : '';
+      if (student.status === 'left') avatarClass = 'left';
+
+      let exitSectionHtml = '';
+      if (student.status === 'left') {
+        const formattedExitDate = student.exit_date ? new Date(student.exit_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
+        exitSectionHtml = `
+          <div class="profile-exit-alert">
+            <h4>
+              <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
+              </svg>
+              Student Exited
+            </h4>
+            <p>
+              <strong>Date Left:</strong> ${formattedExitDate}<br>
+              <strong>Reason:</strong> ${student.exit_reason || 'Unspecified'}<br>
+              <strong>Recorded By:</strong> ${student.exit_recorded_by || 'admin'}<br>
+              ${student.exit_notes ? `<strong>Notes:</strong> ${student.exit_notes}` : ''}
+            </p>
+          </div>
+        `;
+      }
+
+      let paymentsTableHtml = '<p style="color: var(--admin-muted); font-size: 0.85rem; font-style: italic;">No payment history recorded yet.</p>';
+      if (payments.length > 0) {
+        paymentsTableHtml = `
+          <div style="overflow-x: auto; max-height: 200px; border: 1px solid var(--admin-border); border-radius: 8px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
+              <thead>
+                <tr style="background: var(--admin-bg); border-bottom: 1.5px solid var(--admin-border);">
+                  <th style="padding: 8px 12px; font-weight: 700; color: var(--admin-text);">Month</th>
+                  <th style="padding: 8px 12px; font-weight: 700; color: var(--admin-text);">Amount</th>
+                  <th style="padding: 8px 12px; font-weight: 700; color: var(--admin-text);">Date</th>
+                  <th style="padding: 8px 12px; font-weight: 700; color: var(--admin-text);">Notes</th>
+                  <th style="padding: 8px 12px; font-weight: 700; color: var(--admin-text); text-align: right;">Receipt</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${payments.map(p => `
+                  <tr style="border-bottom: 1px solid var(--admin-border);">
+                    <td style="padding: 8px 12px; font-weight: 600; color: var(--admin-accent);">${feeMonthLabel(p.month)}</td>
+                    <td style="padding: 8px 12px; font-weight: 700; color: var(--admin-text);">₹${p.amount.toLocaleString('en-IN')}</td>
+                    <td style="padding: 8px 12px; color: var(--admin-muted);">${p.paid_on || '—'}</td>
+                    <td style="padding: 8px 12px; color: var(--admin-muted);">${p.notes || '—'}</td>
+                    <td style="padding: 8px 12px; text-align: right;">
+                      <button class="btn-profile-receipt btn-secondary" data-pid="${p.id}" style="padding: 2px 8px; font-size: 0.7rem; border-radius: 50px;">📄 Receipt</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      content.innerHTML = `
+        ${exitSectionHtml}
+        <div class="profile-header">
+          <div class="profile-avatar ${avatarClass}">${initials}</div>
+          <div class="profile-header-meta">
+            <h4>${student.student_name}</h4>
+            <p>Form No: ${student.form_no || 'N/A'} | Status: <span class="badge ${student.status === 'approved' ? 'approved' : (student.status === 'left' ? 'rejected' : 'pending')}">${student.status}</span></p>
+          </div>
+        </div>
+
+        <div class="profile-grid">
+          <div class="profile-section-card">
+            <h4>Madrasa Record</h4>
+            <div class="profile-row">
+              <span class="profile-label">Date of Joining</span>
+              <span class="profile-value">${student.doj || 'N/A'}</span>
+            </div>
+            <div class="profile-row">
+              <span class="profile-label">Batch Session</span>
+              <span class="profile-value">${student.batch || 'Zuhr'}</span>
+            </div>
+            <div class="profile-row">
+              <span class="profile-label">Course Enrolled</span>
+              <span class="profile-value">${student.course_applying || 'N/A'}</span>
+            </div>
+            <div class="profile-row">
+              <span class="profile-label">Monthly Fees</span>
+              <span class="profile-value" style="color: var(--admin-accent); font-weight: 700;">₹${parseInt(student.monthly_fee || 0).toLocaleString('en-IN')}.00</span>
+            </div>
+          </div>
+
+          <div class="profile-section-card">
+            <h4>Personal Details</h4>
+            <div class="profile-row">
+              <span class="profile-label">Gender / Age</span>
+              <span class="profile-value">${student.gender || 'N/A'} (${age})</span>
+            </div>
+            <div class="profile-row">
+              <span class="profile-label">Aadhar Number</span>
+              <span class="profile-value">${student.aadhar_no || 'N/A'}</span>
+            </div>
+            <div class="profile-row">
+              <span class="profile-label">Father's Name</span>
+              <span class="profile-value">${student.father_name || 'N/A'}</span>
+            </div>
+            <div class="profile-row">
+              <span class="profile-label">Phone Contact</span>
+              <span class="profile-value">
+                ${student.parent_phone ? `<a href="tel:${student.parent_phone}" style="color: var(--admin-accent); font-weight: 700; text-decoration: none;">📞 ${student.parent_phone}</a>` : 'N/A'}
+              </span>
+            </div>
+          </div>
+
+          <div class="profile-section-card" style="grid-column: span 2;">
+            <h4>Residential & Academic Info</h4>
+            <div class="profile-row">
+              <span class="profile-label">Residential Address</span>
+              <span class="profile-value" style="max-width: 70%; text-align: right; word-break: break-word;">${student.address || 'N/A'}</span>
+            </div>
+            <div class="profile-row">
+              <span class="profile-label">School / College</span>
+              <span class="profile-value">${student.school_name || 'N/A'}</span>
+            </div>
+            <div class="profile-row">
+              <span class="profile-label">Current Academic Class</span>
+              <span class="profile-value">${student.current_class || 'N/A'}</span>
+            </div>
+          </div>
+
+          <div class="profile-section-card" style="grid-column: span 2;">
+            <h4>Payment History</h4>
+            ${paymentsTableHtml}
+          </div>
+        </div>
+      `;
+
+      const editBtn = document.getElementById('btn-profile-edit');
+      if (editBtn) {
+        editBtn.replaceWith(editBtn.cloneNode(true));
+        document.getElementById('btn-profile-edit').addEventListener('click', () => {
+          modal.close();
+          openEditModal(studentId);
+        });
+      }
+
+      const payBtn = document.getElementById('btn-profile-pay');
+      if (payBtn) {
+        payBtn.replaceWith(payBtn.cloneNode(true));
+        document.getElementById('btn-profile-pay').addEventListener('click', () => {
+          modal.close();
+          const rawFee = parseInt(student.monthly_fee) || 0;
+          const expFee = getExpectedFee(student, feeCurrentMonth);
+          const paidAmt = cachedFeePayments.filter(p => p.student_id === student.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
+          openPaymentModal(student.id, student.student_name, expFee, paidAmt, rawFee);
+        });
+      }
+
+      content.querySelectorAll('.btn-profile-receipt').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const pid = e.currentTarget.getAttribute('data-pid');
+          printReceipt(pid);
+        });
+      });
+    }
+
+    // ─── Transaction Receipt Printer Engine ──────────────
+    async function printReceipt(paymentId) {
+      if (!window._supabase) {
+        alert('Supabase is not initialized.');
+        return;
+      }
+      const receiptContainer = document.getElementById('print-receipt-container');
+      if (!receiptContainer) return;
+
+      try {
+        const { data: payments, error } = await window._supabase
+          .from('fee_payments')
+          .select('*, student_registrations(*)')
+          .eq('id', paymentId);
+        
+        if (error) throw error;
+        if (!payments || !payments.length) {
+          alert('Payment record not found.');
+          return;
+        }
+        
+        const p = payments[0];
+        const s = p.student_registrations;
+        if (!s) {
+          alert('Student record associated with this payment not found.');
+          return;
+        }
+
+        const receiptNo = 'REC-' + String(p.id).substring(0, 8).toUpperCase();
+        const amountWords = numberToWords(p.amount) + ' Rupees Only';
+
+        receiptContainer.innerHTML = `
+          <div style="font-family: 'Outfit', 'Inter', sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 2px solid #2D6A4F; border-radius: 16px; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); position: relative;">
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 5rem; font-weight: 800; color: rgba(45, 106, 79, 0.03); pointer-events: none; white-space: nowrap; user-select: none;">MQLC OFFICIAL</div>
+            
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #2D6A4F; padding-bottom: 15px; margin-bottom: 20px;">
+              <div style="display: flex; align-items: center; gap: 1rem;">
+                <img src="assets/logo.png" alt="Logo" style="width: 50px; height: 50px;">
+                <div style="text-align: left;">
+                  <h2 style="margin: 0; color: #2D6A4F; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em;">Millat Qur'an Learning Center</h2>
+                  <p style="margin: 2px 0 0 0; color: #666; font-size: 0.75rem; font-weight: 500;">Jamatkhana Goundpalya, Tumkur, Karnataka</p>
+                </div>
+              </div>
+              <div style="text-align: right;">
+                <span style="display: inline-block; background: rgba(45, 106, 79, 0.1); color: #2D6A4F; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 50px; text-transform: uppercase;">Fee Receipt</span>
+                <p style="margin: 6px 0 0 0; font-size: 0.78rem; font-weight: 600; color: var(--admin-muted);">No: ${receiptNo}</p>
+              </div>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.88rem;">
+              <tbody>
+                <tr>
+                  <td style="padding: 6px 0; color: #666; width: 30%;">Student Name:</td>
+                  <td style="padding: 6px 0; font-weight: 700; color: #111;">${s.student_name}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; color: #666;">Father's Name:</td>
+                  <td style="padding: 6px 0; font-weight: 600; color: #333;">${s.father_name || 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; color: #666;">Batch & Course:</td>
+                  <td style="padding: 6px 0; font-weight: 600; color: #333;">${s.batch || 'N/A'} Batch | ${s.course_applying || 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; color: #666;">Fee Month Covered:</td>
+                  <td style="padding: 6px 0; font-weight: 700; color: #2D6A4F;">${feeMonthLabel(p.month)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; color: #666;">Date of Payment:</td>
+                  <td style="padding: 6px 0; font-weight: 600; color: #333;">${p.paid_on ? new Date(p.paid_on).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; color: #666;">Payment Method / Notes:</td>
+                  <td style="padding: 6px 0; font-style: italic; color: #555;">${p.notes || 'Monthly tuition fee recorded.'}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div style="background: rgba(45, 106, 79, 0.03); border: 1.5px solid rgba(45, 106, 79, 0.15); border-radius: 12px; padding: 15px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px;">
+              <div>
+                <span style="font-size: 0.72rem; color: #666; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: block; margin-bottom: 2px;">Amount in Words</span>
+                <span style="font-size: 0.82rem; font-weight: 600; color: #333; text-transform: capitalize;">${amountWords}</span>
+              </div>
+              <div style="text-align: right;">
+                <span style="font-size: 0.72rem; color: #666; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: block; margin-bottom: 2px;">Grand Total</span>
+                <span style="font-size: 1.5rem; font-weight: 800; color: #2D6A4F;">₹${p.amount.toLocaleString('en-IN')}.00</span>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #ddd; font-size: 0.8rem; color: #666;">
+              <div style="text-align: center; width: 40%;">
+                <div style="height: 40px;"></div>
+                <div style="border-top: 1.5px solid #bbb; padding-top: 5px; font-weight: 600;">Authorized Signatory</div>
+              </div>
+              <div style="text-align: center; width: 40%;">
+                <div style="height: 40px; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-style: italic; color: #888;">Recorded by: ${p.recorded_by || 'admin'}</div>
+                <div style="border-top: 1.5px solid #bbb; padding-top: 5px; font-weight: 600;">Receiver's Signature</div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        document.body.classList.add('print-mode-receipt');
+        const styleBlock = document.createElement('style');
+        styleBlock.id = 'temp-receipt-print-style';
+        styleBlock.innerHTML = '@page { size: portrait; margin: 1cm; }';
+        document.head.appendChild(styleBlock);
+
+        window.print();
+
+        document.body.classList.remove('print-mode-receipt');
+        const tempStyle = document.getElementById('temp-receipt-print-style');
+        if (tempStyle) tempStyle.remove();
+        receiptContainer.innerHTML = '';
+        
+      } catch (err) {
+        console.error('Failed to print receipt:', err);
+        alert('Failed to print receipt: ' + err.message);
+      }
+    }
+
+    // Number conversion helper for India system
+    function numberToWords(num) {
+      const a = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+      const b = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+      
+      if ((num = num.toString()).length > 9) return 'overflow';
+      let n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+      if (!n) return '';
+      let str = '';
+      str += (Number(n[1]) != 0) ? (a[Number(n[1])] || b[Number(n[1].substr(0,1))] + ' ' + a[Number(n[1].substr(1,1))]) + ' crore ' : '';
+      str += (Number(n[2]) != 0) ? (a[Number(n[2])] || b[Number(n[2].substr(0,1))] + ' ' + a[Number(n[2].substr(1,1))]) + ' lakh ' : '';
+      str += (Number(n[3]) != 0) ? (a[Number(n[3])] || b[Number(n[3].substr(0,1))] + ' ' + a[Number(n[3].substr(1,1))]) + ' thousand ' : '';
+      str += (Number(n[4]) != 0) ? (a[Number(n[4])] || b[Number(n[4].substr(0,1))] + ' ' + a[Number(n[4].substr(1,1))]) + ' hundred ' : '';
+      str += (Number(n[5]) != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[Number(n[5].substr(0,1))] + ' ' + a[Number(n[5].substr(1,1))]) : '';
+      return str.trim();
+    }
+
   }
 
 });
