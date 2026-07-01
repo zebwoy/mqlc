@@ -3552,8 +3552,11 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.textContent = 'Confirm Exemption';
         btn.disabled = false;
       }
-    // ─── Student Profile View Controller ─────────────────
-    async function openProfileModal(studentId) {
+    });
+  }
+
+  // ─── Student Profile View Controller ─────────────────
+  async function openProfileModal(studentId) {
       const student = cachedStudents.find(s => s.id.toString() === studentId.toString());
       if (!student) return;
 
@@ -3887,7 +3890,5 @@ document.addEventListener('DOMContentLoaded', () => {
       str += (Number(n[5]) != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[Number(n[5].substr(0,1))] + ' ' + a[Number(n[5].substr(1,1))]) : '';
       return str.trim();
     }
-
-  }
 
 });
