@@ -2741,10 +2741,10 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       let html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">';
-      html += '<thead><tr style="border-bottom: 1px solid var(--admin-border);"><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Month</th><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Amount</th><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Date</th><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Notes</th><th style="text-align: right; padding: 4px 8px; color: var(--admin-muted);">Action</th></tr></thead><tbody>';
+      html += '<thead><tr style="border-bottom: 1px solid var(--admin-border);"><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Month</th><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Date Paid</th><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Amount</th><th style="text-align: right; padding: 4px 8px; color: var(--admin-muted);">Action</th></tr></thead><tbody>';
       Object.keys(byMonth).sort().reverse().forEach(month => {
         byMonth[month].forEach(p => {
-          html += `<tr style="border-bottom: 1px solid var(--admin-bg);"><td style="padding: 4px 8px;">${feeMonthLabel(month)}</td><td style="padding: 4px 8px; font-weight: 600;">₹${p.amount.toLocaleString('en-IN')}</td><td style="padding: 4px 8px;">${p.paid_on || '—'}</td><td style="padding: 4px 8px; color: var(--admin-muted);">${p.notes || '—'}</td><td style="padding: 4px 8px; text-align: right;"><button class="btn-print-receipt btn-secondary" data-pid="${p.id}" style="padding: 2px 8px; font-size: 0.72rem; border-radius: 50px;">📄 Receipt</button></td></tr>`;
+          html += `<tr style="border-bottom: 1px solid var(--admin-bg);"><td style="padding: 4px 8px;">${feeMonthLabel(month)}</td><td style="padding: 4px 8px;">${p.paid_on || '—'}</td><td style="padding: 4px 8px; font-weight: 600;">₹${p.amount.toLocaleString('en-IN')}</td><td style="padding: 4px 8px; text-align: right;"><button class="btn-print-receipt btn-secondary" data-pid="${p.id}" style="padding: 2px 8px; font-size: 0.72rem; border-radius: 50px;">📄 Receipt</button></td></tr>`;
         });
       });
       html += '</tbody></table>';
@@ -3624,9 +3624,8 @@ document.addEventListener('DOMContentLoaded', () => {
               <thead>
                 <tr style="background: var(--admin-bg); border-bottom: 1.5px solid var(--admin-border);">
                   <th style="padding: 8px 12px; font-weight: 700; color: var(--admin-text);">Month</th>
+                  <th style="padding: 8px 12px; font-weight: 700; color: var(--admin-text);">Date Paid</th>
                   <th style="padding: 8px 12px; font-weight: 700; color: var(--admin-text);">Amount</th>
-                  <th style="padding: 8px 12px; font-weight: 700; color: var(--admin-text);">Date</th>
-                  <th style="padding: 8px 12px; font-weight: 700; color: var(--admin-text);">Notes</th>
                   <th style="padding: 8px 12px; font-weight: 700; color: var(--admin-text); text-align: right;">Receipt</th>
                 </tr>
               </thead>
@@ -3634,9 +3633,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${payments.map(p => `
                   <tr style="border-bottom: 1px solid var(--admin-border);">
                     <td style="padding: 8px 12px; font-weight: 600; color: var(--admin-accent);">${feeMonthLabel(p.month)}</td>
-                    <td style="padding: 8px 12px; font-weight: 700; color: var(--admin-text);">₹${p.amount.toLocaleString('en-IN')}</td>
                     <td style="padding: 8px 12px; color: var(--admin-muted);">${p.paid_on || '—'}</td>
-                    <td style="padding: 8px 12px; color: var(--admin-muted);">${p.notes || '—'}</td>
+                    <td style="padding: 8px 12px; font-weight: 700; color: var(--admin-text);">₹${p.amount.toLocaleString('en-IN')}</td>
                     <td style="padding: 8px 12px; text-align: right;">
                       <button class="btn-profile-receipt btn-secondary" data-pid="${p.id}" style="padding: 2px 8px; font-size: 0.7rem; border-radius: 50px;">📄 Receipt</button>
                     </td>
@@ -3781,7 +3779,18 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
-        const receiptNo = 'REC-' + String(p.id).substring(0, 8).toUpperCase();
+        const expFee = getExpectedFee(s, feeCurrentMonth);
+        const paid = cachedFeePayments.filter(pay => pay.student_id === s.id && pay.month === feeCurrentMonth).reduce((sum, pay) => sum + (pay.amount || 0), 0);
+        const remaining = Math.max(0, expFee - paid);
+        const arrears = calcArrears(s, feeCurrentMonth);
+        const totalOutstanding = remaining + arrears;
+
+        const yy = p.month.substring(2, 4);
+        const mm = p.month.substring(5, 7);
+        const formNo = s.form_no || s.id.toString().substring(0, 4);
+        const txHash = String(p.id).substring(0, 4).toUpperCase();
+        const receiptNo = `MQLC/${yy}${mm}/${formNo}-${txHash}`;
+        
         const amountWords = numberToWords(p.amount) + ' Rupees Only';
 
         receiptContainer.innerHTML = `
@@ -3793,7 +3802,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <img src="assets/logo.png" alt="Logo" style="width: 50px; height: 50px;">
                 <div style="text-align: left;">
                   <h2 style="margin: 0; color: #2D6A4F; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em;">Millat Qur'an Learning Center</h2>
-                  <p style="margin: 2px 0 0 0; color: #666; font-size: 0.75rem; font-weight: 500;">Jamatkhana Goundpalya, Tumkur, Karnataka</p>
+                  <p style="margin: 2px 0 0 0; color: #666; font-size: 0.75rem; font-weight: 500;">Faridbaug, Nadi Naka, Bhiwandi</p>
                 </div>
               </div>
               <div style="text-align: right;">
@@ -3805,7 +3814,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.88rem;">
               <tbody>
                 <tr>
-                  <td style="padding: 6px 0; color: #666; width: 30%;">Student Name:</td>
+                  <td style="padding: 6px 0; color: #666; width: 35%;">Student Name:</td>
                   <td style="padding: 6px 0; font-weight: 700; color: #111;">${s.student_name}</td>
                 </tr>
                 <tr>
@@ -3817,7 +3826,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   <td style="padding: 6px 0; font-weight: 600; color: #333;">${s.batch || 'N/A'} Batch | ${s.course_applying || 'N/A'}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 6px 0; color: #666;">Fee Month Covered:</td>
+                  <td style="padding: 6px 0; color: #666;">Fee Month Paid:</td>
                   <td style="padding: 6px 0; font-weight: 700; color: #2D6A4F;">${feeMonthLabel(p.month)}</td>
                 </tr>
                 <tr>
@@ -3825,8 +3834,16 @@ document.addEventListener('DOMContentLoaded', () => {
                   <td style="padding: 6px 0; font-weight: 600; color: #333;">${p.paid_on ? new Date(p.paid_on).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 6px 0; color: #666;">Payment Method / Notes:</td>
-                  <td style="padding: 6px 0; font-style: italic; color: #555;">${p.notes || 'Monthly tuition fee recorded.'}</td>
+                  <td style="padding: 6px 0; color: #666; border-top: 1px dashed #eee;">Arrears (Past Months):</td>
+                  <td style="padding: 6px 0; font-weight: 600; color: #b45309; border-top: 1px dashed #eee;">₹${arrears.toLocaleString('en-IN')}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; color: #666;">Current Month Due (${feeMonthLabel(feeCurrentMonth)}):</td>
+                  <td style="padding: 6px 0; font-weight: 600; color: #333;">₹${remaining.toLocaleString('en-IN')}</td>
+                </tr>
+                <tr style="border-bottom: 1.5px solid #2D6A4F; font-size: 0.95rem;">
+                  <td style="padding: 8px 0; color: #111; font-weight: 700; border-bottom: 2px solid #2D6A4F;">Total Balance Outstanding:</td>
+                  <td style="padding: 8px 0; font-weight: 800; color: #dc2626; border-bottom: 2px solid #2D6A4F;">₹${totalOutstanding.toLocaleString('en-IN')}</td>
                 </tr>
               </tbody>
             </table>
