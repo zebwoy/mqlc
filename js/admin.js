@@ -3807,6 +3807,7 @@ document.addEventListener('DOMContentLoaded', () => {
           } catch (_) {}
         }
 
+        const [asy, asm] = ARREARS_START.split('-').map(Number);
         // Calculate current academic year months (April - March) based on feeCurrentMonth
         const [currYear, currMonth] = feeCurrentMonth.split('-').map(Number);
         let startYear = currYear;
@@ -3826,7 +3827,6 @@ document.addEventListener('DOMContentLoaded', () => {
           const mLabel = new Date(m + '-15').toLocaleDateString('en-US', { month: 'short' });
           const mExp = getExpectedFee(s, m);
           const mExempt = isExemptForMonth(s.id, m);
-          const mPaid = cachedFeePayments.filter(pay => pay.student_id === s.id && pay.month === m).reduce((sum, pay) => sum + (pay.amount || 0), 0);
           
           let bgColor = '#f1f3f4';
           let leftColor = '#5f6368';
@@ -3838,53 +3838,56 @@ document.addEventListener('DOMContentLoaded', () => {
             bgColor = '#f1f3f4';
             leftLabel = 'TBD';
             rightLabel = 'TBD';
-          } else if (m === feeCurrentMonth) {
-            if (mExempt) {
-              bgColor = '#f1f3f4';
-              leftLabel = 'Exempt';
-              rightLabel = '—';
-            } else if (mExp === 0) {
-              bgColor = '#f1f3f4';
-              leftLabel = 'N/A';
-              rightLabel = '—';
-            } else {
-              leftLabel = `₹${mExp}`;
-              rightLabel = `₹${mPaid}`;
-              if (mPaid >= mExp) {
-                bgColor = '#e6f4ea';
-                leftColor = '#137333';
-                rightColor = '#137333';
-              } else {
-                bgColor = '#fce8e6';
-                leftColor = '#c5221f';
-                rightColor = '#c5221f';
-              }
-            }
+          } else if (mExempt) {
+            bgColor = '#f1f3f4';
+            leftLabel = 'Exempt';
+            rightLabel = '—';
+          } else if (mExp === 0) {
+            bgColor = '#f1f3f4';
+            leftLabel = 'N/A';
+            rightLabel = '—';
           } else {
-            if (mExempt) {
-              bgColor = '#f1f3f4';
-              leftLabel = 'Exempt';
-              rightLabel = '—';
-            } else if (mExp === 0) {
-              bgColor = '#f1f3f4';
-              leftLabel = 'N/A';
-              rightLabel = '—';
+            // Cumulative expected up to month m
+            let cumulativeExpected = 0;
+            let cur = new Date(asy, asm - 1, 15);
+            const targetEnd = new Date(m + '-15');
+            while (cur <= targetEnd) {
+              const ym = cur.getFullYear() + '-' + String(cur.getMonth() + 1).padStart(2, '0');
+              cumulativeExpected += getExpectedFee(s, ym);
+              cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 15);
+            }
+
+            // Cumulative paid pool up to month m
+            const cumulativePaidPool = cachedFeePayments
+              .filter(pay => pay.student_id === s.id && pay.month >= ARREARS_START && pay.month <= m)
+              .reduce((sum, pay) => sum + (pay.amount || 0), 0);
+
+            // Cumulative paid before month m
+            const cumulativePaidBefore = cachedFeePayments
+              .filter(pay => pay.student_id === s.id && pay.month >= ARREARS_START && pay.month < m)
+              .reduce((sum, pay) => sum + (pay.amount || 0), 0);
+
+            const leftVal = Math.max(0, cumulativeExpected - cumulativePaidBefore);
+            const rightVal = cachedFeePayments
+              .filter(pay => pay.student_id === s.id && pay.month === m)
+              .reduce((sum, pay) => sum + (pay.amount || 0), 0);
+
+            leftLabel = `₹${leftVal}`;
+            rightLabel = `₹${rightVal}`;
+
+            const remainingLiable = Math.max(0, cumulativeExpected - cumulativePaidPool);
+            if (remainingLiable === 0) {
+              bgColor = '#e6f4ea';
+              leftColor = '#137333';
+              rightColor = '#137333';
+            } else if (rightVal > 0) {
+              bgColor = '#fef7e0';
+              leftColor = '#c5221f';
+              rightColor = '#b06000';
             } else {
-              leftLabel = `₹${mExp}`;
-              rightLabel = `₹${mPaid}`;
-              if (mPaid >= mExp) {
-                bgColor = '#e6f4ea';
-                leftColor = '#137333';
-                rightColor = '#137333';
-              } else if (mPaid > 0) {
-                bgColor = '#fef7e0';
-                leftColor = '#b06000';
-                rightColor = '#b06000';
-              } else {
-                bgColor = '#fce8e6';
-                leftColor = '#c5221f';
-                rightColor = '#c5221f';
-              }
+              bgColor = '#fce8e6';
+              leftColor = '#c5221f';
+              rightColor = '#c5221f';
             }
           }
           
@@ -3915,32 +3918,53 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         matrixHtml += `</tr></tbody></table>`;
 
-        // Calculate exact total outstanding balance and list outstanding months in parenthesis
-        const expFee = getExpectedFee(s, feeCurrentMonth);
-        const paid = cachedFeePayments.filter(pay => pay.student_id === s.id && pay.month === feeCurrentMonth).reduce((sum, pay) => sum + (pay.amount || 0), 0);
-        const remaining = Math.max(0, expFee - paid);
-        const arrears = calcArrears(s, feeCurrentMonth);
-        const totalOutstanding = remaining + arrears;
-
-        const outstandingDetails = [];
-        const [asy, asm] = ARREARS_START.split('-').map(Number);
+        // Calculate exact chronological outstanding balance list
         const [cy, cm] = feeCurrentMonth.split('-').map(Number);
-        let cur = new Date(asy, asm - 1, 15);
-        const end = new Date(cy, cm - 1, 15);
-        while (cur <= end) {
-          const ym = cur.getFullYear() + '-' + String(cur.getMonth() + 1).padStart(2, '0');
-          const mExp = getExpectedFee(s, ym);
-          const mExempt = isExemptForMonth(s.id, ym);
-          if (!mExempt && mExp > 0) {
-            const mPaid = cachedFeePayments.filter(pay => pay.student_id === s.id && pay.month === ym).reduce((sum, pay) => sum + (pay.amount || 0), 0);
-            const mDue = mExp - mPaid;
-            if (mDue > 0) {
-              const mName = cur.toLocaleDateString('en-US', { month: 'long' });
-              outstandingDetails.push(`${mDue} (${mName})`);
-            }
-          }
-          cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 15);
+
+        // Build list of months from ARREARS_START to feeCurrentMonth
+        const allMonthsList = [];
+        let curMonth = new Date(asy, asm - 1, 15);
+        const endMonth = new Date(cy, cm - 1, 15);
+        while (curMonth <= endMonth) {
+          allMonthsList.push(curMonth.getFullYear() + '-' + String(curMonth.getMonth() + 1).padStart(2, '0'));
+          curMonth = new Date(curMonth.getFullYear(), curMonth.getMonth() + 1, 15);
         }
+
+        // Expected fee map
+        const expectedFeeMap = {};
+        allMonthsList.forEach(m => {
+          expectedFeeMap[m] = getExpectedFee(s, m);
+        });
+
+        // Total payments made by the student from ARREARS_START up to feeCurrentMonth
+        const totalPaidPool = cachedFeePayments
+          .filter(pay => pay.student_id === s.id && pay.month >= ARREARS_START && pay.month <= feeCurrentMonth)
+          .reduce((sum, pay) => sum + (pay.amount || 0), 0);
+
+        // Distribute pool chronologically to build outstanding due map
+        const outstandingDueMap = {};
+        let pool = totalPaidPool;
+        allMonthsList.forEach(m => {
+          const exp = expectedFeeMap[m];
+          const alloc = Math.min(pool, exp);
+          pool -= alloc;
+          outstandingDueMap[m] = exp - alloc;
+        });
+
+        // Compute total outstanding balance
+        const totalOutstanding = allMonthsList.reduce((sum, m) => sum + outstandingDueMap[m], 0);
+
+        // Build outstanding details list (e.g. 100 (April) + 300 (May))
+        const outstandingDetails = [];
+        allMonthsList.forEach(m => {
+          const due = outstandingDueMap[m];
+          if (due > 0) {
+            const [y, mm] = m.split('-').map(Number);
+            const dateObj = new Date(y, mm - 1, 15);
+            const mName = dateObj.toLocaleDateString('en-US', { month: 'long' });
+            outstandingDetails.push(`${due} (${mName})`);
+          }
+        });
 
         let outstandingLabel = totalOutstanding > 0 ? (outstandingDetails.length > 0 ? outstandingDetails.join(' + ') : '₹0') : '₹0';
         let statusColor = '#137333'; // green
