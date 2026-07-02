@@ -652,11 +652,6 @@
                     <line x1="12" y1="3" x2="12" y2="15"></line>
                   </svg>
                 </button>
-                <button class="btn-secondary" id="btn-fee-mass-print"
-                  style="padding: 0.4rem 0.5rem; border-radius: 50px; display: flex; align-items: center; justify-content: center;"
-                  title="Mass Print Filtered Ledger Slips">
-                  🖨️
-                </button>
                 <div class="export-container" style="position: relative; display: inline-block;">
                   <button class="btn-secondary" id="btn-fee-export-toggle"
                     style="padding: 0.4rem 0.5rem; border-radius: 50px; display: flex; align-items: center; justify-content: center;"
@@ -690,6 +685,12 @@
                       <span
                         style="background: #fff5f5; color: #c53030; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-weight: 700; font-size: 0.7rem;">P</span>
                       Fee Collection Report
+                    </button>
+                    <button class="export-option" id="btn-fee-print-ledger-trigger"
+                      style="width: 100%; text-align: left; background: none; border: none; padding: 0.6rem 0.75rem; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; color: var(--admin-text); display: flex; align-items: center; gap: 0.75rem; transition: background 0.2s; margin-top: 0.25rem;">
+                      <span
+                        style="background: #e3f2fd; color: #1565c0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-weight: 700; font-size: 0.7rem;">L</span>
+                      Print Fee Ledger (FY26-FY27)
                     </button>
                   </div>
                 </div>
@@ -1131,6 +1132,29 @@
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/admin.js"></script>
+
+  <!-- Bulk Print Select Modal -->
+  <dialog id="modal-bulk-print-select" class="admin-modal" style="max-width: 500px; border-radius: 16px;">
+    <div class="modal-header">
+      <h3>Select Students to Print</h3>
+      <button onclick="document.getElementById('modal-bulk-print-select').close()" class="modal-close-btn">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center;">
+        <input type="text" id="bulk-print-search" placeholder="Search students..." class="modal-input" style="flex: 1; margin: 0; padding: 0.5rem 1rem; border: 1px solid var(--admin-border); border-radius: 50px;">
+        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; user-select: none;">
+          <input type="checkbox" id="bulk-print-select-all" style="width: 16px; height: 16px; accent-color: var(--admin-accent);"> Select All
+        </label>
+      </div>
+      <div id="bulk-print-student-list" style="max-height: 280px; overflow-y: auto; border: 1px solid var(--admin-border); border-radius: 12px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; background: #fafafa;">
+        <!-- Populated dynamically via JS -->
+      </div>
+      <div class="modal-actions" style="justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--admin-border); padding-top: 1rem; margin-top: 0.5rem;">
+        <button onclick="document.getElementById('modal-bulk-print-select').close()" class="btn-secondary" style="border-radius: 50px; padding: 0.5rem 1.25rem;">Cancel</button>
+        <button id="btn-bulk-print-confirm" class="btn-primary" style="border-radius: 50px; padding: 0.5rem 1.5rem;" disabled>Print (0)</button>
+      </div>
+    </div>
+  </dialog>
 
   <!-- Decision Modal Lightbox -->
   <dialog id="modal-decision" class="admin-modal" style="max-width: 600px;">

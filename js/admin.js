@@ -4098,67 +4098,148 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
-        function getFilteredStudents() {
-          const batchFilter = feeBatchFilter ? feeBatchFilter.value : 'all';
-          const statusFilter = feeStatusFilter ? feeStatusFilter.value : 'all';
-          const nameFilter = feeNameFilter ? feeNameFilter.value.toLowerCase().trim() : '';
+        // ─── Bulk print list population and control logic ──────────────
+        const printLedgerTrigger = document.getElementById('btn-fee-print-ledger-trigger');
+        if (printLedgerTrigger) {
+          printLedgerTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (feeExportDropdown) feeExportDropdown.style.display = 'none';
+            
+            // Populating student checklist modal
+            const students = cachedStudents.filter(s => s.status === 'approved' && isEnrolledForMonth(s.doj, feeCurrentMonth));
+            students.sort((a, b) => (a.student_name || '').localeCompare(b.student_name || ''));
 
-          let students = cachedStudents.filter(s => s.status === 'approved' && isEnrolledForMonth(s.doj, feeCurrentMonth));
+            const listContainer = document.getElementById('bulk-print-student-list');
+            if (listContainer) {
+              listContainer.innerHTML = students.map(s => {
+                return `
+                  <label style="display: flex; align-items: center; gap: 0.75rem; padding: 0.4rem 0.5rem; border-radius: 8px; cursor: pointer; user-select: none;" class="bulk-student-item">
+                    <input type="checkbox" class="bulk-student-check" value="${s.id}" style="width: 16px; height: 16px; accent-color: var(--admin-accent);">
+                    <span style="font-size: 0.88rem; font-weight: 500; color: #333;">${s.student_name}</span>
+                    <span style="font-size: 0.72rem; font-weight: 600; background: #e8f0fe; color: #1a73e8; padding: 1px 6px; border-radius: 4px; margin-left: auto;">${s.batch || 'Unassigned'}</span>
+                  </label>
+                `;
+              }).join('');
 
-          // Apply Filters (Name, Batch, Status)
-          students = students.filter(s => {
-            if (nameFilter && !(s.student_name || '').toLowerCase().includes(nameFilter)) return false;
-            if (batchFilter !== 'all') {
-              if (batchFilter === 'unassigned') {
-                if (s.batch && s.batch !== '' && s.batch !== 'null' && s.batch !== 'undefined') return false;
-              } else {
-                if (s.batch !== batchFilter) return false;
-              }
+              // Add change listeners to individual checks
+              listContainer.querySelectorAll('.bulk-student-check').forEach(cb => {
+                cb.addEventListener('change', updatePrintButtonState);
+              });
             }
-            if (statusFilter !== 'all') {
-              if (statusFilter === 'exempt') {
-                return isExemptForMonth(s.id, feeCurrentMonth);
-              }
-              if (isExemptForMonth(s.id, feeCurrentMonth)) return false;
-              const expFee = getExpectedFee(s, feeCurrentMonth);
-              if (expFee === 0) return false;
-              const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
-              let status = 'unpaid';
-              if (paid >= expFee) status = 'paid';
-              else if (paid > 0) status = 'partial';
-              if (status !== statusFilter) return false;
-            }
-            return true;
-          });
 
-          // Sort by batch then name
-          const batchOrder = ['Zuhr', 'Asr', 'Maghrib'];
-          students.sort((a, b) => {
-            const ba = batchOrder.indexOf(a.batch) === -1 ? 99 : batchOrder.indexOf(a.batch);
-            const bb = batchOrder.indexOf(b.batch) === -1 ? 99 : batchOrder.indexOf(b.batch);
-            if (ba !== bb) return ba - bb;
-            return (a.student_name || '').localeCompare(b.student_name || '');
-          });
+            // Reset dialog inputs
+            const searchField = document.getElementById('bulk-print-search');
+            if (searchField) searchField.value = '';
+            const selectAllCheck = document.getElementById('bulk-print-select-all');
+            if (selectAllCheck) selectAllCheck.checked = false;
 
-          return students;
+            updatePrintButtonState();
+
+            const bulkPrintModal = document.getElementById('modal-bulk-print-select');
+            if (bulkPrintModal) bulkPrintModal.showModal();
+          });
         }
 
-        async function massPrintLedgers(startSide = 'left') {
-          const students = getFilteredStudents();
-          if (students.length === 0) {
-            alert('No students found to print.');
-            return;
+        function updatePrintButtonState() {
+          const checkedChecks = Array.from(document.querySelectorAll('.bulk-student-check:checked'));
+          const count = checkedChecks.length;
+          const btn = document.getElementById('btn-bulk-print-confirm');
+          if (btn) {
+            btn.disabled = count === 0;
+            btn.innerText = count === 1 ? `Print (1)` : `Print (${count})`;
           }
+        }
 
+        // Live search inside student print checklist modal
+        const bulkSearchField = document.getElementById('bulk-print-search');
+        if (bulkSearchField) {
+          bulkSearchField.addEventListener('input', () => {
+            const q = bulkSearchField.value.toLowerCase().trim();
+            const items = document.querySelectorAll('.bulk-student-item');
+            items.forEach(item => {
+              const name = item.querySelector('span').innerText.toLowerCase();
+              if (name.includes(q)) {
+                item.style.display = 'flex';
+              } else {
+                item.style.display = 'none';
+              }
+            });
+          });
+        }
+
+        // Select All handler (affects only currently visible/filtered students)
+        const bulkSelectAll = document.getElementById('bulk-print-select-all');
+        if (bulkSelectAll) {
+          bulkSelectAll.addEventListener('change', () => {
+            const isChecked = bulkSelectAll.checked;
+            const items = document.querySelectorAll('.bulk-student-item');
+            items.forEach(item => {
+              if (item.style.display !== 'none') {
+                const cb = item.querySelector('.bulk-student-check');
+                if (cb) cb.checked = isChecked;
+              }
+            });
+            updatePrintButtonState();
+          });
+        }
+
+        // Confirm Action print spooling trigger
+        const bulkPrintConfirmBtn = document.getElementById('btn-bulk-print-confirm');
+        if (bulkPrintConfirmBtn) {
+          bulkPrintConfirmBtn.addEventListener('click', () => {
+            const checkedChecks = Array.from(document.querySelectorAll('.bulk-student-check:checked'));
+            const selectedIds = checkedChecks.map(cb => cb.value);
+            if (selectedIds.length === 0) return;
+
+            const bulkPrintModal = document.getElementById('modal-bulk-print-select');
+            if (bulkPrintModal) bulkPrintModal.close();
+
+            if (selectedIds.length === 1) {
+              requestPrintReceipt(selectedIds[0]);
+            } else {
+              const choiceModal = document.getElementById('modal-print-choice');
+              if (!choiceModal) {
+                bulkPrintLedgersForIds(selectedIds, 'left');
+                return;
+              }
+
+              const leftBtn = document.getElementById('btn-print-left');
+              const rightBtn = document.getElementById('btn-print-right');
+
+              const newLeftBtn = leftBtn.cloneNode(true);
+              leftBtn.replaceWith(newLeftBtn);
+              const newRightBtn = rightBtn.cloneNode(true);
+              rightBtn.replaceWith(newRightBtn);
+
+              newLeftBtn.addEventListener('click', () => {
+                choiceModal.close();
+                bulkPrintLedgersForIds(selectedIds, 'left');
+              });
+
+              newRightBtn.addEventListener('click', () => {
+                choiceModal.close();
+                bulkPrintLedgersForIds(selectedIds, 'right');
+              });
+
+              choiceModal.showModal();
+            }
+          });
+        }
+
+        async function bulkPrintLedgersForIds(studentIds, startSide = 'left') {
+          if (studentIds.length === 0) return;
           const receiptContainer = document.getElementById('print-receipt-container');
           if (!receiptContainer) return;
 
           try {
             let html = '';
             const cards = [];
-            for (let s of students) {
-              const card = buildStudentLedgerCard(s);
-              cards.push(card);
+            for (let id of studentIds) {
+              const s = cachedStudents.find(student => student.id.toString() === id.toString());
+              if (s) {
+                const card = buildStudentLedgerCard(s);
+                cards.push(card);
+              }
             }
 
             let idx = 0;
@@ -4197,47 +4278,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tempStyle) tempStyle.remove();
             receiptContainer.innerHTML = '';
           } catch (err) {
-            console.error('Failed to mass print receipts:', err);
-            alert('Failed to mass print: ' + err.message);
+            console.error('Failed to print bulk ledger sheets:', err);
+            alert('Failed to print: ' + err.message);
           }
-        }
-
-        // ─── Mass Print Event Listener ─────────────────
-        const massPrintBtn = document.getElementById('btn-fee-mass-print');
-        if (massPrintBtn) {
-          massPrintBtn.addEventListener('click', () => {
-            const students = getFilteredStudents();
-            if (students.length === 0) {
-              alert('No students found matching current filters.');
-              return;
-            }
-
-            const choiceModal = document.getElementById('modal-print-choice');
-            if (!choiceModal) {
-              massPrintLedgers('left');
-              return;
-            }
-
-            const leftBtn = document.getElementById('btn-print-left');
-            const rightBtn = document.getElementById('btn-print-right');
-
-            const newLeftBtn = leftBtn.cloneNode(true);
-            leftBtn.replaceWith(newLeftBtn);
-            const newRightBtn = rightBtn.cloneNode(true);
-            rightBtn.replaceWith(newRightBtn);
-
-            newLeftBtn.addEventListener('click', () => {
-              choiceModal.close();
-              massPrintLedgers('left');
-            });
-
-            newRightBtn.addEventListener('click', () => {
-              choiceModal.close();
-              massPrintLedgers('right');
-            });
-
-            choiceModal.showModal();
-          });
         }
 
     // Number conversion helper for India system
