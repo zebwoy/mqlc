@@ -1881,4 +1881,8 @@ body:has(dialog.admin-modal[open])>*:not(dialog) {
     page-break-inside: avoid !important;
     background: white !important;
   }
+
+  .receipt-page:last-child {
+    page-break-after: avoid !important;
+  }
 }

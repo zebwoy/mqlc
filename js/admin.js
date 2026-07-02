@@ -4198,31 +4198,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (selectedIds.length === 1) {
               requestPrintReceipt(selectedIds[0]);
             } else {
-              const choiceModal = document.getElementById('modal-print-choice');
-              if (!choiceModal) {
-                bulkPrintLedgersForIds(selectedIds, 'left');
-                return;
-              }
-
-              const leftBtn = document.getElementById('btn-print-left');
-              const rightBtn = document.getElementById('btn-print-right');
-
-              const newLeftBtn = leftBtn.cloneNode(true);
-              leftBtn.replaceWith(newLeftBtn);
-              const newRightBtn = rightBtn.cloneNode(true);
-              rightBtn.replaceWith(newRightBtn);
-
-              newLeftBtn.addEventListener('click', () => {
-                choiceModal.close();
-                bulkPrintLedgersForIds(selectedIds, 'left');
-              });
-
-              newRightBtn.addEventListener('click', () => {
-                choiceModal.close();
-                bulkPrintLedgersForIds(selectedIds, 'right');
-              });
-
-              choiceModal.showModal();
+              bulkPrintLedgersForIds(selectedIds, 'left');
             }
           });
         }
