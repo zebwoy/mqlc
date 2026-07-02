@@ -1871,4 +1871,14 @@ body:has(dialog.admin-modal[open])>*:not(dialog) {
     align-items: center !important;
     justify-content: center !important;
   }
+
+  .receipt-page {
+    display: flex !important;
+    width: 297mm !important;
+    height: 210mm !important;
+    box-sizing: border-box !important;
+    page-break-after: always !important;
+    page-break-inside: avoid !important;
+    background: white !important;
+  }
 }

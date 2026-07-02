@@ -3778,331 +3778,467 @@ document.addEventListener('DOMContentLoaded', () => {
       choiceModal.showModal();
     }
 
-    // ─── Transaction Receipt Printer Engine ──────────────
-    async function printReceipt(studentId, position = 'left') {
-      if (!window._supabase) {
-        alert('Supabase is not initialized.');
-        return;
-      }
-      const receiptContainer = document.getElementById('print-receipt-container');
-      if (!receiptContainer) return;
-
-      try {
-        const s = cachedStudents.find(student => student.id.toString() === studentId.toString());
-        if (!s) {
-          alert('Student record not found.');
-          return;
-        }
-
-        const curPayments = cachedFeePayments.filter(pay => pay.student_id === s.id && pay.month === feeCurrentMonth);
-        const mPaid = curPayments.reduce((sum, pay) => sum + (pay.amount || 0), 0);
-
-        let recordedBy = 'admin';
-        if (curPayments.length > 0) {
-          recordedBy = curPayments[0].recorded_by || 'admin';
-        } else {
-          try {
-            const { data: { session } } = await window._supabase.auth.getSession();
-            if (session?.user?.email) recordedBy = session.user.email;
-          } catch (_) {}
-        }
-
-        const [asy, asm] = ARREARS_START.split('-').map(Number);
-        // Calculate current academic year months (April - March) based on feeCurrentMonth
-        const [currYear, currMonth] = feeCurrentMonth.split('-').map(Number);
-        let startYear = currYear;
-        if (currMonth >= 1 && currMonth <= 3) {
-          startYear = currYear - 1;
-        }
-        
-        const monthsList = [];
-        for (let i = 0; i < 12; i++) {
-          const m = (4 + i - 1) % 12 + 1;
-          const y = startYear + Math.floor((4 + i - 1) / 12);
-          monthsList.push(`${y}-${String(m).padStart(2, '0')}`);
-        }
-
-        // Generate visual annual payment cells
-        function buildCell(m) {
-          const mLabel = new Date(m + '-15').toLocaleDateString('en-US', { month: 'short' });
-          const mExp = getExpectedFee(s, m);
-          const mExempt = isExemptForMonth(s.id, m);
-          
-          let bgColor = '#f1f3f4';
-          let leftColor = '#5f6368';
-          let rightColor = '#5f6368';
-          let leftLabel = '—';
-          let rightLabel = '—';
-          
-          if (m > feeCurrentMonth) {
-            bgColor = '#f1f3f4';
-            leftLabel = 'TBD';
-            rightLabel = 'TBD';
-          } else if (mExempt) {
-            bgColor = '#f1f3f4';
-            leftLabel = 'Exempt';
-            rightLabel = '—';
-          } else if (mExp === 0) {
-            bgColor = '#f1f3f4';
-            leftLabel = 'N/A';
-            rightLabel = '—';
-          } else {
-            // Cumulative expected up to month m
-            let cumulativeExpected = 0;
-            let cur = new Date(asy, asm - 1, 15);
-            const targetEnd = new Date(m + '-15');
-            while (cur <= targetEnd) {
-              const ym = cur.getFullYear() + '-' + String(cur.getMonth() + 1).padStart(2, '0');
-              cumulativeExpected += getExpectedFee(s, ym);
-              cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 15);
-            }
-
-            // Cumulative paid pool up to month m
-            const cumulativePaidPool = cachedFeePayments
-              .filter(pay => pay.student_id === s.id && pay.month >= ARREARS_START && pay.month <= m)
-              .reduce((sum, pay) => sum + (pay.amount || 0), 0);
-
-            // Cumulative paid before month m
-            const cumulativePaidBefore = cachedFeePayments
-              .filter(pay => pay.student_id === s.id && pay.month >= ARREARS_START && pay.month < m)
-              .reduce((sum, pay) => sum + (pay.amount || 0), 0);
-
-            const leftVal = Math.max(0, cumulativeExpected - cumulativePaidBefore);
-            const rightVal = cachedFeePayments
-              .filter(pay => pay.student_id === s.id && pay.month === m)
-              .reduce((sum, pay) => sum + (pay.amount || 0), 0);
-
-            leftLabel = `₹${leftVal}`;
-            rightLabel = `₹${rightVal}`;
-
-            const remainingLiable = Math.max(0, cumulativeExpected - cumulativePaidPool);
-            if (remainingLiable === 0) {
-              bgColor = '#e6f4ea';
-              leftColor = '#137333';
-              rightColor = '#137333';
-            } else if (rightVal > 0) {
-              bgColor = '#fef7e0';
-              leftColor = '#c5221f';
-              rightColor = '#b06000';
-            } else {
-              bgColor = '#fce8e6';
-              leftColor = '#c5221f';
-              rightColor = '#c5221f';
-            }
+    // ─── Reusable Student Ledger Card Builder ──────────────
+    function buildStudentLedgerCard(s) {
+          // Calculate current academic year months (April - March) based on feeCurrentMonth
+          const [currYear, currMonth] = feeCurrentMonth.split('-').map(Number);
+          let startYear = currYear;
+          if (currMonth >= 1 && currMonth <= 3) {
+            startYear = currYear - 1;
           }
           
-          return `<td style="width: 16.6%; border: 1.5px solid #2D6A4F; padding: 4px; background-color: ${bgColor}; font-weight: 700; text-align: center;">
-            <div style="font-size: 0.58rem; text-transform: uppercase; margin-bottom: 4px; color: #5f6368; border-bottom: 1.5px solid #2D6A4F; padding-bottom: 2px;">
-              ${mLabel}
-            </div>
-            <div style="display: flex; font-size: 0.72rem; line-height: 1.2;">
-              <div style="flex: 1; border-right: 1px solid #2D6A4F; color: ${leftColor}; font-weight: 800;">
-                ${leftLabel}
-              </div>
-              <div style="flex: 1; color: ${rightColor}; font-weight: 800;">
-                ${rightLabel}
-              </div>
-            </div>
-          </td>`;
-        }
-
-        // Row 1: Apr to Sep
-        let matrixHtml = `<table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.75rem; border: 1.5px solid #2D6A4F;"><tbody><tr>`;
-        for (let i = 0; i < 6; i++) {
-          matrixHtml += buildCell(monthsList[i]);
-        }
-        matrixHtml += `</tr><tr>`;
-        // Row 2: Oct to Mar
-        for (let i = 6; i < 12; i++) {
-          matrixHtml += buildCell(monthsList[i]);
-        }
-        matrixHtml += `</tr></tbody></table>`;
-
-        // Calculate exact chronological outstanding balance list
-        const [cy, cm] = feeCurrentMonth.split('-').map(Number);
-
-        // Build list of months from ARREARS_START to feeCurrentMonth
-        const allMonthsList = [];
-        let curMonth = new Date(asy, asm - 1, 15);
-        const endMonth = new Date(cy, cm - 1, 15);
-        while (curMonth <= endMonth) {
-          allMonthsList.push(curMonth.getFullYear() + '-' + String(curMonth.getMonth() + 1).padStart(2, '0'));
-          curMonth = new Date(curMonth.getFullYear(), curMonth.getMonth() + 1, 15);
-        }
-
-        // Expected fee map
-        const expectedFeeMap = {};
-        allMonthsList.forEach(m => {
-          expectedFeeMap[m] = getExpectedFee(s, m);
-        });
-
-        // Total payments made by the student from ARREARS_START up to feeCurrentMonth
-        const totalPaidPool = cachedFeePayments
-          .filter(pay => pay.student_id === s.id && pay.month >= ARREARS_START && pay.month <= feeCurrentMonth)
-          .reduce((sum, pay) => sum + (pay.amount || 0), 0);
-
-        // Distribute pool chronologically to build outstanding due map
-        const outstandingDueMap = {};
-        let pool = totalPaidPool;
-        allMonthsList.forEach(m => {
-          const exp = expectedFeeMap[m];
-          const alloc = Math.min(pool, exp);
-          pool -= alloc;
-          outstandingDueMap[m] = exp - alloc;
-        });
-
-        // Compute total outstanding balance
-        const totalOutstanding = allMonthsList.reduce((sum, m) => sum + outstandingDueMap[m], 0);
-
-        // Build outstanding details list (e.g. 100 (April) + 300 (May))
-        const outstandingDetails = [];
-        allMonthsList.forEach(m => {
-          const due = outstandingDueMap[m];
-          if (due > 0) {
-            const [y, mm] = m.split('-').map(Number);
-            const dateObj = new Date(y, mm - 1, 15);
-            const mName = dateObj.toLocaleDateString('en-US', { month: 'long' });
-            outstandingDetails.push(`${due} (${mName})`);
+          const monthsList = [];
+          for (let i = 0; i < 12; i++) {
+            const m = (4 + i - 1) % 12 + 1;
+            const y = startYear + Math.floor((4 + i - 1) / 12);
+            monthsList.push(`${y}-${String(m).padStart(2, '0')}`);
           }
-        });
 
-        let outstandingLabel = totalOutstanding > 0 ? (outstandingDetails.length > 0 ? outstandingDetails.join(' + ') : '₹0') : '₹0';
-        let statusColor = '#137333'; // green
-        if (totalOutstanding > 0) {
-          statusColor = '#c5221f'; // red
-        }
-
-        const receiptNo = `MQLC/${String(s.id).split('-')[0].toUpperCase()}`;
-        const amountWords = totalOutstanding > 0 ? (numberToWords(totalOutstanding) + ' Rupees Only') : 'Nil';
-
-        function formatDoj(dojStr) {
-          if (!dojStr) return 'N/A';
-          const parts = dojStr.split('-');
-          if (parts.length < 3) return dojStr;
-          const y = parseInt(parts[0]);
-          const m = parseInt(parts[1]);
-          const d = parseInt(parts[2]);
-          const dateObj = new Date(y, m - 1, d);
-          const monthName = dateObj.toLocaleDateString('en-US', { month: 'long' });
-          
-          let suffix = 'th';
-          if (d < 11 || d > 13) {
-            switch (d % 10) {
-              case 1: suffix = 'st'; break;
-              case 2: suffix = 'nd'; break;
-              case 3: suffix = 'rd'; break;
-            }
-          }
-          return `${d}${suffix} ${monthName} ${y}`;
-        }
-
-        const cardHtml = `
-          <div style="width: 138mm; height: 195mm; border: 2px solid #2D6A4F; border-radius: 16px; padding: 15px; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); position: relative; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; overflow: hidden;">
-            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 4rem; font-weight: 800; color: rgba(45, 106, 79, 0.02); pointer-events: none; white-space: nowrap; user-select: none;">MQLC OFFICIAL</div>
+          // Generate visual annual payment cells
+          function buildCell(m) {
+            const mLabel = new Date(m + '-15').toLocaleDateString('en-US', { month: 'short' });
+            const mExp = getExpectedFee(s, m);
+            const mExempt = isExemptForMonth(s.id, m);
             
-            <div>
-              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #2D6A4F; padding-bottom: 8px; margin-bottom: 10px;">
-                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                  <img src="assets/logo.png" alt="Logo" style="width: 40px; height: 40px;">
-                  <div style="text-align: left;">
-                    <h2 style="margin: 0; color: #2D6A4F; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em;">Millat Qur'an Learning Center</h2>
-                    <p style="margin: 1px 0 0 0; color: #666; font-size: 0.68rem; font-weight: 500;">Faridbaug, Nadi Naka, Bhiwandi</p>
+            let bgColor = '#f1f3f4';
+            let leftColor = '#5f6368';
+            let rightColor = '#5f6368';
+            let leftLabel = '—';
+            let rightLabel = '—';
+            
+            if (m > feeCurrentMonth) {
+              bgColor = '#f1f3f4';
+              leftLabel = 'TBD';
+              rightLabel = 'TBD';
+            } else if (mExempt) {
+              bgColor = '#f1f3f4';
+              leftLabel = 'Exempt';
+              rightLabel = '—';
+            } else if (mExp === 0) {
+              bgColor = '#f1f3f4';
+              leftLabel = 'N/A';
+              rightLabel = '—';
+            } else {
+              // Cumulative expected up to month m
+              let cumulativeExpected = 0;
+              let cur = new Date(asy, asm - 1, 15);
+              const targetEnd = new Date(m + '-15');
+              while (cur <= targetEnd) {
+                const ym = cur.getFullYear() + '-' + String(cur.getMonth() + 1).padStart(2, '0');
+                cumulativeExpected += getExpectedFee(s, ym);
+                cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 15);
+              }
+
+              // Cumulative paid pool up to month m
+              const cumulativePaidPool = cachedFeePayments
+                .filter(pay => pay.student_id === s.id && pay.month >= ARREARS_START && pay.month <= m)
+                .reduce((sum, pay) => sum + (pay.amount || 0), 0);
+
+              // Cumulative paid before month m
+              const cumulativePaidBefore = cachedFeePayments
+                .filter(pay => pay.student_id === s.id && pay.month >= ARREARS_START && pay.month < m)
+                .reduce((sum, pay) => sum + (pay.amount || 0), 0);
+
+              const leftVal = Math.max(0, cumulativeExpected - cumulativePaidBefore);
+              const rightVal = cachedFeePayments
+                .filter(pay => pay.student_id === s.id && pay.month === m)
+                .reduce((sum, pay) => sum + (pay.amount || 0), 0);
+
+              leftLabel = `₹${leftVal}`;
+              rightLabel = `₹${rightVal}`;
+
+              const remainingLiable = Math.max(0, cumulativeExpected - cumulativePaidPool);
+              if (remainingLiable === 0) {
+                bgColor = '#e6f4ea';
+                leftColor = '#137333';
+                rightColor = '#137333';
+              } else if (rightVal > 0) {
+                bgColor = '#fef7e0';
+                leftColor = '#c5221f';
+                rightColor = '#b06000';
+              } else {
+                bgColor = '#fce8e6';
+                leftColor = '#c5221f';
+                rightColor = '#c5221f';
+              }
+            }
+            
+            return `<td style="width: 16.6%; border: 1.5px solid #2D6A4F; padding: 4px; background-color: ${bgColor}; font-weight: 700; text-align: center;">
+              <div style="font-size: 0.58rem; text-transform: uppercase; margin-bottom: 4px; color: #5f6368; border-bottom: 1.5px solid #2D6A4F; padding-bottom: 2px;">
+                ${mLabel}
+              </div>
+              <div style="display: flex; font-size: 0.72rem; line-height: 1.2;">
+                <div style="flex: 1; border-right: 1px solid #2D6A4F; color: ${leftColor}; font-weight: 800;">
+                  ${leftLabel}
+                </div>
+                <div style="flex: 1; color: ${rightColor}; font-weight: 800;">
+                  ${rightLabel}
+                </div>
+              </div>
+            </td>`;
+          }
+
+          // Row 1: Apr to Sep
+          let matrixHtml = `<table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.75rem; border: 1.5px solid #2D6A4F;"><tbody><tr>`;
+          for (let i = 0; i < 6; i++) {
+            matrixHtml += buildCell(monthsList[i]);
+          }
+          matrixHtml += `</tr><tr>`;
+          // Row 2: Oct to Mar
+          for (let i = 6; i < 12; i++) {
+            matrixHtml += buildCell(monthsList[i]);
+          }
+          matrixHtml += `</tr></tbody></table>`;
+
+          // Calculate exact chronological outstanding balance list
+          const [cy, cm] = feeCurrentMonth.split('-').map(Number);
+
+          // Build list of months from ARREARS_START to feeCurrentMonth
+          const allMonthsList = [];
+          let curMonth = new Date(asy, asm - 1, 15);
+          const endMonth = new Date(cy, cm - 1, 15);
+          while (curMonth <= endMonth) {
+            allMonthsList.push(curMonth.getFullYear() + '-' + String(curMonth.getMonth() + 1).padStart(2, '0'));
+            curMonth = new Date(curMonth.getFullYear(), curMonth.getMonth() + 1, 15);
+          }
+
+          // Expected fee map
+          const expectedFeeMap = {};
+          allMonthsList.forEach(m => {
+            expectedFeeMap[m] = getExpectedFee(s, m);
+          });
+
+          // Total payments made by the student from ARREARS_START up to feeCurrentMonth
+          const totalPaidPool = cachedFeePayments
+            .filter(pay => pay.student_id === s.id && pay.month >= ARREARS_START && pay.month <= feeCurrentMonth)
+            .reduce((sum, pay) => sum + (pay.amount || 0), 0);
+
+          // Distribute pool chronologically to build outstanding due map
+          const outstandingDueMap = {};
+          let pool = totalPaidPool;
+          allMonthsList.forEach(m => {
+            const exp = expectedFeeMap[m];
+            const alloc = Math.min(pool, exp);
+            pool -= alloc;
+            outstandingDueMap[m] = exp - alloc;
+          });
+
+          // Compute total outstanding balance
+          const totalOutstanding = allMonthsList.reduce((sum, m) => sum + outstandingDueMap[m], 0);
+
+          // Build outstanding details list (e.g. 100 (April) + 300 (May))
+          const outstandingDetails = [];
+          allMonthsList.forEach(m => {
+            const due = outstandingDueMap[m];
+            if (due > 0) {
+              const [y, mm] = m.split('-').map(Number);
+              const dateObj = new Date(y, mm - 1, 15);
+              const mName = dateObj.toLocaleDateString('en-US', { month: 'long' });
+              outstandingDetails.push(`${due} (${mName})`);
+            }
+          });
+
+          let outstandingLabel = totalOutstanding > 0 ? (outstandingDetails.length > 0 ? outstandingDetails.join(' + ') : '₹0') : '₹0';
+          let statusColor = '#137333'; // green
+          if (totalOutstanding > 0) {
+            statusColor = '#c5221f'; // red
+          }
+
+          const receiptNo = `MQLC/${String(s.id).split('-')[0].toUpperCase()}`;
+          const amountWords = totalOutstanding > 0 ? (numberToWords(totalOutstanding) + ' Rupees Only') : 'Nil';
+
+          function formatDoj(dojStr) {
+            if (!dojStr) return 'N/A';
+            const parts = dojStr.split('-');
+            if (parts.length < 3) return dojStr;
+            const y = parseInt(parts[0]);
+            const m = parseInt(parts[1]);
+            const d = parseInt(parts[2]);
+            const dateObj = new Date(y, m - 1, d);
+            const monthName = dateObj.toLocaleDateString('en-US', { month: 'long' });
+            
+            let suffix = 'th';
+            if (d < 11 || d > 13) {
+              switch (d % 10) {
+                case 1: suffix = 'st'; break;
+                case 2: suffix = 'nd'; break;
+                case 3: suffix = 'rd'; break;
+              }
+            }
+            return `${d}${suffix} ${monthName} ${y}`;
+          }
+
+          return `
+            <div style="width: 138mm; height: 195mm; border: 2px solid #2D6A4F; border-radius: 16px; padding: 15px; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); position: relative; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; overflow: hidden;">
+              <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 4rem; font-weight: 800; color: rgba(45, 106, 79, 0.02); pointer-events: none; white-space: nowrap; user-select: none;">MQLC OFFICIAL</div>
+              
+              <div>
+                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #2D6A4F; padding-bottom: 8px; margin-bottom: 10px;">
+                  <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <img src="assets/logo.png" alt="Logo" style="width: 40px; height: 40px;">
+                    <div style="text-align: left;">
+                      <h2 style="margin: 0; color: #2D6A4F; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em;">Millat Qur'an Learning Center</h2>
+                      <p style="margin: 1px 0 0 0; color: #666; font-size: 0.68rem; font-weight: 500;">Faridbaug, Nadi Naka, Bhiwandi</p>
+                    </div>
+                  </div>
+                  <div style="text-align: right;">
+                    <span style="display: inline-block; background: rgba(45, 106, 79, 0.1); color: #2D6A4F; font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 50px; text-transform: uppercase;">Fee Receipt</span>
+                    <p style="margin: 4px 0 0 0; font-size: 0.72rem; font-weight: 600; color: var(--admin-muted);">${receiptNo}</p>
                   </div>
                 </div>
-                <div style="text-align: right;">
-                  <span style="display: inline-block; background: rgba(45, 106, 79, 0.1); color: #2D6A4F; font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 50px; text-transform: uppercase;">Fee Receipt</span>
-                  <p style="margin: 4px 0 0 0; font-size: 0.72rem; font-weight: 600; color: var(--admin-muted);">${receiptNo}</p>
+
+                <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px; font-size: 0.8rem;">
+                  <tbody>
+                    <tr>
+                      <td style="padding: 4px 0; color: #666; width: 35%;">Student Name:</td>
+                      <td style="padding: 4px 0; font-weight: 700; color: #111;">${s.student_name}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 4px 0; color: #666;">Father's Name:</td>
+                      <td style="padding: 4px 0; font-weight: 600; color: #333;">${s.father_name || 'N/A'}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 4px 0; color: #666;">Date of Joining:</td>
+                      <td style="padding: 4px 0; font-weight: 600; color: #333;">${formatDoj(s.doj)}</td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 4px 0; color: #666;">Batch & Course:</td>
+                      <td style="padding: 4px 0; font-weight: 600; color: #333;">${s.batch || 'N/A'} Batch | ${s.course_applying || 'N/A'}</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div style="margin-top: 10px; margin-bottom: 10px;">
+                  <span style="font-size: 0.68rem; color: #666; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: block;">Annual Fee Status Matrix</span>
+                  ${matrixHtml}
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #eee; padding-top: 8px; margin-bottom: 15px; font-size: 0.82rem;">
+                  <span style="font-weight: 700; color: #111;">Total Balance Outstanding:</span>
+                  <span style="font-weight: 800; color: ${statusColor};">${outstandingLabel}</span>
                 </div>
               </div>
 
-              <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px; font-size: 0.8rem;">
-                <tbody>
-                  <tr>
-                    <td style="padding: 4px 0; color: #666; width: 35%;">Student Name:</td>
-                    <td style="padding: 4px 0; font-weight: 700; color: #111;">${s.student_name}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 4px 0; color: #666;">Father's Name:</td>
-                    <td style="padding: 4px 0; font-weight: 600; color: #333;">${s.father_name || 'N/A'}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 4px 0; color: #666;">Date of Joining:</td>
-                    <td style="padding: 4px 0; font-weight: 600; color: #333;">${formatDoj(s.doj)}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 4px 0; color: #666;">Batch & Course:</td>
-                    <td style="padding: 4px 0; font-weight: 600; color: #333;">${s.batch || 'N/A'} Batch | ${s.course_applying || 'N/A'}</td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <div style="margin-top: 10px; margin-bottom: 10px;">
-                <span style="font-size: 0.68rem; color: #666; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: block;">Annual Fee Status Matrix</span>
-                ${matrixHtml}
-              </div>
-
-              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #eee; padding-top: 8px; margin-bottom: 15px; font-size: 0.82rem;">
-                <span style="font-weight: 700; color: #111;">Total Balance Outstanding:</span>
-                <span style="font-weight: 800; color: ${statusColor};">${outstandingLabel}</span>
-              </div>
-            </div>
-
-            <div>
-              <div style="background: rgba(45, 106, 79, 0.02); border: 1px solid rgba(45, 106, 79, 0.12); border-radius: 8px; padding: 10px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
-                <div>
-                  <span style="font-size: 0.65rem; color: #666; text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em; display: block; margin-bottom: 1px;">Amount in Words</span>
-                  <span style="font-size: 0.75rem; font-weight: 600; color: #333; text-transform: capitalize;">${amountWords}</span>
+              <div>
+                <div style="background: rgba(45, 106, 79, 0.02); border: 1px solid rgba(45, 106, 79, 0.12); border-radius: 8px; padding: 10px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                  <div>
+                    <span style="font-size: 0.65rem; color: #666; text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em; display: block; margin-bottom: 1px;">Amount in Words</span>
+                    <span style="font-size: 0.75rem; font-weight: 600; color: #333; text-transform: capitalize;">${amountWords}</span>
+                  </div>
+                  <div style="text-align: right;">
+                    <span style="font-size: 0.65rem; color: #666; text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em; display: block; margin-bottom: 1px;">Grand Total</span>
+                    <span style="font-size: 1.25rem; font-weight: 800; color: #2D6A4F;">₹${totalOutstanding.toLocaleString('en-IN')}.00</span>
+                  </div>
                 </div>
-                <div style="text-align: right;">
-                  <span style="font-size: 0.65rem; color: #666; text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em; display: block; margin-bottom: 1px;">Grand Total</span>
-                  <span style="font-size: 1.25rem; font-weight: 800; color: #2D6A4F;">₹${totalOutstanding.toLocaleString('en-IN')}.00</span>
-                </div>
-              </div>
 
-              <div style="display: flex; justify-content: space-between; margin-top: 25px; font-size: 0.72rem; color: #666;">
-                <div style="text-align: center; width: 45%;">
-                  <div style="height: 35px;"></div>
-                  <div style="border-top: 1.2px solid #bbb; padding-top: 4px; font-weight: 600;">Authorized Signatory</div>
-                </div>
-                <div style="text-align: center; width: 45%;">
-                  <div style="height: 35px;"></div>
-                  <div style="border-top: 1.2px solid #bbb; padding-top: 4px; font-weight: 600;">Receiver's Signature</div>
+                <div style="display: flex; justify-content: space-between; margin-top: 25px; font-size: 0.72rem; color: #666;">
+                  <div style="text-align: center; width: 45%;">
+                    <div style="height: 35px;"></div>
+                    <div style="border-top: 1.2px solid #bbb; padding-top: 4px; font-weight: 600;">Authorized Signatory</div>
+                  </div>
+                  <div style="text-align: center; width: 45%;">
+                    <div style="height: 35px;"></div>
+                    <div style="border-top: 1.2px solid #bbb; padding-top: 4px; font-weight: 600;">Receiver's Signature</div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        `;
-
-        if (position === 'left') {
-          receiptContainer.innerHTML = `
-            <div class="receipt-half">${cardHtml}</div>
-            <div class="receipt-half"></div>
-          `;
-        } else {
-          receiptContainer.innerHTML = `
-            <div class="receipt-half"></div>
-            <div class="receipt-half">${cardHtml}</div>
           `;
         }
 
-        document.body.classList.add('print-mode-receipt');
-        const styleBlock = document.createElement('style');
-        styleBlock.id = 'temp-receipt-print-style';
-        styleBlock.innerHTML = '@page { size: A4 landscape; margin: 0; }';
-        document.head.appendChild(styleBlock);
+        async function printReceipt(studentId, position = 'left') {
+          if (!window._supabase) {
+            alert('Supabase is not initialized.');
+            return;
+          }
+          const receiptContainer = document.getElementById('print-receipt-container');
+          if (!receiptContainer) return;
 
-        window.print();
+          try {
+            const s = cachedStudents.find(student => student.id.toString() === studentId.toString());
+            if (!s) {
+              alert('Student record not found.');
+              return;
+            }
 
-        document.body.classList.remove('print-mode-receipt');
-        const tempStyle = document.getElementById('temp-receipt-print-style');
-        if (tempStyle) tempStyle.remove();
-        receiptContainer.innerHTML = '';
-        
-      } catch (err) {
-        console.error('Failed to print receipt:', err);
-        alert('Failed to print receipt: ' + err.message);
-      }
-    }
+            const cardHtml = buildStudentLedgerCard(s);
+
+            if (position === 'left') {
+              receiptContainer.innerHTML = `
+                <div class="receipt-page">
+                  <div class="receipt-half">${cardHtml}</div>
+                  <div class="receipt-half"></div>
+                </div>
+              `;
+            } else {
+              receiptContainer.innerHTML = `
+                <div class="receipt-page">
+                  <div class="receipt-half"></div>
+                  <div class="receipt-half">${cardHtml}</div>
+                </div>
+              `;
+            }
+
+            document.body.classList.add('print-mode-receipt');
+            const styleBlock = document.createElement('style');
+            styleBlock.id = 'temp-receipt-print-style';
+            styleBlock.innerHTML = '@page { size: A4 landscape; margin: 0; }';
+            document.head.appendChild(styleBlock);
+
+            window.print();
+
+            document.body.classList.remove('print-mode-receipt');
+            const tempStyle = document.getElementById('temp-receipt-print-style');
+            if (tempStyle) tempStyle.remove();
+            receiptContainer.innerHTML = '';
+            
+          } catch (err) {
+            console.error('Failed to print receipt:', err);
+            alert('Failed to print receipt: ' + err.message);
+          }
+        }
+
+        function getFilteredStudents() {
+          const batchFilter = feeBatchFilter ? feeBatchFilter.value : 'all';
+          const statusFilter = feeStatusFilter ? feeStatusFilter.value : 'all';
+          const nameFilter = feeNameFilter ? feeNameFilter.value.toLowerCase().trim() : '';
+
+          let students = cachedStudents.filter(s => s.status === 'approved' && isEnrolledForMonth(s.doj, feeCurrentMonth));
+
+          // Apply Filters (Name, Batch, Status)
+          students = students.filter(s => {
+            if (nameFilter && !(s.student_name || '').toLowerCase().includes(nameFilter)) return false;
+            if (batchFilter !== 'all') {
+              if (batchFilter === 'unassigned') {
+                if (s.batch && s.batch !== '' && s.batch !== 'null' && s.batch !== 'undefined') return false;
+              } else {
+                if (s.batch !== batchFilter) return false;
+              }
+            }
+            if (statusFilter !== 'all') {
+              if (statusFilter === 'exempt') {
+                return isExemptForMonth(s.id, feeCurrentMonth);
+              }
+              if (isExemptForMonth(s.id, feeCurrentMonth)) return false;
+              const expFee = getExpectedFee(s, feeCurrentMonth);
+              if (expFee === 0) return false;
+              const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
+              let status = 'unpaid';
+              if (paid >= expFee) status = 'paid';
+              else if (paid > 0) status = 'partial';
+              if (status !== statusFilter) return false;
+            }
+            return true;
+          });
+
+          // Sort by batch then name
+          const batchOrder = ['Zuhr', 'Asr', 'Maghrib'];
+          students.sort((a, b) => {
+            const ba = batchOrder.indexOf(a.batch) === -1 ? 99 : batchOrder.indexOf(a.batch);
+            const bb = batchOrder.indexOf(b.batch) === -1 ? 99 : batchOrder.indexOf(b.batch);
+            if (ba !== bb) return ba - bb;
+            return (a.student_name || '').localeCompare(b.student_name || '');
+          });
+
+          return students;
+        }
+
+        async function massPrintLedgers(startSide = 'left') {
+          const students = getFilteredStudents();
+          if (students.length === 0) {
+            alert('No students found to print.');
+            return;
+          }
+
+          const receiptContainer = document.getElementById('print-receipt-container');
+          if (!receiptContainer) return;
+
+          try {
+            let html = '';
+            const cards = [];
+            for (let s of students) {
+              const card = buildStudentLedgerCard(s);
+              cards.push(card);
+            }
+
+            let idx = 0;
+            if (startSide === 'right') {
+              html += `
+                <div class="receipt-page">
+                  <div class="receipt-half"></div>
+                  <div class="receipt-half">${cards[idx++]}</div>
+                </div>
+              `;
+            }
+
+            while (idx < cards.length) {
+              const leftCard = cards[idx++];
+              const rightCard = idx < cards.length ? cards[idx++] : '';
+              html += `
+                <div class="receipt-page">
+                  <div class="receipt-half">${leftCard}</div>
+                  <div class="receipt-half">${rightCard ? rightCard : ''}</div>
+                </div>
+              `;
+            }
+
+            receiptContainer.innerHTML = html;
+
+            document.body.classList.add('print-mode-receipt');
+            const styleBlock = document.createElement('style');
+            styleBlock.id = 'temp-receipt-print-style';
+            styleBlock.innerHTML = '@page { size: A4 landscape; margin: 0; }';
+            document.head.appendChild(styleBlock);
+
+            window.print();
+
+            document.body.classList.remove('print-mode-receipt');
+            const tempStyle = document.getElementById('temp-receipt-print-style');
+            if (tempStyle) tempStyle.remove();
+            receiptContainer.innerHTML = '';
+          } catch (err) {
+            console.error('Failed to mass print receipts:', err);
+            alert('Failed to mass print: ' + err.message);
+          }
+        }
+
+        // ─── Mass Print Event Listener ─────────────────
+        const massPrintBtn = document.getElementById('btn-fee-mass-print');
+        if (massPrintBtn) {
+          massPrintBtn.addEventListener('click', () => {
+            const students = getFilteredStudents();
+            if (students.length === 0) {
+              alert('No students found matching current filters.');
+              return;
+            }
+
+            const choiceModal = document.getElementById('modal-print-choice');
+            if (!choiceModal) {
+              massPrintLedgers('left');
+              return;
+            }
+
+            const leftBtn = document.getElementById('btn-print-left');
+            const rightBtn = document.getElementById('btn-print-right');
+
+            const newLeftBtn = leftBtn.cloneNode(true);
+            leftBtn.replaceWith(newLeftBtn);
+            const newRightBtn = rightBtn.cloneNode(true);
+            rightBtn.replaceWith(newRightBtn);
+
+            newLeftBtn.addEventListener('click', () => {
+              choiceModal.close();
+              massPrintLedgers('left');
+            });
+
+            newRightBtn.addEventListener('click', () => {
+              choiceModal.close();
+              massPrintLedgers('right');
+            });
+
+            choiceModal.showModal();
+          });
+        }
 
     // Number conversion helper for India system
     function numberToWords(num) {
