@@ -3834,7 +3834,11 @@ document.addEventListener('DOMContentLoaded', () => {
           let textColor = '#5f6368';
           let textLabel = '—';
           
-          if (mExempt) {
+          if (m > p.month) {
+            bgColor = '#f1f3f4';
+            textColor = '#5f6368';
+            textLabel = 'TBD';
+          } else if (mExempt) {
             bgColor = '#f1f3f4';
             textColor = '#5f6368';
             textLabel = 'Exempt';
@@ -3910,7 +3914,7 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
-        const receiptNo = `MQLC/${String(p.id).split('-')[0].toUpperCase()}`;
+        const receiptNo = `MQLC/${String(s.id).split('-')[0].toUpperCase()}`;
         const amountWords = numberToWords(p.amount) + ' Rupees Only';
 
         const cardHtml = `
