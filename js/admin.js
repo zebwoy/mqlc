@@ -3780,6 +3780,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ─── Reusable Student Ledger Card Builder ──────────────
     function buildStudentLedgerCard(s) {
+          const [asy, asm] = ARREARS_START.split('-').map(Number);
           // Calculate current academic year months (April - March) based on feeCurrentMonth
           const [currYear, currMonth] = feeCurrentMonth.split('-').map(Number);
           let startYear = currYear;
