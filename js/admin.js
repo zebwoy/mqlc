@@ -2382,13 +2382,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     feed.querySelectorAll('.btn-fee-print').forEach(btn => {
       btn.addEventListener('click', () => {
-        const studentId = btn.dataset.sid;
-        const curPayments = cachedFeePayments.filter(p => p.student_id.toString() === studentId.toString() && p.month === feeCurrentMonth);
-        if (curPayments.length === 0) {
-          alert(`No payment record found for ${btn.dataset.name} in ${feeMonthLabel(feeCurrentMonth)}.`);
-          return;
-        }
-        requestPrintReceipt(curPayments[0].id);
+        requestPrintReceipt(btn.dataset.sid);
       });
     });
 
@@ -3748,22 +3742,17 @@ document.addEventListener('DOMContentLoaded', () => {
       if (printBtn) {
         printBtn.replaceWith(printBtn.cloneNode(true));
         document.getElementById('btn-profile-print').addEventListener('click', () => {
-          const curPayments = cachedFeePayments.filter(p => p.student_id.toString() === studentId.toString() && p.month === feeCurrentMonth);
-          if (curPayments.length === 0) {
-            alert(`No payment record found for ${student.student_name} in ${feeMonthLabel(feeCurrentMonth)}.`);
-            return;
-          }
           modal.close();
-          requestPrintReceipt(curPayments[0].id);
+          requestPrintReceipt(studentId);
         });
       }
     }
 
     // ─── Print Position Request Wrapper ─────────────────
-    function requestPrintReceipt(paymentId) {
+    function requestPrintReceipt(studentId) {
       const choiceModal = document.getElementById('modal-print-choice');
       if (!choiceModal) {
-        printReceipt(paymentId, 'left');
+        printReceipt(studentId, 'left');
         return;
       }
       
@@ -3778,19 +3767,19 @@ document.addEventListener('DOMContentLoaded', () => {
       
       newLeftBtn.addEventListener('click', () => {
         choiceModal.close();
-        printReceipt(paymentId, 'left');
+        printReceipt(studentId, 'left');
       });
       
       newRightBtn.addEventListener('click', () => {
         choiceModal.close();
-        printReceipt(paymentId, 'right');
+        printReceipt(studentId, 'right');
       });
       
       choiceModal.showModal();
     }
 
     // ─── Transaction Receipt Printer Engine ──────────────
-    async function printReceipt(paymentId, position = 'left') {
+    async function printReceipt(studentId, position = 'left') {
       if (!window._supabase) {
         alert('Supabase is not initialized.');
         return;
@@ -3799,22 +3788,23 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!receiptContainer) return;
 
       try {
-        const { data: payments, error } = await window._supabase
-          .from('fee_payments')
-          .select('*, student_registrations(*)')
-          .eq('id', paymentId);
-        
-        if (error) throw error;
-        if (!payments || !payments.length) {
-          alert('Payment record not found.');
+        const s = cachedStudents.find(student => student.id.toString() === studentId.toString());
+        if (!s) {
+          alert('Student record not found.');
           return;
         }
-        
-        const p = payments[0];
-        const s = p.student_registrations;
-        if (!s) {
-          alert('Student record associated with this payment not found.');
-          return;
+
+        const curPayments = cachedFeePayments.filter(pay => pay.student_id === s.id && pay.month === feeCurrentMonth);
+        const mPaid = curPayments.reduce((sum, pay) => sum + (pay.amount || 0), 0);
+
+        let recordedBy = 'admin';
+        if (curPayments.length > 0) {
+          recordedBy = curPayments[0].recorded_by || 'admin';
+        } else {
+          try {
+            const { data: { session } } = await window._supabase.auth.getSession();
+            if (session?.user?.email) recordedBy = session.user.email;
+          } catch (_) {}
         }
 
         // Calculate current academic year months (April - March) based on feeCurrentMonth
@@ -3943,7 +3933,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const receiptNo = `MQLC/${String(s.id).split('-')[0].toUpperCase()}`;
-        const amountWords = numberToWords(p.amount) + ' Rupees Only';
+        const amountWords = mPaid > 0 ? (numberToWords(mPaid) + ' Rupees Only') : 'Nil';
 
         const cardHtml = `
           <div style="width: 138mm; height: 195mm; border: 2px solid #2D6A4F; border-radius: 16px; padding: 15px; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); position: relative; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; overflow: hidden;">
@@ -4000,7 +3990,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div style="text-align: right;">
                   <span style="font-size: 0.65rem; color: #666; text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em; display: block; margin-bottom: 1px;">Grand Total</span>
-                  <span style="font-size: 1.25rem; font-weight: 800; color: #2D6A4F;">₹${p.amount.toLocaleString('en-IN')}.00</span>
+                  <span style="font-size: 1.25rem; font-weight: 800; color: #2D6A4F;">₹${mPaid.toLocaleString('en-IN')}.00</span>
                 </div>
               </div>
 
@@ -4010,7 +4000,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   <div style="border-top: 1.2px solid #bbb; padding-top: 4px; font-weight: 600;">Authorized Signatory</div>
                 </div>
                 <div style="text-align: center; width: 45%;">
-                  <div style="height: 35px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-style: italic; color: #888;">Recorded by: ${p.recorded_by || 'admin'}</div>
+                  <div style="height: 35px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-style: italic; color: #888;">Recorded by: ${recordedBy}</div>
                   <div style="border-top: 1.2px solid #bbb; padding-top: 4px; font-weight: 600;">Receiver's Signature</div>
                 </div>
               </div>
