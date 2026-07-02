@@ -1849,9 +1849,9 @@ body:has(dialog.admin-modal[open])>*:not(dialog) {
     display: none !important;
   }
   body.print-mode-receipt #print-receipt-container {
-    display: flex !important;
+    display: block !important;
     width: 297mm !important;
-    height: 210mm !important;
+    height: auto !important;
     padding: 0 !important;
     margin: 0 !important;
     box-sizing: border-box !important;

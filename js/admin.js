@@ -2263,6 +2263,25 @@ document.addEventListener('DOMContentLoaded', () => {
     el('fee-kpi-rate-sub', `${paidCount} of ${activeStudentCount} students fully paid`);
     if (countEl) countEl.textContent = `Showing ${students.length} student${students.length === 1 ? '' : 's'}`;
 
+    // Update dynamic academic year for print ledger dropdown trigger
+    const [currYear, currMonth] = feeCurrentMonth.split('-').map(Number);
+    let startYear = currYear;
+    if (currMonth >= 1 && currMonth <= 3) {
+      startYear = currYear - 1;
+    }
+    const yearLabel = `Fee Ledger (FY${String(startYear).substring(2)}-FY${String(startYear + 1).substring(2)})`;
+    const triggerBtn = document.getElementById('btn-fee-print-ledger-trigger');
+    if (triggerBtn) {
+      const badge = triggerBtn.querySelector('span');
+      if (badge) {
+        triggerBtn.innerHTML = '';
+        triggerBtn.appendChild(badge);
+        triggerBtn.appendChild(document.createTextNode(' ' + yearLabel));
+      } else {
+        triggerBtn.innerText = yearLabel;
+      }
+    }
+
     // Render matrix
     feed.innerHTML = '';
     if (students.length === 0) {
