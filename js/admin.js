@@ -3975,6 +3975,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const receiptNo = `MQLC/${String(s.id).split('-')[0].toUpperCase()}`;
         const amountWords = totalOutstanding > 0 ? (numberToWords(totalOutstanding) + ' Rupees Only') : 'Nil';
 
+        function formatDoj(dojStr) {
+          if (!dojStr) return 'N/A';
+          const parts = dojStr.split('-');
+          if (parts.length < 3) return dojStr;
+          const y = parseInt(parts[0]);
+          const m = parseInt(parts[1]);
+          const d = parseInt(parts[2]);
+          const dateObj = new Date(y, m - 1, d);
+          const monthName = dateObj.toLocaleDateString('en-US', { month: 'long' });
+          
+          let suffix = 'th';
+          if (d < 11 || d > 13) {
+            switch (d % 10) {
+              case 1: suffix = 'st'; break;
+              case 2: suffix = 'nd'; break;
+              case 3: suffix = 'rd'; break;
+            }
+          }
+          return `${d}${suffix} ${monthName} ${y}`;
+        }
+
         const cardHtml = `
           <div style="width: 138mm; height: 195mm; border: 2px solid #2D6A4F; border-radius: 16px; padding: 15px; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); position: relative; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; overflow: hidden;">
             <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 4rem; font-weight: 800; color: rgba(45, 106, 79, 0.02); pointer-events: none; white-space: nowrap; user-select: none;">MQLC OFFICIAL</div>
@@ -4003,6 +4024,10 @@ document.addEventListener('DOMContentLoaded', () => {
                   <tr>
                     <td style="padding: 4px 0; color: #666;">Father's Name:</td>
                     <td style="padding: 4px 0; font-weight: 600; color: #333;">${s.father_name || 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 4px 0; color: #666;">Date of Joining:</td>
+                    <td style="padding: 4px 0; font-weight: 600; color: #333;">${formatDoj(s.doj)}</td>
                   </tr>
                   <tr>
                     <td style="padding: 4px 0; color: #666;">Batch & Course:</td>
