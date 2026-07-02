@@ -2354,6 +2354,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ${showUndo ? `<button class="btn-fee-undo btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="Undo last payment">⟳</button>` : ''}
             ${exemptBtn}
             <button class="btn-fee-history btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="View history">📋</button>
+            <button class="btn-fee-print btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="Print receipt">🖨️</button>
           </div>
         </div>
         <div class="fee-history-panel" data-history-for="${s.id}" style="display: none; background: var(--admin-bg); border-radius: 8px; padding: 0.75rem 1rem; margin: 0 0 0.5rem 0; font-size: 0.82rem;"></div>`;
@@ -2378,6 +2379,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     feed.querySelectorAll('.btn-fee-history').forEach(btn => {
       btn.addEventListener('click', () => toggleHistory(btn.dataset.sid));
+    });
+    feed.querySelectorAll('.btn-fee-print').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const studentId = btn.dataset.sid;
+        const curPayments = cachedFeePayments.filter(p => p.student_id.toString() === studentId.toString() && p.month === feeCurrentMonth);
+        if (curPayments.length === 0) {
+          alert(`No payment record found for ${btn.dataset.name} in ${feeMonthLabel(feeCurrentMonth)}.`);
+          return;
+        }
+        requestPrintReceipt(curPayments[0].id);
+      });
     });
 
     // Exempt / Un-exempt buttons
@@ -2741,22 +2753,15 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       let html = '<table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">';
-      html += '<thead><tr style="border-bottom: 1px solid var(--admin-border);"><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Month</th><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Date Paid</th><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Amount</th><th style="text-align: right; padding: 4px 8px; color: var(--admin-muted);">Action</th></tr></thead><tbody>';
+      html += '<thead><tr style="border-bottom: 1px solid var(--admin-border);"><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Month</th><th style="text-align: left; padding: 4px 8px; color: var(--admin-muted);">Date Paid</th><th style="text-align: right; padding: 4px 8px; color: var(--admin-muted);">Amount</th></tr></thead><tbody>';
       Object.keys(byMonth).sort().reverse().forEach(month => {
         byMonth[month].forEach(p => {
-          html += `<tr style="border-bottom: 1px solid var(--admin-bg);"><td style="padding: 4px 8px;">${feeMonthLabel(month)}</td><td style="padding: 4px 8px;">${p.paid_on || '—'}</td><td style="padding: 4px 8px; font-weight: 600;">₹${p.amount.toLocaleString('en-IN')}</td><td style="padding: 4px 8px; text-align: right;"><button class="btn-print-receipt btn-secondary" data-pid="${p.id}" style="padding: 2px 8px; font-size: 0.72rem; border-radius: 50px;">📄 Receipt</button></td></tr>`;
+          html += `<tr style="border-bottom: 1px solid var(--admin-bg);"><td style="padding: 4px 8px;">${feeMonthLabel(month)}</td><td style="padding: 4px 8px;">${p.paid_on || '—'}</td><td style="padding: 4px 8px; font-weight: 600; text-align: right;">₹${p.amount.toLocaleString('en-IN')}</td></tr>`;
         });
       });
       html += '</tbody></table>';
       panel.innerHTML = html;
 
-      // Bind print receipt buttons
-      panel.querySelectorAll('.btn-print-receipt').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const pid = e.currentTarget.getAttribute('data-pid');
-          requestPrintReceipt(pid);
-        });
-      });
     } catch (err) {
       panel.innerHTML = '<em style="color: #dc2626;">Error loading history.</em>';
     }
@@ -3625,8 +3630,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <tr style="background: var(--admin-bg); border-bottom: 1.5px solid var(--admin-border);">
                   <th style="padding: 8px 12px; font-weight: 700; color: var(--admin-text);">Month</th>
                   <th style="padding: 8px 12px; font-weight: 700; color: var(--admin-text);">Date Paid</th>
-                  <th style="padding: 8px 12px; font-weight: 700; color: var(--admin-text);">Amount</th>
-                  <th style="padding: 8px 12px; font-weight: 700; color: var(--admin-text); text-align: right;">Receipt</th>
+                  <th style="padding: 8px 12px; font-weight: 700; color: var(--admin-text); text-align: right;">Amount</th>
                 </tr>
               </thead>
               <tbody>
@@ -3634,10 +3638,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   <tr style="border-bottom: 1px solid var(--admin-border);">
                     <td style="padding: 8px 12px; font-weight: 600; color: var(--admin-accent);">${feeMonthLabel(p.month)}</td>
                     <td style="padding: 8px 12px; color: var(--admin-muted);">${p.paid_on || '—'}</td>
-                    <td style="padding: 8px 12px; font-weight: 700; color: var(--admin-text);">₹${p.amount.toLocaleString('en-IN')}</td>
-                    <td style="padding: 8px 12px; text-align: right;">
-                      <button class="btn-profile-receipt btn-secondary" data-pid="${p.id}" style="padding: 2px 8px; font-size: 0.7rem; border-radius: 50px;">📄 Receipt</button>
-                    </td>
+                    <td style="padding: 8px 12px; font-weight: 700; color: var(--admin-text); text-align: right;">₹${p.amount.toLocaleString('en-IN')}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -3743,12 +3744,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
 
-      content.querySelectorAll('.btn-profile-receipt').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const pid = e.currentTarget.getAttribute('data-pid');
-          requestPrintReceipt(pid);
+      const printBtn = document.getElementById('btn-profile-print');
+      if (printBtn) {
+        printBtn.replaceWith(printBtn.cloneNode(true));
+        document.getElementById('btn-profile-print').addEventListener('click', () => {
+          const curPayments = cachedFeePayments.filter(p => p.student_id.toString() === studentId.toString() && p.month === feeCurrentMonth);
+          if (curPayments.length === 0) {
+            alert(`No payment record found for ${student.student_name} in ${feeMonthLabel(feeCurrentMonth)}.`);
+            return;
+          }
+          modal.close();
+          requestPrintReceipt(curPayments[0].id);
         });
-      });
+      }
     }
 
     // ─── Print Position Request Wrapper ─────────────────
@@ -3834,30 +3842,50 @@ document.addEventListener('DOMContentLoaded', () => {
           let textColor = '#5f6368';
           let textLabel = '—';
           
-          if (m > p.month) {
+          if (m > feeCurrentMonth) {
             bgColor = '#f1f3f4';
             textColor = '#5f6368';
             textLabel = 'TBD';
-          } else if (mExempt) {
-            bgColor = '#f1f3f4';
-            textColor = '#5f6368';
-            textLabel = 'Exempt';
-          } else if (mExp === 0) {
-            bgColor = '#f1f3f4';
-            textColor = '#5f6368';
-            textLabel = 'N/A';
-          } else if (mPaid >= mExp) {
-            bgColor = '#e6f4ea'; // light green
-            textColor = '#137333';
-            textLabel = `₹${mPaid}`;
-          } else if (mPaid > 0) {
-            bgColor = '#fef7e0'; // light yellow
-            textColor = '#b06000';
-            textLabel = `₹${mPaid}`;
+          } else if (m === feeCurrentMonth) {
+            if (mExempt) {
+              bgColor = '#f1f3f4';
+              textColor = '#5f6368';
+              textLabel = 'Exempt';
+            } else if (mExp === 0) {
+              bgColor = '#f1f3f4';
+              textColor = '#5f6368';
+              textLabel = 'N/A';
+            } else if (mPaid >= mExp) {
+              bgColor = '#e6f4ea';
+              textColor = '#137333';
+              textLabel = `₹${mPaid}`;
+            } else {
+              bgColor = '#fce8e6'; // light red
+              textColor = '#c5221f';
+              textLabel = `₹${mExp}`;
+            }
           } else {
-            bgColor = '#fce8e6'; // light red
-            textColor = '#c5221f';
-            textLabel = `₹0`;
+            if (mExempt) {
+              bgColor = '#f1f3f4';
+              textColor = '#5f6368';
+              textLabel = 'Exempt';
+            } else if (mExp === 0) {
+              bgColor = '#f1f3f4';
+              textColor = '#5f6368';
+              textLabel = 'N/A';
+            } else if (mPaid >= mExp) {
+              bgColor = '#e6f4ea';
+              textColor = '#137333';
+              textLabel = `₹${mPaid}`;
+            } else if (mPaid > 0) {
+              bgColor = '#fef7e0';
+              textColor = '#b06000';
+              textLabel = `₹${mPaid}`;
+            } else {
+              bgColor = '#fce8e6';
+              textColor = '#c5221f';
+              textLabel = `₹0`;
+            }
           }
           
           return `<td style="width: 16.6%; border: 1.5px solid #2D6A4F; padding: 5px; background-color: ${bgColor}; color: ${textColor}; font-weight: 700; text-align: center;">
@@ -3885,7 +3913,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const arrears = calcArrears(s, feeCurrentMonth);
         const totalOutstanding = remaining + arrears;
 
-        const outstandingMonths = [];
+        const outstandingDetails = [];
         const [asy, asm] = ARREARS_START.split('-').map(Number);
         const [cy, cm] = feeCurrentMonth.split('-').map(Number);
         let cur = new Date(asy, asm - 1, 15);
@@ -3898,8 +3926,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const mPaid = cachedFeePayments.filter(pay => pay.student_id === s.id && pay.month === ym).reduce((sum, pay) => sum + (pay.amount || 0), 0);
             const mDue = mExp - mPaid;
             if (mDue > 0) {
-              const mLabel = cur.toLocaleDateString('en-US', { month: 'short' });
-              outstandingMonths.push(mLabel.toLowerCase());
+              const mName = cur.toLocaleDateString('en-US', { month: 'long' });
+              outstandingDetails.push(`${mDue} (${mName})`);
             }
           }
           cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 15);
@@ -3909,8 +3937,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let statusColor = '#137333'; // green
         if (totalOutstanding > 0) {
           statusColor = '#c5221f'; // red
-          if (outstandingMonths.length > 0) {
-            outstandingLabel += ` (${outstandingMonths.join(', ')})`;
+          if (outstandingDetails.length > 0) {
+            outstandingLabel += ` (${outstandingDetails.join(' + ')})`;
           }
         }
 
