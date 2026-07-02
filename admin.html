@@ -1302,6 +1302,21 @@
     </div>
   </dialog>
 
+  <!-- Receipt Print Choice Modal -->
+  <dialog id="modal-print-choice" class="admin-modal" style="max-width: 380px;">
+    <div class="modal-header">
+      <h3>Print Position</h3>
+      <button onclick="document.getElementById('modal-print-choice').close()" class="modal-close-btn">✕</button>
+    </div>
+    <div class="modal-body" style="padding: 1.5rem; text-align: center;">
+      <p style="font-size: 0.9rem; color: var(--admin-muted); margin-bottom: 1.5rem;">Select where the A5 receipt should print on the A4 landscape page:</p>
+      <div style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 0.5rem;">
+        <button id="btn-print-left" class="btn-primary" style="padding: 0.6rem 1.2rem; font-size: 0.85rem; border-radius: 50px;">Left Side</button>
+        <button id="btn-print-right" class="btn-primary" style="padding: 0.6rem 1.2rem; font-size: 0.85rem; border-radius: 50px; background-color: var(--admin-muted);">Right Side</button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- Record Payment Modal -->
   <dialog id="modal-record-payment" class="admin-modal" style="max-width: 460px;">
     <div class="modal-header">

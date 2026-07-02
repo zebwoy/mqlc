@@ -2754,7 +2754,7 @@ document.addEventListener('DOMContentLoaded', () => {
       panel.querySelectorAll('.btn-print-receipt').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const pid = e.currentTarget.getAttribute('data-pid');
-          printReceipt(pid);
+          requestPrintReceipt(pid);
         });
       });
     } catch (err) {
@@ -3746,13 +3746,43 @@ document.addEventListener('DOMContentLoaded', () => {
       content.querySelectorAll('.btn-profile-receipt').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const pid = e.currentTarget.getAttribute('data-pid');
-          printReceipt(pid);
+          requestPrintReceipt(pid);
         });
       });
     }
 
+    // ─── Print Position Request Wrapper ─────────────────
+    function requestPrintReceipt(paymentId) {
+      const choiceModal = document.getElementById('modal-print-choice');
+      if (!choiceModal) {
+        printReceipt(paymentId, 'left');
+        return;
+      }
+      
+      const leftBtn = document.getElementById('btn-print-left');
+      const rightBtn = document.getElementById('btn-print-right');
+      
+      // Clone buttons to clear previous listeners cleanly
+      const newLeftBtn = leftBtn.cloneNode(true);
+      leftBtn.replaceWith(newLeftBtn);
+      const newRightBtn = rightBtn.cloneNode(true);
+      rightBtn.replaceWith(newRightBtn);
+      
+      newLeftBtn.addEventListener('click', () => {
+        choiceModal.close();
+        printReceipt(paymentId, 'left');
+      });
+      
+      newRightBtn.addEventListener('click', () => {
+        choiceModal.close();
+        printReceipt(paymentId, 'right');
+      });
+      
+      choiceModal.showModal();
+    }
+
     // ─── Transaction Receipt Printer Engine ──────────────
-    async function printReceipt(paymentId) {
+    async function printReceipt(paymentId, position = 'left') {
       if (!window._supabase) {
         alert('Supabase is not initialized.');
         return;
@@ -3779,103 +3809,199 @@ document.addEventListener('DOMContentLoaded', () => {
           return;
         }
 
+        // Calculate current academic year months (April - March) based on feeCurrentMonth
+        const [currYear, currMonth] = feeCurrentMonth.split('-').map(Number);
+        let startYear = currYear;
+        if (currMonth >= 1 && currMonth <= 3) {
+          startYear = currYear - 1;
+        }
+        
+        const monthsList = [];
+        for (let i = 0; i < 12; i++) {
+          const m = (4 + i - 1) % 12 + 1;
+          const y = startYear + Math.floor((4 + i - 1) / 12);
+          monthsList.push(`${y}-${String(m).padStart(2, '0')}`);
+        }
+
+        // Generate visual annual payment cells
+        function buildCell(m) {
+          const mLabel = new Date(m + '-15').toLocaleDateString('en-US', { month: 'short' });
+          const mExp = getExpectedFee(s, m);
+          const mExempt = isExemptForMonth(s.id, m);
+          const mPaid = cachedFeePayments.filter(pay => pay.student_id === s.id && pay.month === m).reduce((sum, pay) => sum + (pay.amount || 0), 0);
+          
+          let bgColor = '#f1f3f4';
+          let textColor = '#5f6368';
+          let textLabel = '—';
+          
+          if (mExempt) {
+            bgColor = '#f1f3f4';
+            textColor = '#5f6368';
+            textLabel = 'Exempt';
+          } else if (mExp === 0) {
+            bgColor = '#f1f3f4';
+            textColor = '#5f6368';
+            textLabel = 'N/A';
+          } else if (mPaid >= mExp) {
+            bgColor = '#e6f4ea'; // light green
+            textColor = '#137333';
+            textLabel = `₹${mPaid}`;
+          } else if (mPaid > 0) {
+            bgColor = '#fef7e0'; // light yellow
+            textColor = '#b06000';
+            textLabel = `₹${mPaid}`;
+          } else {
+            bgColor = '#fce8e6'; // light red
+            textColor = '#c5221f';
+            textLabel = `₹0`;
+          }
+          
+          return `<td style="width: 16.6%; border: 1.5px solid #2D6A4F; padding: 5px; background-color: ${bgColor}; color: ${textColor}; font-weight: 700; text-align: center;">
+            <div style="font-size: 0.58rem; text-transform: uppercase; margin-bottom: 2px;">${mLabel}</div>
+            <div style="font-size: 0.72rem;">${textLabel}</div>
+          </td>`;
+        }
+
+        // Row 1: Apr to Sep
+        let matrixHtml = `<table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.75rem; border: 1.5px solid #2D6A4F;"><tbody><tr>`;
+        for (let i = 0; i < 6; i++) {
+          matrixHtml += buildCell(monthsList[i]);
+        }
+        matrixHtml += `</tr><tr>`;
+        // Row 2: Oct to Mar
+        for (let i = 6; i < 12; i++) {
+          matrixHtml += buildCell(monthsList[i]);
+        }
+        matrixHtml += `</tr></tbody></table>`;
+
+        // Calculate exact total outstanding balance and list outstanding months in parenthesis
         const expFee = getExpectedFee(s, feeCurrentMonth);
         const paid = cachedFeePayments.filter(pay => pay.student_id === s.id && pay.month === feeCurrentMonth).reduce((sum, pay) => sum + (pay.amount || 0), 0);
         const remaining = Math.max(0, expFee - paid);
         const arrears = calcArrears(s, feeCurrentMonth);
         const totalOutstanding = remaining + arrears;
 
-        const yy = p.month.substring(2, 4);
-        const mm = p.month.substring(5, 7);
-        const formNo = s.form_no || s.id.toString().substring(0, 4);
-        const txHash = String(p.id).substring(0, 4).toUpperCase();
-        const receiptNo = `MQLC/${yy}${mm}/${formNo}-${txHash}`;
-        
+        const outstandingMonths = [];
+        const [asy, asm] = ARREARS_START.split('-').map(Number);
+        const [cy, cm] = feeCurrentMonth.split('-').map(Number);
+        let cur = new Date(asy, asm - 1, 15);
+        const end = new Date(cy, cm - 1, 15);
+        while (cur <= end) {
+          const ym = cur.getFullYear() + '-' + String(cur.getMonth() + 1).padStart(2, '0');
+          const mExp = getExpectedFee(s, ym);
+          const mExempt = isExemptForMonth(s.id, ym);
+          if (!mExempt && mExp > 0) {
+            const mPaid = cachedFeePayments.filter(pay => pay.student_id === s.id && pay.month === ym).reduce((sum, pay) => sum + (pay.amount || 0), 0);
+            const mDue = mExp - mPaid;
+            if (mDue > 0) {
+              const mLabel = cur.toLocaleDateString('en-US', { month: 'short' });
+              outstandingMonths.push(mLabel.toLowerCase());
+            }
+          }
+          cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 15);
+        }
+
+        let outstandingLabel = `₹${totalOutstanding.toLocaleString('en-IN')}`;
+        let statusColor = '#137333'; // green
+        if (totalOutstanding > 0) {
+          statusColor = '#c5221f'; // red
+          if (outstandingMonths.length > 0) {
+            outstandingLabel += ` (${outstandingMonths.join(', ')})`;
+          }
+        }
+
+        const receiptNo = `MQLC/${String(p.id).split('-')[0].toUpperCase()}`;
         const amountWords = numberToWords(p.amount) + ' Rupees Only';
 
-        receiptContainer.innerHTML = `
-          <div style="font-family: 'Outfit', 'Inter', sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 2px solid #2D6A4F; border-radius: 16px; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); position: relative;">
-            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 5rem; font-weight: 800; color: rgba(45, 106, 79, 0.03); pointer-events: none; white-space: nowrap; user-select: none;">MQLC OFFICIAL</div>
+        const cardHtml = `
+          <div style="width: 138mm; height: 195mm; border: 2px solid #2D6A4F; border-radius: 16px; padding: 15px; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); position: relative; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; overflow: hidden;">
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 4rem; font-weight: 800; color: rgba(45, 106, 79, 0.02); pointer-events: none; white-space: nowrap; user-select: none;">MQLC OFFICIAL</div>
             
-            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #2D6A4F; padding-bottom: 15px; margin-bottom: 20px;">
-              <div style="display: flex; align-items: center; gap: 1rem;">
-                <img src="assets/logo.png" alt="Logo" style="width: 50px; height: 50px;">
-                <div style="text-align: left;">
-                  <h2 style="margin: 0; color: #2D6A4F; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em;">Millat Qur'an Learning Center</h2>
-                  <p style="margin: 2px 0 0 0; color: #666; font-size: 0.75rem; font-weight: 500;">Faridbaug, Nadi Naka, Bhiwandi</p>
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #2D6A4F; padding-bottom: 8px; margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <img src="assets/logo.png" alt="Logo" style="width: 40px; height: 40px;">
+                  <div style="text-align: left;">
+                    <h2 style="margin: 0; color: #2D6A4F; font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em;">Millat Qur'an Learning Center</h2>
+                    <p style="margin: 1px 0 0 0; color: #666; font-size: 0.68rem; font-weight: 500;">Faridbaug, Nadi Naka, Bhiwandi</p>
+                  </div>
+                </div>
+                <div style="text-align: right;">
+                  <span style="display: inline-block; background: rgba(45, 106, 79, 0.1); color: #2D6A4F; font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 50px; text-transform: uppercase;">Fee Receipt</span>
+                  <p style="margin: 4px 0 0 0; font-size: 0.72rem; font-weight: 600; color: var(--admin-muted);">${receiptNo}</p>
                 </div>
               </div>
-              <div style="text-align: right;">
-                <span style="display: inline-block; background: rgba(45, 106, 79, 0.1); color: #2D6A4F; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 50px; text-transform: uppercase;">Fee Receipt</span>
-                <p style="margin: 6px 0 0 0; font-size: 0.78rem; font-weight: 600; color: var(--admin-muted);">No: ${receiptNo}</p>
+
+              <table style="width: 100%; border-collapse: collapse; margin-bottom: 5px; font-size: 0.8rem;">
+                <tbody>
+                  <tr>
+                    <td style="padding: 4px 0; color: #666; width: 35%;">Student Name:</td>
+                    <td style="padding: 4px 0; font-weight: 700; color: #111;">${s.student_name}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 4px 0; color: #666;">Father's Name:</td>
+                    <td style="padding: 4px 0; font-weight: 600; color: #333;">${s.father_name || 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 4px 0; color: #666;">Batch & Course:</td>
+                    <td style="padding: 4px 0; font-weight: 600; color: #333;">${s.batch || 'N/A'} Batch | ${s.course_applying || 'N/A'}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div style="margin-top: 10px; margin-bottom: 10px;">
+                <span style="font-size: 0.68rem; color: #666; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: block;">Annual Fee Status Matrix</span>
+                ${matrixHtml}
+              </div>
+
+              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #eee; padding-top: 8px; margin-bottom: 15px; font-size: 0.82rem;">
+                <span style="font-weight: 700; color: #111;">Total Balance Outstanding:</span>
+                <span style="font-weight: 800; color: ${statusColor};">${outstandingLabel}</span>
               </div>
             </div>
 
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.88rem;">
-              <tbody>
-                <tr>
-                  <td style="padding: 6px 0; color: #666; width: 35%;">Student Name:</td>
-                  <td style="padding: 6px 0; font-weight: 700; color: #111;">${s.student_name}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; color: #666;">Father's Name:</td>
-                  <td style="padding: 6px 0; font-weight: 600; color: #333;">${s.father_name || 'N/A'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; color: #666;">Batch & Course:</td>
-                  <td style="padding: 6px 0; font-weight: 600; color: #333;">${s.batch || 'N/A'} Batch | ${s.course_applying || 'N/A'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; color: #666;">Fee Month Paid:</td>
-                  <td style="padding: 6px 0; font-weight: 700; color: #2D6A4F;">${feeMonthLabel(p.month)}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; color: #666;">Date of Payment:</td>
-                  <td style="padding: 6px 0; font-weight: 600; color: #333;">${p.paid_on ? new Date(p.paid_on).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; color: #666; border-top: 1px dashed #eee;">Arrears (Past Months):</td>
-                  <td style="padding: 6px 0; font-weight: 600; color: #b45309; border-top: 1px dashed #eee;">₹${arrears.toLocaleString('en-IN')}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; color: #666;">Current Month Due (${feeMonthLabel(feeCurrentMonth)}):</td>
-                  <td style="padding: 6px 0; font-weight: 600; color: #333;">₹${remaining.toLocaleString('en-IN')}</td>
-                </tr>
-                <tr style="border-bottom: 1.5px solid #2D6A4F; font-size: 0.95rem;">
-                  <td style="padding: 8px 0; color: #111; font-weight: 700; border-bottom: 2px solid #2D6A4F;">Total Balance Outstanding:</td>
-                  <td style="padding: 8px 0; font-weight: 800; color: #dc2626; border-bottom: 2px solid #2D6A4F;">₹${totalOutstanding.toLocaleString('en-IN')}</td>
-                </tr>
-              </tbody>
-            </table>
+            <div>
+              <div style="background: rgba(45, 106, 79, 0.02); border: 1px solid rgba(45, 106, 79, 0.12); border-radius: 8px; padding: 10px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                <div>
+                  <span style="font-size: 0.65rem; color: #666; text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em; display: block; margin-bottom: 1px;">Amount in Words</span>
+                  <span style="font-size: 0.75rem; font-weight: 600; color: #333; text-transform: capitalize;">${amountWords}</span>
+                </div>
+                <div style="text-align: right;">
+                  <span style="font-size: 0.65rem; color: #666; text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em; display: block; margin-bottom: 1px;">Grand Total</span>
+                  <span style="font-size: 1.25rem; font-weight: 800; color: #2D6A4F;">₹${p.amount.toLocaleString('en-IN')}.00</span>
+                </div>
+              </div>
 
-            <div style="background: rgba(45, 106, 79, 0.03); border: 1.5px solid rgba(45, 106, 79, 0.15); border-radius: 12px; padding: 15px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px;">
-              <div>
-                <span style="font-size: 0.72rem; color: #666; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: block; margin-bottom: 2px;">Amount in Words</span>
-                <span style="font-size: 0.82rem; font-weight: 600; color: #333; text-transform: capitalize;">${amountWords}</span>
-              </div>
-              <div style="text-align: right;">
-                <span style="font-size: 0.72rem; color: #666; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; display: block; margin-bottom: 2px;">Grand Total</span>
-                <span style="font-size: 1.5rem; font-weight: 800; color: #2D6A4F;">₹${p.amount.toLocaleString('en-IN')}.00</span>
-              </div>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; margin-top: 40px; padding-top: 20px; border-top: 1px dashed #ddd; font-size: 0.8rem; color: #666;">
-              <div style="text-align: center; width: 40%;">
-                <div style="height: 40px;"></div>
-                <div style="border-top: 1.5px solid #bbb; padding-top: 5px; font-weight: 600;">Authorized Signatory</div>
-              </div>
-              <div style="text-align: center; width: 40%;">
-                <div style="height: 40px; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-style: italic; color: #888;">Recorded by: ${p.recorded_by || 'admin'}</div>
-                <div style="border-top: 1.5px solid #bbb; padding-top: 5px; font-weight: 600;">Receiver's Signature</div>
+              <div style="display: flex; justify-content: space-between; margin-top: 25px; font-size: 0.72rem; color: #666;">
+                <div style="text-align: center; width: 45%;">
+                  <div style="height: 35px;"></div>
+                  <div style="border-top: 1.2px solid #bbb; padding-top: 4px; font-weight: 600;">Authorized Signatory</div>
+                </div>
+                <div style="text-align: center; width: 45%;">
+                  <div style="height: 35px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-style: italic; color: #888;">Recorded by: ${p.recorded_by || 'admin'}</div>
+                  <div style="border-top: 1.2px solid #bbb; padding-top: 4px; font-weight: 600;">Receiver's Signature</div>
+                </div>
               </div>
             </div>
           </div>
         `;
 
+        if (position === 'left') {
+          receiptContainer.innerHTML = `
+            <div class="receipt-half">${cardHtml}</div>
+            <div class="receipt-half"></div>
+          `;
+        } else {
+          receiptContainer.innerHTML = `
+            <div class="receipt-half"></div>
+            <div class="receipt-half">${cardHtml}</div>
+          `;
+        }
+
         document.body.classList.add('print-mode-receipt');
         const styleBlock = document.createElement('style');
         styleBlock.id = 'temp-receipt-print-style';
-        styleBlock.innerHTML = '@page { size: portrait; margin: 1cm; }';
+        styleBlock.innerHTML = '@page { size: A4 landscape; margin: 0; }';
         document.head.appendChild(styleBlock);
 
         window.print();

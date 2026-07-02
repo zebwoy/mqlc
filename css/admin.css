@@ -1849,14 +1849,26 @@ body:has(dialog.admin-modal[open])>*:not(dialog) {
     display: none !important;
   }
   body.print-mode-receipt #print-receipt-container {
-    display: block !important;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 100%;
+    display: flex !important;
+    width: 297mm !important;
+    height: 210mm !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    background: white !important;
   }
   body.print-mode-receipt {
     background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .receipt-half {
+    width: 148.5mm !important;
+    height: 210mm !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 }
