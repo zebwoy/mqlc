@@ -3829,58 +3829,77 @@ document.addEventListener('DOMContentLoaded', () => {
           const mPaid = cachedFeePayments.filter(pay => pay.student_id === s.id && pay.month === m).reduce((sum, pay) => sum + (pay.amount || 0), 0);
           
           let bgColor = '#f1f3f4';
-          let textColor = '#5f6368';
-          let textLabel = '—';
+          let leftColor = '#5f6368';
+          let rightColor = '#5f6368';
+          let leftLabel = '—';
+          let rightLabel = '—';
           
           if (m > feeCurrentMonth) {
             bgColor = '#f1f3f4';
-            textColor = '#5f6368';
-            textLabel = 'TBD';
+            leftLabel = 'TBD';
+            rightLabel = 'TBD';
           } else if (m === feeCurrentMonth) {
             if (mExempt) {
               bgColor = '#f1f3f4';
-              textColor = '#5f6368';
-              textLabel = 'Exempt';
+              leftLabel = 'Exempt';
+              rightLabel = '—';
             } else if (mExp === 0) {
               bgColor = '#f1f3f4';
-              textColor = '#5f6368';
-              textLabel = 'N/A';
-            } else if (mPaid >= mExp) {
-              bgColor = '#e6f4ea';
-              textColor = '#137333';
-              textLabel = `₹${mPaid}`;
+              leftLabel = 'N/A';
+              rightLabel = '—';
             } else {
-              bgColor = '#fce8e6'; // light red
-              textColor = '#c5221f';
-              textLabel = `₹${mExp}`;
+              leftLabel = `₹${mExp}`;
+              rightLabel = `₹${mPaid}`;
+              if (mPaid >= mExp) {
+                bgColor = '#e6f4ea';
+                leftColor = '#137333';
+                rightColor = '#137333';
+              } else {
+                bgColor = '#fce8e6';
+                leftColor = '#c5221f';
+                rightColor = '#c5221f';
+              }
             }
           } else {
             if (mExempt) {
               bgColor = '#f1f3f4';
-              textColor = '#5f6368';
-              textLabel = 'Exempt';
+              leftLabel = 'Exempt';
+              rightLabel = '—';
             } else if (mExp === 0) {
               bgColor = '#f1f3f4';
-              textColor = '#5f6368';
-              textLabel = 'N/A';
-            } else if (mPaid >= mExp) {
-              bgColor = '#e6f4ea';
-              textColor = '#137333';
-              textLabel = `₹${mPaid}`;
-            } else if (mPaid > 0) {
-              bgColor = '#fef7e0';
-              textColor = '#b06000';
-              textLabel = `₹${mPaid}`;
+              leftLabel = 'N/A';
+              rightLabel = '—';
             } else {
-              bgColor = '#fce8e6';
-              textColor = '#c5221f';
-              textLabel = `₹0`;
+              leftLabel = `₹${mExp}`;
+              rightLabel = `₹${mPaid}`;
+              if (mPaid >= mExp) {
+                bgColor = '#e6f4ea';
+                leftColor = '#137333';
+                rightColor = '#137333';
+              } else if (mPaid > 0) {
+                bgColor = '#fef7e0';
+                leftColor = '#b06000';
+                rightColor = '#b06000';
+              } else {
+                bgColor = '#fce8e6';
+                leftColor = '#c5221f';
+                rightColor = '#c5221f';
+              }
             }
           }
           
-          return `<td style="width: 16.6%; border: 1.5px solid #2D6A4F; padding: 5px; background-color: ${bgColor}; color: ${textColor}; font-weight: 700; text-align: center;">
-            <div style="font-size: 0.58rem; text-transform: uppercase; margin-bottom: 2px;">${mLabel}</div>
-            <div style="font-size: 0.72rem;">${textLabel}</div>
+          return `<td style="width: 16.6%; border: 1.5px solid #2D6A4F; padding: 4px; background-color: ${bgColor}; font-weight: 700; text-align: center;">
+            <div style="font-size: 0.58rem; text-transform: uppercase; margin-bottom: 4px; color: #5f6368; border-bottom: 1.5px solid #2D6A4F; padding-bottom: 2px;">
+              ${mLabel}
+            </div>
+            <div style="display: flex; font-size: 0.72rem; line-height: 1.2;">
+              <div style="flex: 1; border-right: 1px solid #2D6A4F; color: ${leftColor}; font-weight: 800;">
+                ${leftLabel}
+              </div>
+              <div style="flex: 1; color: ${rightColor}; font-weight: 800;">
+                ${rightLabel}
+              </div>
+            </div>
           </td>`;
         }
 
@@ -3923,17 +3942,14 @@ document.addEventListener('DOMContentLoaded', () => {
           cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 15);
         }
 
-        let outstandingLabel = `₹${totalOutstanding.toLocaleString('en-IN')}`;
+        let outstandingLabel = totalOutstanding > 0 ? (outstandingDetails.length > 0 ? outstandingDetails.join(' + ') : '₹0') : '₹0';
         let statusColor = '#137333'; // green
         if (totalOutstanding > 0) {
           statusColor = '#c5221f'; // red
-          if (outstandingDetails.length > 0) {
-            outstandingLabel += ` (${outstandingDetails.join(' + ')})`;
-          }
         }
 
         const receiptNo = `MQLC/${String(s.id).split('-')[0].toUpperCase()}`;
-        const amountWords = mPaid > 0 ? (numberToWords(mPaid) + ' Rupees Only') : 'Nil';
+        const amountWords = totalOutstanding > 0 ? (numberToWords(totalOutstanding) + ' Rupees Only') : 'Nil';
 
         const cardHtml = `
           <div style="width: 138mm; height: 195mm; border: 2px solid #2D6A4F; border-radius: 16px; padding: 15px; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); position: relative; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; overflow: hidden;">
@@ -3990,7 +4006,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div style="text-align: right;">
                   <span style="font-size: 0.65rem; color: #666; text-transform: uppercase; font-weight: 700; letter-spacing: 0.03em; display: block; margin-bottom: 1px;">Grand Total</span>
-                  <span style="font-size: 1.25rem; font-weight: 800; color: #2D6A4F;">₹${mPaid.toLocaleString('en-IN')}.00</span>
+                  <span style="font-size: 1.25rem; font-weight: 800; color: #2D6A4F;">₹${totalOutstanding.toLocaleString('en-IN')}.00</span>
                 </div>
               </div>
 
@@ -4000,7 +4016,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   <div style="border-top: 1.2px solid #bbb; padding-top: 4px; font-weight: 600;">Authorized Signatory</div>
                 </div>
                 <div style="text-align: center; width: 45%;">
-                  <div style="height: 35px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-style: italic; color: #888;">Recorded by: ${recordedBy}</div>
+                  <div style="height: 35px;"></div>
                   <div style="border-top: 1.2px solid #bbb; padding-top: 4px; font-weight: 600;">Receiver's Signature</div>
                 </div>
               </div>
