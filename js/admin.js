@@ -3789,15 +3789,6 @@ document.addEventListener('DOMContentLoaded', () => {
           openPaymentModal(student.id, student.student_name, expFee, paidAmt, rawFee);
         });
       }
-
-      const printBtn = document.getElementById('btn-profile-print');
-      if (printBtn) {
-        printBtn.replaceWith(printBtn.cloneNode(true));
-        document.getElementById('btn-profile-print').addEventListener('click', () => {
-          modal.close();
-          requestPrintReceipt(studentId);
-        });
-      }
     }
 
     // ─── Print Position Request Wrapper ─────────────────
