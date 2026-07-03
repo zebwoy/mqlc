@@ -166,6 +166,24 @@ The project was brought from a blank canvas to a fully operational administrativ
 
 - [x] **Fee Report Export:** Dedicated export functionality for fee data (separate from student exports) with columns for Expected, Paid, Remaining, and Status — filterable by batch and pro-rata/exemption-aware.
 
+### 🤖 Premium "Robot Toast" System
+
+- [x] **Zero-Dependency Toast Engine:** Exposes a global `toast` system with multiple states: `toast.success()`, `toast.error()`, `toast.warning()`, `toast.info()`, and `toast.loading()`.
+
+- [x] **Fluid Drag-to-Dismiss Gestures:** Mouse and touch swipe actions track coordinates. Cards translate, rotate, and fade with the pointer, flying out beyond `80px` or snapping back smoothly on release.
+
+- [x] **Active Duration Progress Indicator:** Shrinking visual indicator at the bottom of the card showing remaining time.
+
+- [x] **Smart Hover & Focus Pauses:** Countdowns and bar animations pause when hovering over cards, or when the browser tab loses focus.
+
+- [x] **Typewriter Output Effect:** Optional parameter prints notification text letter-by-letter using timing queues.
+
+- [x] **Bespoke Animated Vector Robots:** Five custom-crafted SVG robots animate live using CSS keyframes (Waving arm on Success, Rapid shaking on Error, Pulsing antenna on Warning, Vertical float on Info, Spinning gear on Loading).
+
+- [x] **Async Promise Lifecycle Handlers:** Exposes `toast.promise(promise, options)` to transition dynamically from a loading gear to success/error states inside a single notification container.
+
+- [x] **Seamless App-Wide Integration:** Replaced all native blocking browser alerts across the dashboard, registration forms, and auth gateways.
+
 ### 🔒 Security & Infrastructure
 
 - [x] **Row-Level Security (RLS):** Supabase RLS policies restrict anonymous access to `otp_pins` (SELECT/UPDATE only) and `quiz_leaderboard` (INSERT/SELECT only), while `fee_payments` and `fee_exemptions` are admin-only via authenticated policies.
