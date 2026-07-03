@@ -128,8 +128,15 @@ The project was brought from a blank canvas to a fully operational administrativ
 - [x] **DOJ-Based Enrollment Filtering:** The fee matrix only shows students whose Date of Joining falls on or before the selected fee month, preventing ghost billing for students who hadn't yet enrolled.
 
 - [x] **Intelligent Arrears Tracking:** From April 2026 onward, unpaid balances from prior months are automatically aggregated and displayed as arrears ("⚠ ₹X overdue from past months · Total due: ₹Y"). The arrears engine iterates month-by-month and respects pro-rata and exemption rules.
-
 - [x] **Redefined Collection Window:** The billing cycle is formally defined as the 25th of month M to the 24th of month M+1. Payments within this window are classified as "On-Time"; payments after are flagged as "Arrears Recovered."
+- [x] **A5 Landscape Ledger Statement Printing:** Dynamic single-student ledger slip printing formatted for A5 landscape (half of A4 landscape) paper with custom receipt numbering (`MQLC/ShortID`) and clean signature blanks for manual signing.
+- [x] **Print Alignment & Waste Prevention:** Interactive choice modal asking the admin to print on either the Left Side or Right Side of the A4 landscape sheet, allowing reuse of half-spent sheets.
+- [x] **Divided Sub-Cell Monthly Matrix:** The annual status matrix splits each month cell into Left (Cumulative expected liability) and Right (Actual payment received in that month) sub-cells, styled with green/yellow/red color-coding.
+- [x] **Cumulative Ledger Calculation:** Computes expected sub-cells cumulatively (`leftVal = max(0, cumulativeExpected - cumulativePaidBefore)`) so that arrears carry forward automatically across monthly columns.
+- [x] **Chronological Arrears Distribution:** Pools all student payments since `ARREARS_START` ('2026-03') and allocates them chronologically (oldest-first) to display the remaining outstanding math with full month names (e.g. `100 (April) + 300 (May)`).
+- [x] **Dynamic Date of Joining Format:** Renders the student's DOJ below Father's Name with proper English ordinal formatting (e.g., `6th June 2026`, `21st April 2026`).
+- [x] **Select-Based Bulk Ledger Printing:** A checkbox-driven student selection list inside the Export dropdown menu. Supports search filtering, dynamic count updates (`Print (count)`), and page break controls (`display: block` and `:last-child` page-break overrides) to spool multiple sheets without overlaps.
+- [x] **Smart Bulk Spooling Layout:** Automatically skips the position choice modal for bulk prints (selected count > 1) to tile ledger slips sequentially (`Left -> Right -> Left -> Right`), maximizing print layout speed.
 
 ### 🧮 Fee Intelligence
 
