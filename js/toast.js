@@ -149,7 +149,7 @@
         // Clean up previous event listeners and timeouts
         if (card._timeoutId) clearTimeout(card._timeoutId);
         if (card._progressInterval) clearInterval(card._progressInterval);
-        card.className = `toast-card toast-${type}`;
+        card.className = `toast-card toast-${type} show`;
       }
     }
 
