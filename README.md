@@ -128,6 +128,10 @@ The project was brought from a blank canvas to a fully operational administrativ
 - [x] **DOJ-Based Enrollment Filtering:** The fee matrix only shows students whose Date of Joining falls on or before the selected fee month, preventing ghost billing for students who hadn't yet enrolled.
 
 - [x] **Intelligent Arrears Tracking:** From April 2026 onward, unpaid balances from prior months are automatically aggregated and displayed as arrears ("⚠ ₹X overdue from past months · Total due: ₹Y"). The arrears engine iterates month-by-month and respects pro-rata and exemption rules.
+
+- [x] **Print Fee Ledger (Dynamic FY):** Added an option in the export fee report popup to print individual or bulk student fee ledgers with dynamic Academic Year computation (e.g., FY26-FY27).
+
+- [x] **Smart Bulk Ledger Printing Layout:** A modal displaying student checkboxes and search options. When selected, automatically computes the selection count (e.g. `Print (3)`) and arranges student records side-by-side using an A5-optimized, left-right printing foundation. It resolves layout pagination (e.g. inserting page-breaks after every 2 students, and avoiding trailing empty sheets) for any bulk volume.
 - [x] **Redefined Collection Window:** The billing cycle is formally defined as the 25th of month M to the 24th of month M+1. Payments within this window are classified as "On-Time"; payments after are flagged as "Arrears Recovered."
 - [x] **A5 Landscape Ledger Statement Printing:** Dynamic single-student ledger slip printing formatted for A5 landscape (half of A4 landscape) paper with custom receipt numbering (`MQLC/ShortID`) and clean signature blanks for manual signing.
 - [x] **Print Alignment & Waste Prevention:** Interactive choice modal asking the admin to print on either the Left Side or Right Side of the A4 landscape sheet, allowing reuse of half-spent sheets.
