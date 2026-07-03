@@ -3777,18 +3777,6 @@ document.addEventListener('DOMContentLoaded', () => {
           openEditModal(studentId);
         });
       }
-
-      const payBtn = document.getElementById('btn-profile-pay');
-      if (payBtn) {
-        payBtn.replaceWith(payBtn.cloneNode(true));
-        document.getElementById('btn-profile-pay').addEventListener('click', () => {
-          modal.close();
-          const rawFee = parseInt(student.monthly_fee) || 0;
-          const expFee = getExpectedFee(student, feeCurrentMonth);
-          const paidAmt = cachedFeePayments.filter(p => p.student_id === student.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
-          openPaymentModal(student.id, student.student_name, expFee, paidAmt, rawFee);
-        });
-      }
     }
 
     // ─── Print Position Request Wrapper ─────────────────
