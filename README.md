@@ -236,7 +236,8 @@ mqlc/
 │   ├── sections.css        # Content Sections, Bulletin Board & Responsive Rules
 │   ├── quiz.css            # Quiz UI, Leaderboard & Score Animations
 │   ├── register.css        # Registration Wizard Styles
-│   └── timeline.css        # Timeline Page Layout
+│   ├── timeline.css        # Timeline Page Layout
+│   └── toast.css           # Premium Glassmorphism & Animated Robot Toast Styles
 ├── js/
 │   ├── admin.js            # Dashboard CRUD, Fee Tracker, Analytics & Export Logic
 │   ├── auth.js             # Supabase Authentication State Machine
@@ -246,7 +247,8 @@ mqlc/
 │   ├── register.js         # OTP Verification & Registration State Machine
 │   ├── audio.js            # Quranic Audio Player (Lazy-loaded)
 │   ├── updates.js          # Updates Carousel Renderer
-│   └── supabase-config.js  # Supabase Client Initialization
+│   ├── supabase-config.js  # Supabase Client Initialization
+│   └── toast.js            # Premium Swipe-Dismiss Gesture & Promise Notification Engine
 ```
 ---
 <div align="center">
