@@ -149,20 +149,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnVerify) {
     btnVerify.addEventListener('click', async () => {
       if (!window._supabase) {
-        authStatus.textContent = "System offline. Cannot verify PIN.";
+        toast.error("System offline. Cannot verify PIN.");
         return;
       }
 
       const pinVal = inputPin.value.trim();
       if (pinVal.length !== 6) {
-        authStatus.textContent = "Please enter a valid 6-digit PIN.";
+        toast.warning("Please enter a valid 6-digit PIN.");
         return;
       }
 
-      try {
-        btnVerify.disabled = true;
-        authStatus.textContent = "";
-
+      const verifyPromise = (async () => {
         const { data, error } = await window._supabase
           .from('otp_pins')
           .select('*')
@@ -171,18 +168,29 @@ document.addEventListener('DOMContentLoaded', () => {
           .single();
 
         if (error || !data) {
-          throw new Error("Invalid or expired PIN.");
+          throw new Error("Incorrect or Expired PIN. Please contact the administrator.");
         }
+        return data;
+      })();
 
+      toast.promise(verifyPromise, {
+        loading: "Verifying PIN...",
+        success: "PIN verified! Establishing secure connection...",
+        error: (err) => err.message
+      });
+
+      try {
+        btnVerify.disabled = true;
+        const data = await verifyPromise;
         verifiedPinId = data.id;
 
-        // Transition Stages
-        stageAuth.classList.remove('active');
-        progressContainer.style.display = 'block';
-        updateWizardUI(); // Start step 1
+        setTimeout(() => {
+          stageAuth.classList.remove('active');
+          progressContainer.style.display = 'block';
+          updateWizardUI(); // Start step 1
+        }, 1200);
 
       } catch (err) {
-        authStatus.textContent = "Incorrect or Expired PIN. Please contact the administrator.";
         inputPin.value = "";
       } finally {
         btnVerify.disabled = false;
@@ -202,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
 
       if (!window._supabase || !verifiedPinId) {
-        submitStatus.textContent = "Session invalid. Please refresh the page.";
+        toast.error("Session invalid. Please refresh the page.");
         return;
       }
 
@@ -240,10 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
         status: 'pending'
       };
 
-      try {
-        btnSubmit.disabled = true;
-        submitStatus.textContent = "";
-
+      const submitPromise = (async () => {
         const { error: regError } = await window._supabase
           .from('student_registrations')
           .insert([payload]);
@@ -256,15 +261,26 @@ document.addEventListener('DOMContentLoaded', () => {
           .eq('id', verifiedPinId);
 
         if (pinError) console.error("Warning: Failed to invalidate PIN.", pinError);
+      })();
 
-        // Success Transition
-        document.getElementById(wizardSteps[currentStepIdx]).classList.remove('active');
-        progressContainer.style.display = 'none';
-        stageSuccess.classList.add('active');
+      toast.promise(submitPromise, {
+        loading: "Submitting application...",
+        success: "Application submitted successfully!",
+        error: (err) => `Submission failed: ${err.message}`
+      });
+
+      try {
+        btnSubmit.disabled = true;
+        await submitPromise;
+
+        setTimeout(() => {
+          document.getElementById(wizardSteps[currentStepIdx]).classList.remove('active');
+          progressContainer.style.display = 'none';
+          stageSuccess.classList.add('active');
+        }, 1200);
 
       } catch (err) {
         console.error(err);
-        submitStatus.textContent = "An error occurred while submitting: " + err.message;
         btnSubmit.disabled = false;
       }
     });

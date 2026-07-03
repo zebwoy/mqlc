@@ -57,15 +57,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const password = document.getElementById('password').value;
     authError.style.display = 'none';
 
-    const { data, error } = await _supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+    const loginPromise = (async () => {
+      const { data, error } = await _supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      if (error) throw error;
+      return data;
+    })();
 
-    if (error) {
-      authError.textContent = error.message;
-      authError.style.display = 'block';
-    }
+    toast.promise(loginPromise, {
+      loading: 'Authenticating credentials...',
+      success: 'Welcome back, Admin!',
+      error: (err) => `Authentication failed: ${err.message}`
+    });
   });
 
   // 4. Logout Action

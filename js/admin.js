@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { ...configBase, folder: 'home/mqlc/updates', tags: ['updates'] },
         (error, result) => {
           if (!error && result && result.event === "success") {
-            setTimeout(() => alert('Upload Successful! The new media is now live on the Updates slider.'), 500);
+            toast.success('Upload Successful! The new media is now live on the Updates slider.');
           }
           if (result && (result.event === 'abort' || result.event === 'close' || result.event === 'success')) {
             if (statusUpdates) statusUpdates.innerHTML = 'Open Uploader &rarr;';
@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { ...configBase, folder: 'home/mqlc/bulletin', tags: ['bulletin'] },
         (error, result) => {
           if (!error && result && result.event === "success") {
-            setTimeout(() => alert('Upload Successful! The file is now live on the Bulletin Board.'), 500);
+            toast.success('Upload Successful! The file is now live on the Bulletin Board.');
           }
           if (result && (result.event === 'abort' || result.event === 'close' || result.event === 'success')) {
             if (statusBulletin) statusBulletin.innerHTML = 'Open Uploader &rarr;';
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { ...configBase, folder: 'home/mqlc/bulletin', tags: ['bulletin', 'quiz'] },
         (error, result) => {
           if (!error && result && result.event === "success") {
-            setTimeout(() => alert('Quiz Upload Successful! The new interactive quiz has been published to your bulletin board.'), 500);
+            toast.success('Quiz Upload Successful! The new interactive quiz has been published to your bulletin board.');
           }
           if (result && (result.event === 'abort' || result.event === 'close' || result.event === 'success')) {
             if (statusQuiz) statusQuiz.innerHTML = 'Upload JSON &rarr;';
@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnGenerateOtp) {
     btnGenerateOtp.addEventListener('click', async () => {
       if (!window._supabase) {
-        alert("Supabase not initialized.");
+        toast.error("Supabase not initialized.");
         return;
       }
       btnGenerateOtp.disabled = true;
@@ -208,15 +208,24 @@ document.addEventListener('DOMContentLoaded', () => {
       // Generate 6 digit random pin
       const pin = Math.floor(100000 + Math.random() * 900000).toString();
 
-      try {
+      const otpPromise = (async () => {
         const { error } = await window._supabase.from('otp_pins').insert([{ pin: pin }]);
         if (error) throw error;
+        return pin;
+      })();
 
+      toast.promise(otpPromise, {
+        loading: "Generating secure OTP PIN...",
+        success: "OTP PIN generated successfully!",
+        error: (err) => `Failed to generate PIN: ${err.message}`
+      });
+
+      try {
+        await otpPromise;
         otpDisplay.textContent = pin;
         otpDisplay.style.color = 'var(--admin-accent)';
       } catch (err) {
         console.error("OTP Gen Error:", err);
-        alert("Failed to generate PIN: " + err.message);
       } finally {
         btnGenerateOtp.disabled = false;
         btnGenerateOtp.textContent = "Generate New PIN";
@@ -1505,12 +1514,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (filtered.length === 0) {
-      alert('No data to export based on current filters.');
+      toast.warning('No data to export based on current filters.');
       return;
     }
 
     if (typeof XLSX === 'undefined') {
-      alert('Excel engine is still loading. Please try again in a moment.');
+      toast.info('Excel engine is still loading. Please try again in a moment.');
       return;
     }
 
@@ -1604,7 +1613,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (filtered.length === 0) {
-      alert('No data to export based on current filters.');
+      toast.warning('No data to export based on current filters.');
       return;
     }
 
@@ -2418,12 +2427,26 @@ document.addEventListener('DOMContentLoaded', () => {
     feed.querySelectorAll('.btn-fee-unexempt').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!confirm(`Remove exemption for ${btn.dataset.name} for ${feeMonthLabel(feeCurrentMonth)}?`)) return;
-        try {
-          await window._supabase.from('fee_exemptions')
+        
+        const unexemptPromise = (async () => {
+          const { error } = await window._supabase.from('fee_exemptions')
             .delete().eq('student_id', btn.dataset.sid).eq('month', feeCurrentMonth);
+          if (error) throw error;
+        })();
+
+        toast.promise(unexemptPromise, {
+          loading: "Removing exemption...",
+          success: `Exemption removed for ${btn.dataset.name}!`,
+          error: (err) => `Failed to remove exemption: ${err.message}`
+        });
+
+        try {
+          await unexemptPromise;
           cachedFeeExemptions = cachedFeeExemptions.filter(e => !(e.student_id === btn.dataset.sid && e.month === feeCurrentMonth));
           renderFeeMatrix();
-        } catch (err) { console.error('Un-exempt error:', err); alert('Failed to remove exemption.'); }
+        } catch (err) {
+          console.error('Un-exempt error:', err);
+        }
       });
     });
   }
@@ -2648,34 +2671,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Validate month range
       if (toMonth < fromMonth) {
-        statusMsg.textContent = '"To" month cannot be before "From" month.';
-        statusMsg.className = 'status-msg error';
-        statusMsg.style.display = 'block';
+        toast.warning('"To" month cannot be before "From" month.');
         return;
       }
 
       // Native date input already returns YYYY-MM-DD
       const paidOn = document.getElementById('pay-date').value;
       if (!paidOn) {
-        statusMsg.textContent = 'Please select a valid date.';
-        statusMsg.className = 'status-msg error';
-        statusMsg.style.display = 'block';
+        toast.warning('Please select a valid date.');
         return;
       }
 
       const notes = document.getElementById('pay-notes').value.trim();
 
       if (!totalAmount || totalAmount <= 0) {
-        statusMsg.textContent = 'Please enter a valid amount.';
-        statusMsg.className = 'status-msg error';
-        statusMsg.style.display = 'block';
+        toast.warning('Please enter a valid amount.');
         return;
       }
 
       btn.textContent = 'Recording...';
       btn.disabled = true;
 
-      try {
+      const recordPromise = (async () => {
         let adminEmail = 'admin';
         const { data: { session } } = await window._supabase.auth.getSession();
         if (session?.user?.email) adminEmail = session.user.email;
@@ -2696,23 +2713,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const { error } = await window._supabase.from('fee_payments').insert(payload);
         if (error) throw error;
+        return { isSingleMonth, split };
+      })();
 
-        const msg = isSingleMonth
+      toast.promise(recordPromise, {
+        loading: "Recording fee payment...",
+        success: (res) => res.isSingleMonth
           ? 'Payment recorded successfully!'
-          : `₹${totalAmount.toLocaleString('en-IN')} split across ${split.length} months successfully!`;
-        statusMsg.textContent = msg;
-        statusMsg.className = 'status-msg success';
-        statusMsg.style.display = 'block';
+          : `₹${totalAmount.toLocaleString('en-IN')} split across ${res.split.length} months successfully!`,
+        error: (err) => `Failed to record payment: ${err.message}`
+      });
 
+      try {
+        await recordPromise;
         setTimeout(() => {
           document.getElementById('modal-record-payment').close();
           hydrateFeeTracker();
-        }, 800);
+        }, 1200);
       } catch (err) {
         console.error(err);
-        statusMsg.textContent = 'Failed: ' + err.message;
-        statusMsg.className = 'status-msg error';
-        statusMsg.style.display = 'block';
       } finally {
         btn.textContent = 'Record Payment';
         btn.disabled = false;
@@ -2722,16 +2741,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ─── Undo Last Payment ─────────
   async function undoLastPayment(studentId, name) {
+    const payments = cachedFeePayments.filter(p => p.student_id === studentId && p.month === feeCurrentMonth).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    if (!payments.length) {
+      toast.warning('No payments found to undo for this month.');
+      return;
+    }
+
     if (!confirm(`Undo the last payment for ${name} in ${feeMonthLabel(feeCurrentMonth)}?`)) return;
-    try {
-      const payments = cachedFeePayments.filter(p => p.student_id === studentId && p.month === feeCurrentMonth).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      if (!payments.length) return;
+
+    const undoPromise = (async () => {
       const { error } = await window._supabase.from('fee_payments').delete().eq('id', payments[0].id);
       if (error) throw error;
+    })();
+
+    toast.promise(undoPromise, {
+      loading: `Undoing last payment for ${name}...`,
+      success: `Payment successfully undone!`,
+      error: (err) => `Failed to undo payment: ${err.message}`
+    });
+
+    try {
+      await undoPromise;
       await hydrateFeeTracker();
     } catch (err) {
       console.error(err);
-      alert('Failed to undo: ' + err.message);
     }
   }
 
