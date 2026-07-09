@@ -8,6 +8,24 @@ const CLOUDINARY_UPLOAD_PRESET = 'wrye55gv'; // REPLACE THIS
 
 document.addEventListener('DOMContentLoaded', () => {
 
+  let exitDatePicker, paymentDatePicker, bulkPaymentDatePicker;
+
+  // Initialize reusable custom date pickers
+  exitDatePicker = new CustomDatePicker({
+    container: '#exit-datepicker',
+    input: '#edit-exit-date'
+  });
+
+  paymentDatePicker = new CustomDatePicker({
+    container: '#pay-datepicker',
+    input: '#pay-date'
+  });
+
+  bulkPaymentDatePicker = new CustomDatePicker({
+    container: '#bulk-pay-datepicker',
+    input: '#bulk-pay-date'
+  });
+
   // ─── 0. DATE UI ENHANCEMENTS (FLATPICKR) ──────────────────────
   if (typeof flatpickr !== 'undefined') {
     flatpickr("input[type=date]", {
@@ -752,11 +770,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const exitNotesVal = student.exit_notes || '';
 
     const dateVal = exitDateVal ? new Date(exitDateVal) : new Date();
-    exitDpSelectDate(dateVal);
-    const input = document.getElementById('edit-exit-date');
-    if (input) input.value = exitDateVal; // set actual database value
-    const display = document.getElementById('exit-date-display');
-    if (display) display.textContent = exitDateVal ? exitDpFormatDisplay(dateVal) : 'Select date';
+    if (exitDatePicker) {
+      exitDatePicker.selectDate(dateVal);
+      if (!exitDateVal) {
+        document.getElementById('edit-exit-date').value = '';
+        exitDatePicker.displayEl.textContent = 'Select date';
+      }
+    }
 
     const reasonInput = document.getElementById('edit-exit-reason');
     if (reasonInput) reasonInput.value = exitReasonVal;
@@ -778,92 +798,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('modal-edit-student').showModal();
   }
 
-  // ─── Inline Date Picker Engine for Student Exit ───
-  let exitDpViewYear = new Date().getFullYear();
-  let exitDpViewMonth = new Date().getMonth();
-
-  function exitDpFormatDisplay(date) {
-    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-  }
-
-  function exitDpToISO(date) {
-    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
-  }
-
-  function exitDpSelectDate(date) {
-    const input = document.getElementById('edit-exit-date');
-    const display = document.getElementById('exit-date-display');
-    if (input) input.value = exitDpToISO(date);
-    if (display) display.textContent = exitDpFormatDisplay(date);
-    exitDpViewYear = date.getFullYear();
-    exitDpViewMonth = date.getMonth();
-    exitDpRenderGrid();
-  }
-
-  function exitDpRenderGrid() {
-    const grid = document.getElementById('exit-dp-grid');
-    const label = document.getElementById('exit-dp-month-label');
-    if (!grid || !label) return;
-
-    const viewDate = new Date(exitDpViewYear, exitDpViewMonth, 1);
-    label.textContent = viewDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
-
-    const today = new Date();
-    const selectedVal = document.getElementById('edit-exit-date')?.value || '';
-    const firstDay = viewDate.getDay();
-    const daysInMonth = new Date(exitDpViewYear, exitDpViewMonth + 1, 0).getDate();
-
-    let html = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
-      .map(d => `<span class="dp-head">${d}</span>`).join('');
-
-    for (let i = 0; i < firstDay; i++) {
-      html += `<span></span>`;
-    }
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const iso = exitDpToISO(new Date(exitDpViewYear, exitDpViewMonth, day));
-      const isToday = (day === today.getDate() && exitDpViewMonth === today.getMonth() && exitDpViewYear === today.getFullYear());
-      const isSelected = (iso === selectedVal);
-      const cls = `dp-day${isToday ? ' dp-today' : ''}${isSelected ? ' dp-selected' : ''}`;
-      html += `<button type="button" class="${cls}" data-date="${iso}">${day}</button>`;
-    }
-
-    grid.innerHTML = html;
-
-    grid.querySelectorAll('.dp-day').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const [y, m, d] = btn.dataset.date.split('-').map(Number);
-        exitDpSelectDate(new Date(y, m - 1, d));
-        const dropdown = document.getElementById('exit-date-dropdown');
-        if (dropdown) dropdown.style.display = 'none';
-      });
-    });
-  }
-
-  // Toggle calendar
-  const exitDpTrigger = document.getElementById('exit-date-trigger');
-  const exitDpDropdown = document.getElementById('exit-date-dropdown');
-  if (exitDpTrigger && exitDpDropdown) {
-    exitDpTrigger.addEventListener('click', () => {
-      const isOpen = exitDpDropdown.style.display !== 'none';
-      exitDpDropdown.style.display = isOpen ? 'none' : 'block';
-      if (!isOpen) exitDpRenderGrid();
-    });
-  }
-
-  // Prev / Next month
-  const exitDpPrev = document.getElementById('exit-dp-prev-month');
-  const exitDpNext = document.getElementById('exit-dp-next-month');
-  if (exitDpPrev) exitDpPrev.addEventListener('click', () => { exitDpViewMonth--; if (exitDpViewMonth < 0) { exitDpViewMonth = 11; exitDpViewYear--; } exitDpRenderGrid(); });
-  if (exitDpNext) exitDpNext.addEventListener('click', () => { exitDpViewMonth++; if (exitDpViewMonth > 11) { exitDpViewMonth = 0; exitDpViewYear++; } exitDpRenderGrid(); });
-
-  // Today button
-  const exitDpTodayBtn = document.getElementById('exit-dp-today-btn');
-  if (exitDpTodayBtn) exitDpTodayBtn.addEventListener('click', () => {
-    exitDpSelectDate(new Date());
-    if (exitDpDropdown) exitDpDropdown.style.display = 'none';
-  });
-
   // Change listener to show/hide exit audit section dynamically
   const editStatusSelect = document.getElementById('edit-student-status');
   const editExitSection = document.getElementById('edit-exit-audit-section');
@@ -876,7 +810,7 @@ document.addEventListener('DOMContentLoaded', () => {
         editExitSection.style.display = 'block';
         if (editExitReason) editExitReason.required = true;
         if (editExitDate && !editExitDate.value) {
-          exitDpSelectDate(new Date());
+          if (exitDatePicker) exitDatePicker.selectDate(new Date());
         }
       } else {
         editExitSection.style.display = 'none';
@@ -2553,8 +2487,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Set today's date using inline datepicker
-    dpSelectDate(new Date());
-    document.getElementById('pay-date-dropdown').style.display = 'none';
+    if (paymentDatePicker) {
+      paymentDatePicker.selectDate(new Date());
+    }
 
     document.getElementById('pay-notes').value = '';
     document.getElementById('pay-status-msg').style.display = 'none';
@@ -2565,89 +2500,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSplitPreview();
   }
 
-  // ─── Inline Date Picker Engine ───
-  let dpViewYear, dpViewMonth; // currently viewed month in the calendar
 
-  function dpFormatDisplay(date) {
-    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-  }
-
-  function dpToISO(date) {
-    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
-  }
-
-  function dpSelectDate(date) {
-    document.getElementById('pay-date').value = dpToISO(date);
-    document.getElementById('pay-date-display').textContent = dpFormatDisplay(date);
-    dpViewYear = date.getFullYear();
-    dpViewMonth = date.getMonth();
-    dpRenderGrid();
-  }
-
-  function dpRenderGrid() {
-    const grid = document.getElementById('dp-grid');
-    const label = document.getElementById('dp-month-label');
-    if (!grid || !label) return;
-
-    const viewDate = new Date(dpViewYear, dpViewMonth, 1);
-    label.textContent = viewDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
-
-    const today = new Date();
-    const selectedVal = document.getElementById('pay-date').value;
-    const firstDay = viewDate.getDay(); // 0=Sun
-    const daysInMonth = new Date(dpViewYear, dpViewMonth + 1, 0).getDate();
-
-    let html = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
-      .map(d => `<span class="dp-head">${d}</span>`).join('');
-
-    // Blanks for days before 1st
-    for (let i = 0; i < firstDay; i++) {
-      html += `<span></span>`;
-    }
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const iso = dpToISO(new Date(dpViewYear, dpViewMonth, day));
-      const isToday = (day === today.getDate() && dpViewMonth === today.getMonth() && dpViewYear === today.getFullYear());
-      const isSelected = (iso === selectedVal);
-      const cls = `dp-day${isToday ? ' dp-today' : ''}${isSelected ? ' dp-selected' : ''}`;
-      html += `<button type="button" class="${cls}" data-date="${iso}">${day}</button>`;
-    }
-
-    grid.innerHTML = html;
-
-    // Bind day clicks
-    grid.querySelectorAll('.dp-day').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const [y, m, d] = btn.dataset.date.split('-').map(Number);
-        dpSelectDate(new Date(y, m - 1, d));
-        document.getElementById('pay-date-dropdown').style.display = 'none';
-      });
-    });
-  }
-
-  // Toggle calendar
-  const dpTrigger = document.getElementById('pay-date-trigger');
-  const dpDropdown = document.getElementById('pay-date-dropdown');
-  if (dpTrigger && dpDropdown) {
-    dpTrigger.addEventListener('click', () => {
-      const isOpen = dpDropdown.style.display !== 'none';
-      dpDropdown.style.display = isOpen ? 'none' : 'block';
-      if (!isOpen) dpRenderGrid();
-    });
-  }
-
-  // Prev / Next month
-  const dpPrev = document.getElementById('dp-prev-month');
-  const dpNext = document.getElementById('dp-next-month');
-  if (dpPrev) dpPrev.addEventListener('click', () => { dpViewMonth--; if (dpViewMonth < 0) { dpViewMonth = 11; dpViewYear--; } dpRenderGrid(); });
-  if (dpNext) dpNext.addEventListener('click', () => { dpViewMonth++; if (dpViewMonth > 11) { dpViewMonth = 0; dpViewYear++; } dpRenderGrid(); });
-
-  // Today button
-  const dpTodayBtn = document.getElementById('dp-today-btn');
-  if (dpTodayBtn) dpTodayBtn.addEventListener('click', () => {
-    dpSelectDate(new Date());
-    document.getElementById('pay-date-dropdown').style.display = 'none';
-  });
 
   // Wire live preview updates
   const payFromEl = document.getElementById('pay-month-from');
@@ -2811,6 +2664,298 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       panel.innerHTML = '<em style="color: #dc2626;">Error loading history.</em>';
     }
+  }
+
+  // ─── Bulk Fee Mark Flow ─────────────────
+  const btnFeeBulkPay = document.getElementById('btn-fee-bulk-pay');
+  const modalBulkPay = document.getElementById('modal-bulk-fee-mark');
+  const bulkPayStudentList = document.getElementById('bulk-pay-student-list');
+  const bulkPaySearch = document.getElementById('bulk-pay-search');
+  const bulkPayBatch = document.getElementById('bulk-pay-batch');
+  const bulkPaySelectAll = document.getElementById('bulk-pay-select-all');
+  const btnBulkPayConfirm = document.getElementById('btn-bulk-pay-confirm');
+  const formBulkPay = document.getElementById('form-bulk-pay');
+  const bulkPayStatusMsg = document.getElementById('bulk-pay-status-msg');
+  const bulkPayMonthLabel = document.getElementById('bulk-pay-month-label');
+
+  let eligibleStudents = [];
+  let checkedStudentIds = new Set();
+
+  if (btnFeeBulkPay && modalBulkPay) {
+    btnFeeBulkPay.addEventListener('click', () => {
+      if (bulkPayMonthLabel) {
+        bulkPayMonthLabel.textContent = feeMonthLabel(feeCurrentMonth);
+      }
+      
+      if (bulkPaySearch) bulkPaySearch.value = '';
+      if (bulkPayBatch) bulkPayBatch.value = 'all';
+      if (bulkPaySelectAll) bulkPaySelectAll.checked = false;
+      document.getElementById('bulk-pay-notes').value = '';
+      if (bulkPayStatusMsg) {
+        bulkPayStatusMsg.style.display = 'none';
+        bulkPayStatusMsg.textContent = '';
+      }
+
+      if (bulkPaymentDatePicker) {
+        bulkPaymentDatePicker.selectDate(new Date());
+      }
+
+      eligibleStudents = cachedStudents.filter(s => {
+        if (s.status !== 'approved') return false;
+        if (!isEnrolledForMonth(s.doj, feeCurrentMonth)) return false;
+        if (isExemptForMonth(s.id, feeCurrentMonth)) return false;
+        
+        const expFee = getExpectedFee(s, feeCurrentMonth);
+        if (expFee === 0) return false;
+        const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
+        const remaining = Math.max(0, expFee - paid);
+        const arrears = calcArrears(s, feeCurrentMonth);
+        const totalOutstanding = remaining + arrears;
+        
+        return totalOutstanding > 0;
+      });
+
+      checkedStudentIds.clear();
+      renderBulkPayStudents();
+      modalBulkPay.showModal();
+    });
+
+    if (bulkPaySearch) {
+      bulkPaySearch.addEventListener('input', renderBulkPayStudents);
+    }
+
+    if (bulkPayBatch) {
+      bulkPayBatch.addEventListener('change', renderBulkPayStudents);
+    }
+
+    if (bulkPaySelectAll) {
+      bulkPaySelectAll.addEventListener('change', (e) => {
+        const visibleCheckboxes = bulkPayStudentList.querySelectorAll('input[type="checkbox"]');
+        visibleCheckboxes.forEach(cb => {
+          cb.checked = e.target.checked;
+          const sid = cb.dataset.sid;
+          if (e.target.checked) {
+            checkedStudentIds.add(sid);
+          } else {
+            checkedStudentIds.delete(sid);
+          }
+        });
+        updateBulkPayConfirmButton();
+      });
+    }
+  }
+
+  function renderBulkPayStudents() {
+    if (!bulkPayStudentList) return;
+    
+    const searchTerm = bulkPaySearch ? bulkPaySearch.value.toLowerCase().trim() : '';
+    const batchFilter = bulkPayBatch ? bulkPayBatch.value : 'all';
+
+    let filtered = eligibleStudents.filter(s => {
+      if (searchTerm && !(s.student_name || '').toLowerCase().includes(searchTerm)) return false;
+      if (batchFilter !== 'all') {
+        if (batchFilter === 'unassigned') {
+          if (s.batch && s.batch !== '' && s.batch !== 'null' && s.batch !== 'undefined') return false;
+        } else {
+          if (s.batch !== batchFilter) return false;
+        }
+      }
+      return true;
+    });
+
+    filtered.sort((a, b) => (a.student_name || '').localeCompare(b.student_name || ''));
+
+    bulkPayStudentList.innerHTML = '';
+    if (filtered.length === 0) {
+      bulkPayStudentList.innerHTML = '<p style="text-align: center; color: var(--admin-muted); font-size: 0.85rem; margin: 1rem 0;">No pending students found matching criteria.</p>';
+      if (bulkPaySelectAll) bulkPaySelectAll.checked = false;
+      updateBulkPayConfirmButton();
+      return;
+    }
+
+    filtered.forEach(s => {
+      const expFee = getExpectedFee(s, feeCurrentMonth);
+      const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
+      const remaining = Math.max(0, expFee - paid);
+      const arrears = calcArrears(s, feeCurrentMonth);
+      const totalOutstanding = remaining + arrears;
+      
+      const isChecked = checkedStudentIds.has(s.id.toString());
+      
+      const item = document.createElement('label');
+      item.className = 'bulk-pay-student-item';
+      item.style.display = 'flex';
+      item.style.alignItems = 'center';
+      item.style.justifyContent = 'space-between';
+      item.style.padding = '0.4rem 0.6rem';
+      item.style.borderBottom = '1px solid var(--admin-border)';
+      item.style.cursor = 'pointer';
+      item.style.fontSize = '0.85rem';
+      item.style.fontWeight = '500';
+
+      let detailsStr = `₹${totalOutstanding}`;
+      if (arrears > 0) {
+        detailsStr += ` (incl. ₹${arrears} arrears)`;
+      }
+
+      item.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <input type="checkbox" data-sid="${s.id}" data-outstanding="${totalOutstanding}" style="width: 16px; height: 16px; accent-color: var(--admin-accent);" ${isChecked ? 'checked' : ''}>
+          <span>${s.student_name} <small style="color: var(--admin-muted); font-weight: normal;">(${s.batch || 'Unassigned'})</small></span>
+        </div>
+        <span style="font-weight: 600; color: #dc2626;">${detailsStr}</span>
+      `;
+
+      const cb = item.querySelector('input[type="checkbox"]');
+      cb.addEventListener('change', (e) => {
+        const sid = s.id.toString();
+        if (e.target.checked) {
+          checkedStudentIds.add(sid);
+        } else {
+          checkedStudentIds.delete(sid);
+        }
+        
+        if (bulkPaySelectAll) {
+          const allCheckboxes = bulkPayStudentList.querySelectorAll('input[type="checkbox"]');
+          const allChecked = Array.from(allCheckboxes).every(input => input.checked);
+          bulkPaySelectAll.checked = allChecked;
+        }
+        
+        updateBulkPayConfirmButton();
+      });
+
+      bulkPayStudentList.appendChild(item);
+    });
+
+    updateBulkPayConfirmButton();
+  }
+
+  function updateBulkPayConfirmButton() {
+    if (!btnBulkPayConfirm) return;
+    const count = checkedStudentIds.size;
+    btnBulkPayConfirm.textContent = `Record Payments (${count})`;
+    btnBulkPayConfirm.disabled = count === 0;
+  }
+
+  if (formBulkPay) {
+    formBulkPay.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const paidOn = document.getElementById('bulk-pay-date').value;
+      const notes = document.getElementById('bulk-pay-notes').value.trim();
+      const statusMsg = document.getElementById('bulk-pay-status-msg');
+      const btn = document.getElementById('btn-bulk-pay-confirm');
+
+      if (checkedStudentIds.size === 0) {
+        toast.warning('Please select at least one student.');
+        return;
+      }
+
+      if (!paidOn) {
+        toast.warning('Please select a valid date.');
+        return;
+      }
+
+      btn.textContent = 'Recording...';
+      btn.disabled = true;
+
+      const recordPromise = (async () => {
+        let adminEmail = 'admin';
+        const { data: { session } } = await window._supabase.auth.getSession();
+        if (session?.user?.email) adminEmail = session.user.email;
+
+        const paymentsToInsert = [];
+        
+        for (const sid of checkedStudentIds) {
+          const student = eligibleStudents.find(s => s.id.toString() === sid);
+          if (!student) continue;
+
+          const expFee = getExpectedFee(student, feeCurrentMonth);
+          const paid = cachedFeePayments.filter(p => p.student_id === student.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
+          const remaining = Math.max(0, expFee - paid);
+          const arrears = calcArrears(student, feeCurrentMonth);
+          const totalOutstanding = remaining + arrears;
+
+          if (totalOutstanding <= 0) continue;
+
+          if (arrears > 0) {
+            const unpaidMonths = [];
+            let checkMonth = '2026-03';
+            while (checkMonth <= feeCurrentMonth) {
+              if (isEnrolledForMonth(student.doj, checkMonth) && !isExemptForMonth(student.id, checkMonth)) {
+                const expVal = getExpectedFee(student, checkMonth);
+                const paidVal = cachedFeePayments.filter(p => p.student_id === student.id && p.month === checkMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
+                const dueVal = Math.max(0, expVal - paidVal);
+                if (dueVal > 0) {
+                  unpaidMonths.push({ month: checkMonth, due: dueVal });
+                }
+              }
+              const [y, m] = checkMonth.split('-').map(Number);
+              const nextM = m === 12 ? 1 : m + 1;
+              const nextY = m === 12 ? y + 1 : y;
+              checkMonth = nextY + '-' + String(nextM).padStart(2, '0');
+            }
+
+            let amtLeft = totalOutstanding;
+            unpaidMonths.forEach(mObj => {
+              if (amtLeft <= 0) return;
+              const payAmt = Math.min(amtLeft, mObj.due);
+              paymentsToInsert.push({
+                student_id: student.id,
+                month: mObj.month,
+                amount: payAmt,
+                paid_on: paidOn,
+                recorded_by: adminEmail,
+                notes: notes ? `${notes} (Bulk record)` : 'Bulk payment (Arrears allocated)'
+              });
+              amtLeft -= payAmt;
+            });
+          } else {
+            paymentsToInsert.push({
+              student_id: student.id,
+              month: feeCurrentMonth,
+              amount: totalOutstanding,
+              paid_on: paidOn,
+              recorded_by: adminEmail,
+              notes: notes || 'Bulk payment'
+            });
+          }
+        }
+
+        if (paymentsToInsert.length === 0) {
+          throw new Error("No payments needed recording.");
+        }
+
+        const { error } = await window._supabase.from('fee_payments').insert(paymentsToInsert);
+        if (error) throw error;
+        
+        return paymentsToInsert.length;
+      })();
+
+      toast.promise(recordPromise, {
+        loading: "Recording bulk payments...",
+        success: (count) => `Successfully recorded payments for ${checkedStudentIds.size} student(s) (${count} allocations)!`,
+        error: (err) => `Failed to record payments: ${err.message}`
+      });
+
+      try {
+        await recordPromise;
+        setTimeout(() => {
+          modalBulkPay.close();
+          hydrateFeeTracker();
+        }, 1200);
+      } catch (err) {
+        console.error(err);
+        if (statusMsg) {
+          statusMsg.style.display = 'block';
+          statusMsg.textContent = `Error: ${err.message}`;
+          statusMsg.className = 'status-msg error';
+        }
+      } finally {
+        btn.textContent = `Record Payments (${checkedStudentIds.size})`;
+        btn.disabled = false;
+      }
+    });
   }
 
   // ─── Fee Export ─────────
