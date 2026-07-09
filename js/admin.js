@@ -284,10 +284,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const tr = document.createElement('tr');
 
         tr.innerHTML = `
-          <td style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--admin-border);">${app.form_no || 'N/A'}</td>
-          <td style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--admin-border); font-weight: 500;">${app.student_name}</td>
-          <td style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--admin-border);">${app.course_applying}</td>
-          <td style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--admin-border);"><span style="background: rgba(212, 160, 23, 0.2); color: #B08200; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">${app.status.toUpperCase()}</span></td>
+          <td style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--admin-border);">${escapeHTML(app.form_no || 'N/A')}</td>
+          <td style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--admin-border); font-weight: 500;">${escapeHTML(app.student_name)}</td>
+          <td style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--admin-border);">${escapeHTML(app.course_applying)}</td>
+          <td style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--admin-border);"><span style="background: rgba(212, 160, 23, 0.2); color: #B08200; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">${escapeHTML(app.status.toUpperCase())}</span></td>
           <td style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--admin-border);"><button class="btn-review" data-id="${app.id}" style="background: var(--admin-bg); border: 1px solid var(--admin-border); padding: 0.5rem 1rem; border-radius: 6px; cursor:pointer; font-weight: 600;">Review</button></td>
         `;
         tbodyPending.appendChild(tr);
@@ -346,15 +346,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Inject all metadata natively
     modalStudentDetails.innerHTML = `
-      <strong>Form Info:</strong> ${app.form_no || 'N/A'} | ${app.course_applying || 'N/A'}<br>
-      <strong>Father:</strong> ${app.father_name} (${app.contact_father})<br>
-      <strong>Mother:</strong> ${app.contact_mother || 'N/A'}<br>
-      <strong>DOB:</strong> ${app.dob} | <strong>Gender:</strong> ${app.gender}<br>
-      <strong>Address:</strong> ${app.address}<br>
+      <strong>Form Info:</strong> ${escapeHTML(app.form_no || 'N/A')} | ${escapeHTML(app.course_applying || 'N/A')}<br>
+      <strong>Father:</strong> ${escapeHTML(app.father_name)} (${escapeHTML(app.contact_father)})<br>
+      <strong>Mother:</strong> ${escapeHTML(app.contact_mother || 'N/A')}<br>
+      <strong>DOB:</strong> ${escapeHTML(app.dob)} | <strong>Gender:</strong> ${escapeHTML(app.gender)}<br>
+      <strong>Address:</strong> ${escapeHTML(app.address)}<br>
       <hr style="border:0; border-top: 1px solid var(--admin-border); margin: 0.5rem 0;">
-      <strong>School:</strong> ${app.school_name} (Class ${app.current_class || 'N/A'})<br>
-      <strong>School Days:</strong> ${app.school_days || 'N/A'}<br>
-      <strong>School Time:</strong> ${app.school_time || 'N/A'}<br>
+      <strong>School:</strong> ${escapeHTML(app.school_name)} (Class ${escapeHTML(app.current_class || 'N/A')})<br>
+      <strong>School Days:</strong> ${escapeHTML(app.school_days || 'N/A')}<br>
+      <strong>School Time:</strong> ${escapeHTML(app.school_time || 'N/A')}<br>
     `;
 
     modalDecision.showModal();
@@ -705,18 +705,18 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (app.gender === 'Female') relation = 'daughter';
         let parentSubtext = '';
         if (app.father_name && app.father_name.trim() !== '' && app.father_name !== 'N/A') {
-          parentSubtext = ` <span style="font-size: 0.8rem; font-weight: 500; color: var(--admin-muted);">(${relation} of ${app.father_name})</span>`;
+          parentSubtext = ` <span style="font-size: 0.8rem; font-weight: 500; color: var(--admin-muted);">(${escapeHTML(relation)} of ${escapeHTML(app.father_name)})</span>`;
         }
 
         feedContainer.innerHTML += `
         <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center;">
           <div class="activity-detail">
-            <h4 style="margin-bottom: 0.25rem;">${app.student_name}${parentSubtext}</h4>
-            <p style="font-size: 0.8rem; margin-bottom: 0.25rem;">${app.course_applying} | Form: ${app.form_no || 'N/A'}</p>
+            <h4 style="margin-bottom: 0.25rem;">${escapeHTML(app.student_name)}${parentSubtext}</h4>
+            <p style="font-size: 0.8rem; margin-bottom: 0.25rem;">${escapeHTML(app.course_applying)} | Form: ${escapeHTML(app.form_no || 'N/A')}</p>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
               ${app.status === 'left' ? `
                 <span style="font-size: 0.7rem; background: #fde8e8; color: #c53030; padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase;">Inactive</span>
-                ${app.exit_reason ? `<span style="font-size: 0.7rem; background: #f3f4f6; color: #4b5563; padding: 2px 6px; border-radius: 4px; font-weight: 500;">Reason: ${app.exit_reason}</span>` : ''}
+                ${app.exit_reason ? `<span style="font-size: 0.7rem; background: #f3f4f6; color: #4b5563; padding: 2px 6px; border-radius: 4px; font-weight: 500;">Reason: ${escapeHTML(app.exit_reason)}</span>` : ''}
               ` : ''}
             </div>
           </div>
@@ -1417,7 +1417,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const filterDropdown = document.getElementById('ds-filter-status');
   const batchDropdown = document.getElementById('ds-filter-batch');
   const courseDropdown = document.getElementById('ds-filter-course');
-  if (filterInput) filterInput.addEventListener('input', renderStudentMatrix);
+  if (filterInput) filterInput.addEventListener('input', debounce(renderStudentMatrix, 200));
   if (filterDropdown) filterDropdown.addEventListener('change', renderStudentMatrix);
   if (batchDropdown) batchDropdown.addEventListener('change', renderStudentMatrix);
   if (courseDropdown) courseDropdown.addEventListener('change', renderStudentMatrix);
@@ -1471,7 +1471,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return (a.student_name || '').localeCompare(b.student_name || '');
     });
 
-    // Prepare Data for SheetJS
+    // Prepare Data
     const data = filtered.map(s => ({
       'Form No': s.form_no || 'N/A',
       'Student Name': s.student_name || '',
@@ -1486,35 +1486,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'Current Class': s.current_class || ''
     }));
 
-    const ws = XLSX.utils.json_to_sheet(data);
-
-    // 1. Set Column Widths (Better readability)
-    const wscols = [
-      { wch: 15 }, // Form No
-      { wch: 25 }, // Student Name
-      { wch: 25 }, // Father Name
-      { wch: 25 }, // Course
-      { wch: 10 }, // Batch
-      { wch: 10 }, // Status
-      { wch: 12 }, // Joining Date
-      { wch: 10 }, // Gender
-      { wch: 15 }, // Aadhar No.
-      { wch: 30 }, // School
-      { wch: 15 }  // Class
-    ];
-    ws['!cols'] = wscols;
-
-    // 2. Enable Autofilter for the whole range
-    const range = XLSX.utils.decode_range(ws['!ref']);
-    ws['!autofilter'] = { ref: XLSX.utils.encode_range(range) };
-
-    // 3. Freeze Top Row (Header)
-    ws['!views'] = [{ state: 'frozen', ySplit: 1, activePane: 'bottomLeft', pane: 'bottomLeft' }];
-
-    // 4. Create Workbook and Download
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Students");
-    XLSX.writeFile(wb, `MQLC_Students_${new Date().toISOString().split('T')[0]}.xlsx`);
+    exportToExcel(data, "Students", `MQLC_Students_${new Date().toISOString().split('T')[0]}.xlsx`);
   }
 
   function exportToPDF() {
@@ -1831,7 +1803,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const feeStatusFilter = document.getElementById('fee-filter-status');
 
   if (feeBatchFilter) feeBatchFilter.addEventListener('change', renderFeeMatrix);
-  if (feeNameFilter) feeNameFilter.addEventListener('input', renderFeeMatrix);
+  if (feeNameFilter) feeNameFilter.addEventListener('input', debounce(renderFeeMatrix, 200));
   if (feeStatusFilter) feeStatusFilter.addEventListener('change', renderFeeMatrix);
 
   // Hook to pill click
@@ -2272,7 +2244,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (s.gender === 'Female') relation = 'daughter';
         let parentSubtext = '';
         if (s.father_name && s.father_name.trim() !== '' && s.father_name !== 'N/A') {
-          parentSubtext = ` <span style="font-size: 0.8rem; font-weight: 500; color: var(--admin-muted);">(${relation} of ${s.father_name})</span>`;
+          parentSubtext = ` <span style="font-size: 0.8rem; font-weight: 500; color: var(--admin-muted);">(${escapeHTML(relation)} of ${escapeHTML(s.father_name)})</span>`;
         }
 
         // Pro-rata indicator
@@ -2285,7 +2257,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Fee line
         let feeLine = '';
         if (exempt) {
-          feeLine = `<p style="font-size: 0.8rem; margin-bottom: 0.15rem; color: var(--admin-muted); font-style: italic;">Exempt — ${exemptRec ? exemptRec.reason : 'No reason'}</p>`;
+          feeLine = `<p style="font-size: 0.8rem; margin-bottom: 0.15rem; color: var(--admin-muted); font-style: italic;">Exempt — ${exemptRec ? escapeHTML(exemptRec.reason) : 'No reason'}</p>`;
         } else if (expFee > 0) {
           feeLine = `<p style="font-size: 0.8rem; margin-bottom: 0.15rem;">₹${paid.toLocaleString('en-IN')} / ₹${expFee.toLocaleString('en-IN')}${proRataNote}${remaining > 0 && paid > 0 ? ` · <span style="color:#dc2626;">₹${remaining.toLocaleString('en-IN')} due</span>` : ''}</p>`;
         } else if (rawFee === 0) {
@@ -2310,7 +2282,7 @@ document.addEventListener('DOMContentLoaded', () => {
         feed.innerHTML += `
         <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;${exempt ? ' opacity: 0.65;' : ''}">
           <div class="activity-detail" style="flex: 1; min-width: 180px;">
-            <h4 style="margin-bottom: 0.25rem;">${s.student_name}${parentSubtext}</h4>
+            <h4 style="margin-bottom: 0.25rem;">${escapeHTML(s.student_name)}${parentSubtext}</h4>
             ${feeLine}
             ${arrearsLine}
           </div>
@@ -2806,7 +2778,7 @@ document.addEventListener('DOMContentLoaded', () => {
       item.innerHTML = `
         <div style="display: flex; align-items: center; gap: 0.5rem;">
           <input type="checkbox" data-sid="${s.id}" data-outstanding="${totalOutstanding}" style="width: 16px; height: 16px; accent-color: var(--admin-accent);" ${isChecked ? 'checked' : ''}>
-          <span>${s.student_name} <small style="color: var(--admin-muted); font-weight: normal;">(${s.batch || 'Unassigned'})</small></span>
+          <span>${escapeHTML(s.student_name)} <small style="color: var(--admin-muted); font-weight: normal;">(${escapeHTML(s.batch || 'Unassigned')})</small></span>
         </div>
         <span style="font-weight: 600; color: #dc2626;">${detailsStr}</span>
       `;
@@ -3011,17 +2983,7 @@ document.addEventListener('DOMContentLoaded', () => {
       feeExportDropdown.style.display = 'none';
       const rows = getFeeExportData();
       if (!rows.length) return alert('No data to export.');
-      if (typeof XLSX !== 'undefined') {
-        const ws = XLSX.utils.json_to_sheet(rows);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Fee Report');
-        XLSX.writeFile(wb, `MQLC_Fee_Report_${feeCurrentMonth}.xlsx`);
-      } else {
-        const headers = Object.keys(rows[0]);
-        const csv = [headers.join(','), ...rows.map(r => headers.map(h => `"${r[h]}"`).join(','))].join('\n');
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `MQLC_Fee_Report_${feeCurrentMonth}.csv`; a.click();
-      }
+      exportToExcel(rows, 'Fee Report', `MQLC_Fee_Report_${feeCurrentMonth}.xlsx`);
     });
   }
 
@@ -4457,5 +4419,29 @@ document.addEventListener('DOMContentLoaded', () => {
       str += (Number(n[5]) != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[Number(n[5].substr(0,1))] + ' ' + a[Number(n[5].substr(1,1))]) : '';
       return str.trim();
     }
+
+  // ─── 9. SUPABASE REALTIME DB SYNCHRONIZATION ──────────────────
+  if (window._supabase) {
+    window._supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'student_registrations' },
+        () => {
+          console.log('Supabase Realtime Update: student_registrations changed');
+          hydrateDashboardAndAnalytics();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'fee_payments' },
+        () => {
+          console.log('Supabase Realtime Update: fee_payments changed');
+          hydrateDashboardAndAnalytics();
+          hydrateFeeTracker();
+        }
+      )
+      .subscribe();
+  }
 
 });

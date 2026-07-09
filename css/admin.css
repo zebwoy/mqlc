@@ -2001,4 +2001,18 @@ body:has(dialog.admin-modal[open])>*:not(dialog) {
   font-size: 0.85rem;
   border: 1px solid var(--admin-border);
   background: #fff;
+}
+
+/* Filter search focus alignment */
+#ds-filter-search,
+#fee-filter-name,
+#bulk-pay-search {
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+
+#ds-filter-search:focus,
+#fee-filter-name:focus,
+#bulk-pay-search:focus {
+  border-color: var(--admin-accent) !important;
+  box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1) !important;
 }
