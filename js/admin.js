@@ -191,6 +191,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   pillNavs.forEach(pill => {
     pill.addEventListener('click', () => {
+      const activeTabId = pill.getAttribute('data-sub');
+      
+      // Save active tab state in localStorage
+      localStorage.setItem('mqlc_active_tab', activeTabId);
+
       // Remove active classes
       pillNavs.forEach(p => {
         p.classList.remove('active');
@@ -205,15 +210,25 @@ document.addEventListener('DOMContentLoaded', () => {
       pill.style.color = 'white';
 
       // Show Target Sub View
-      const targetSub = document.getElementById(pill.getAttribute('data-sub'));
+      const targetSub = document.getElementById(activeTabId);
       if (targetSub) targetSub.style.display = 'block';
 
       // 1. If Manual Entry is activated, auto-generate the next Form Number
-      if (pill.getAttribute('data-sub') === 'sub-manual') {
+      if (activeTabId === 'sub-manual') {
         initManualFormNumber();
       }
     });
   });
+
+  // Restore active tab from localStorage on page load
+  const savedTab = localStorage.getItem('mqlc_active_tab') || 'sub-dashboard';
+  const activePill = document.querySelector(`[data-sub="${savedTab}"]`);
+  if (activePill) {
+    activePill.click();
+  } else {
+    const firstPill = document.querySelector('[data-sub]');
+    if (firstPill) firstPill.click();
+  }
 
   // 3b. Generate OTP PIN Logic
   const btnGenerateOtp = document.getElementById('btn-generate-otp');
@@ -988,7 +1003,15 @@ document.addEventListener('DOMContentLoaded', () => {
   let chartInstances = {};
 
   async function renderCharts(approvedData) {
-    if (chartsRendered || typeof Chart === 'undefined') return;
+    if (typeof Chart === 'undefined') return;
+
+    // Destroy existing chart instances to allow clean redrawing with updated cache data
+    Object.keys(chartInstances).forEach(key => {
+      if (chartInstances[key]) {
+        chartInstances[key].destroy();
+        chartInstances[key] = null;
+      }
+    });
 
     // Aggregation Logic
     const courseCount = {};
@@ -4443,5 +4466,21 @@ document.addEventListener('DOMContentLoaded', () => {
       )
       .subscribe();
   }
+
+  // Standardize Dialog UX: Close on Backdrop Click
+  document.querySelectorAll('dialog.admin-modal').forEach(dialog => {
+    dialog.addEventListener('click', (e) => {
+      const rect = dialog.getBoundingClientRect();
+      const isInDialog = (
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom
+      );
+      if (!isInDialog) {
+        dialog.close();
+      }
+    });
+  });
 
 });

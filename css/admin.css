@@ -108,6 +108,13 @@ a {
   border: 1px solid var(--admin-border);
   padding: 2rem;
   margin-bottom: 2rem;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.04), 0 4px 12px -2px rgba(0, 0, 0, 0.02);
+  border-color: var(--admin-accent);
 }
 
 .export-option:hover {
@@ -446,21 +453,27 @@ a {
 }
 
 .badge.pending {
-  background: #fef3c7;
+  background: rgba(254, 243, 199, 0.65);
   color: #92400e;
-  border: 1px solid #fde68a;
+  border: 1px solid rgba(253, 230, 138, 0.8);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .badge.approved {
-  background: #d1fae5;
+  background: rgba(209, 250, 229, 0.65);
   color: #065f46;
-  border: 1px solid #a7f3d0;
+  border: 1px solid rgba(167, 243, 208, 0.8);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .badge.rejected {
-  background: #fee2e2;
+  background: rgba(254, 226, 226, 0.65);
   color: #991b1b;
-  border: 1px solid #fecaca;
+  border: 1px solid rgba(254, 202, 202, 0.8);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .chart-card {
