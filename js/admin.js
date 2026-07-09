@@ -26,6 +26,11 @@ document.addEventListener('DOMContentLoaded', () => {
     input: '#bulk-pay-date'
   });
 
+  // Initialize reusable custom select dropdowns
+  document.querySelectorAll('select').forEach(select => {
+    new CustomSelect(select);
+  });
+
   // ─── 0. DATE UI ENHANCEMENTS (FLATPICKR) ──────────────────────
   if (typeof flatpickr !== 'undefined') {
     flatpickr("input[type=date]", {
