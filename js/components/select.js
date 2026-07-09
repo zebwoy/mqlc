@@ -19,8 +19,17 @@
       this.wrapper = document.createElement('div');
       this.wrapper.className = 'custom-select-wrapper';
       
-      // If the native select has a rounded border style (e.g. filters), inherit it
-      if (this.nativeSelect.id.includes('filter') || this.nativeSelect.classList.contains('rounded') || this.options.rounded) {
+      // If the native select has a rounded border style, is a filter, month/year selector, or quiz selector, inherit the rounded inline class
+      const isRounded = 
+        this.nativeSelect.id.includes('filter') || 
+        this.nativeSelect.id.includes('month') || 
+        this.nativeSelect.id.includes('year') ||
+        this.nativeSelect.id.includes('quiz') ||
+        this.nativeSelect.classList.contains('rounded') ||
+        (this.nativeSelect.style.borderRadius && parseInt(this.nativeSelect.style.borderRadius) > 12) ||
+        this.options.rounded;
+
+      if (isRounded) {
         this.wrapper.classList.add('rounded');
       }
       
