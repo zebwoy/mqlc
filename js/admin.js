@@ -459,6 +459,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const manualForm = document.getElementById('registration-form');
   const manualStatusMsg = document.getElementById('reg-status');
+  // Pre-declared here so hydrateActiveTab (outside the if-block) can reference it.
+  // async function declarations inside blocks are strictly block-scoped — they do NOT
+  // get the legacy var-hoisting that plain function declarations get in sloppy mode.
+  let initManualFormNumber = null;
 
   if (manualForm) {
     manualForm.addEventListener('submit', async (e) => {
@@ -612,7 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initManualEntryComponents();
 
     // Auto-generate Form Number (MQLC-YYYY-XXXX)
-    async function initManualFormNumber() {
+    initManualFormNumber = async function initManualFormNumber() {
       const formNoInput = manualForm.querySelector('input[name="form_no"]');
       if (!formNoInput || !window._supabase) return;
 
