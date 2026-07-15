@@ -214,8 +214,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (targetSub) targetSub.style.display = 'block';
 
       // 1. If Manual Entry is activated, auto-generate the next Form Number
+      // Guard: function may not yet be defined if this fires during page restore
       if (activeTabId === 'sub-manual') {
-        initManualFormNumber();
+        if (typeof initManualFormNumber === 'function') initManualFormNumber();
       }
     });
   });
@@ -1941,6 +1942,28 @@ document.addEventListener('DOMContentLoaded', () => {
   // Hook to pill click
   const feePill = document.querySelector('[data-sub="sub-fees"]');
   if (feePill) feePill.addEventListener('click', hydrateFeeTracker);
+
+  // ─── Auto-hydrate the restored tab on page load ───────────────────────
+  // Problem: activePill.click() fires at startup BEFORE per-tab hydration listeners
+  // are attached (feePill/dsPill listeners come later in the file). So refreshing on
+  // fee tracker or manual entry shows a blank view until the user clicks another tab.
+  // Fix: after all listeners are registered, fire the right hydration for the saved tab.
+  ;(function autoHydrateRestoredTab() {
+    const savedTab = localStorage.getItem('mqlc_active_tab') || 'sub-dashboard';
+
+    if (savedTab === 'sub-fees') {
+      // Fee tracker only fetches on pill click — trigger it now on restore
+      hydrateFeeTracker();
+    } else if (savedTab === 'sub-manual' && manualForm) {
+      // initManualFormNumber() may have been undefined when activePill.click() fired;
+      // safely re-run it here now that the if(manualForm) block has executed
+      const fi = manualForm.querySelector('input[name="form_no"]');
+      if (fi && !fi.value && typeof initManualFormNumber === 'function') {
+        initManualFormNumber();
+      }
+    }
+    // sub-dashboard and sub-analytics → auth.js calls window.hydrateDashboardAndAnalytics()
+  })();
 
   async function hydrateFeeTracker() {
     if (!window._supabase) return;
