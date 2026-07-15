@@ -364,7 +364,7 @@
                 <div class="grid-2">
                   <div class="input-group">
                     <label>Date of Joining (DOJ)</label>
-                    <input type="date" name="doj" required>
+                    <input type="date" name="doj" id="reg-doj" required>
                   </div>
                   <div class="input-group">
                     <label>Form Number</label>
@@ -419,22 +419,19 @@
                   </div>
                   <div class="input-group">
                     <label>Gender</label>
-                    <select name="gender" required>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                    </select>
+                    <div id="reg-gender-host"></div>
                   </div>
                   <div class="input-group">
                     <label>Date of Birth</label>
-                    <input type="date" name="dob" required>
-                  </div>
-                  <div class="input-group full-width">
-                    <label>Aadhar Number</label>
-                    <input type="text" name="aadhar_no" placeholder="xxxx-xxxx-xxxx" maxlength="14" required>
+                    <input type="date" name="dob" id="reg-dob">
                   </div>
                   <div class="input-group full-width">
                     <label>Residential Address</label>
                     <textarea name="address" rows="2" required></textarea>
+                  </div>
+                  <div class="input-group full-width">
+                    <label>Aadhar Number</label>
+                    <div id="reg-aadhar-host"></div>
                   </div>
                   <div class="input-group">
                     <label>Father's Contact No.</label>
@@ -1171,6 +1168,9 @@
   <script src="js/components/datepicker.js"></script>
   <script src="js/components/select.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/components/RadioGroup.js"></script>
+  <script src="js/components/AadharInput.js"></script>
+  <script src="js/components/SmartDateInput.js"></script>
   <script src="js/components/TogglePill.js"></script>
   <script src="js/admin.js"></script>
 

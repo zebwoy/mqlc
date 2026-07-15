@@ -528,6 +528,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         manualForm.reset();
+
+        // Reset all form components to their defaults
+        if (window._regGender) window._regGender.setValue('Male');
+        if (window._regAadhar) window._regAadhar.reset();
+        if (window._regDoj) window._regDoj.setValue(new Date().toISOString().split('T')[0]);
+        if (window._regDob) window._regDob.reset();
+        (window._regSelects || []).forEach(cs => cs.syncOptions());
+
         manualStatusMsg.textContent = `✅ Student registered and ₹${feeVal.toLocaleString('en-IN')} admission fee recorded for ${feeMonthLabel ? feeMonthLabel(computeAdmissionFeeMonth(dojVal)) : computeAdmissionFeeMonth(dojVal)}.`;
         manualStatusMsg.className = 'status-msg success';
         manualStatusMsg.style.display = 'block';
@@ -552,21 +560,61 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Aadhar Card Auto-Formatter (XXXX-XXXX-XXXX)
-    const aadharInput = manualForm.querySelector('input[name="aadhar_no"]');
-    if (aadharInput) {
-      aadharInput.addEventListener('input', (e) => {
-        let val = e.target.value.replace(/\D/g, ''); // Remove all non-numerics
-        if (val.length > 12) val = val.slice(0, 12); // Limit to 12 digits
+    // ─── Initialise reusable components in the manual entry form ────────
+    const _regSelects = [];
+    window._regSelects = _regSelects;
 
-        let formatted = '';
-        for (let i = 0; i < val.length; i++) {
-          if (i > 0 && i % 4 === 0) formatted += '-';
-          formatted += val[i];
-        }
-        e.target.value = formatted;
-      });
+    function initManualEntryComponents() {
+      // RadioGroup for Gender
+      const genderHost = document.getElementById('reg-gender-host');
+      if (genderHost && typeof RadioGroup !== 'undefined' && !genderHost.dataset.init) {
+        genderHost.dataset.init = '1';
+        window._regGender = new RadioGroup(genderHost, {
+          name: 'gender',
+          options: [
+            { value: 'Male',   label: '\u2642 Male'   },
+            { value: 'Female', label: '\u2640 Female' }
+          ],
+          value: 'Male'
+        });
+      }
+
+      // AadharInput — 3-box XXXX-XXXX-XXXX
+      const aadharHost = document.getElementById('reg-aadhar-host');
+      if (aadharHost && typeof AadharInput !== 'undefined' && !aadharHost.dataset.init) {
+        aadharHost.dataset.init = '1';
+        window._regAadhar = new AadharInput(aadharHost, { name: 'aadhar_no' });
+      }
+
+      // SmartDateInput — DOJ (defaults to today)
+      const dojEl = document.getElementById('reg-doj');
+      if (dojEl && typeof SmartDateInput !== 'undefined' && !dojEl.dataset.sdiInit) {
+        dojEl.dataset.sdiInit = '1';
+        window._regDoj = new SmartDateInput(dojEl);
+        window._regDoj.setValue(new Date().toISOString().split('T')[0]);
+      }
+
+      // SmartDateInput — DOB (no default)
+      const dobEl = document.getElementById('reg-dob');
+      if (dobEl && typeof SmartDateInput !== 'undefined' && !dobEl.dataset.sdiInit) {
+        dobEl.dataset.sdiInit = '1';
+        window._regDob = new SmartDateInput(dobEl);
+      }
+
+      // CustomSelect for all form dropdowns
+      if (typeof CustomSelect !== 'undefined') {
+        ['[name="is_prepaid"]', '[name="batch"]', '[name="course_applying"]'].forEach(sel => {
+          const el = manualForm.querySelector(sel);
+          if (el && !el.dataset.csInit) {
+            el.dataset.csInit = '1';
+            _regSelects.push(new CustomSelect(el));
+          }
+        });
+      }
     }
+
+    // Init once on first load
+    initManualEntryComponents();
 
     // Auto-generate Form Number (MQLC-YYYY-XXXX)
     async function initManualFormNumber() {
