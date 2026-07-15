@@ -633,6 +633,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusFilter = document.getElementById('ds-filter-status')?.value || 'all';
     const batchFilter = document.getElementById('ds-filter-batch')?.value || 'all';
     const courseFilter = document.getElementById('ds-filter-course')?.value || 'all';
+    const modeFilter = document.getElementById('ds-filter-mode')?.dataset.mode || 'all';
 
     let filtered = [...(cachedStudents || [])].sort((a, b) => new Date(b.created_at || b.doj) - new Date(a.created_at || a.doj));
 
@@ -662,6 +663,13 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         filtered = filtered.filter(s => s.course_applying === courseFilter);
       }
+    }
+
+    // Handle Fee Mode Filter (toggle)
+    if (modeFilter === 'prepaid') {
+      filtered = filtered.filter(s => s.is_prepaid === true);
+    } else if (modeFilter === 'postpaid') {
+      filtered = filtered.filter(s => !s.is_prepaid);
     }
 
     // Handle Text Filter
@@ -728,7 +736,7 @@ document.addEventListener('DOMContentLoaded', () => {
         feedContainer.innerHTML += `
         <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center;">
           <div class="activity-detail">
-            <h4 style="margin-bottom: 0.25rem;">${escapeHTML(app.student_name)}${parentSubtext}</h4>
+            <h4 style="margin-bottom: 0.25rem;">${escapeHTML(app.student_name)}${app.is_prepaid ? `<span style="font-size:0.65rem;background:#dbeafe;color:#1d4ed8;padding:1px 6px;border-radius:4px;font-weight:600;margin-left:5px;vertical-align:middle;">🔵 Prepaid</span>` : ''}${parentSubtext}</h4>
             <p style="font-size: 0.8rem; margin-bottom: 0.25rem;">${escapeHTML(app.course_applying)} | Form: ${escapeHTML(app.form_no || 'N/A')}</p>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
               ${app.status === 'left' ? `
@@ -1437,6 +1445,17 @@ document.addEventListener('DOMContentLoaded', () => {
       if (batchSelect) batchSelect.value = 'all';
       if (courseSelect) courseSelect.value = 'all';
 
+      // Reset fee mode toggle to All
+      const modeGroup = document.getElementById('ds-filter-mode');
+      if (modeGroup) {
+        modeGroup.dataset.mode = 'all';
+        modeGroup.querySelectorAll('.ds-mode-btn').forEach(b => {
+          const isAll = b.dataset.val === 'all';
+          b.style.background = isAll ? 'var(--admin-accent)' : 'none';
+          b.style.color = isAll ? '#fff' : (b.dataset.val === 'prepaid' ? '#1d4ed8' : 'var(--admin-muted)');
+        });
+      }
+
       // Re-trigger matrix rendering with default filters
       renderStudentMatrix();
     });
@@ -1451,6 +1470,23 @@ document.addEventListener('DOMContentLoaded', () => {
   if (filterDropdown) filterDropdown.addEventListener('change', renderStudentMatrix);
   if (batchDropdown) batchDropdown.addEventListener('change', renderStudentMatrix);
   if (courseDropdown) courseDropdown.addEventListener('change', renderStudentMatrix);
+
+  // Fee mode toggle pill handler
+  const modeGroup = document.getElementById('ds-filter-mode');
+  if (modeGroup) {
+    modeGroup.querySelectorAll('.ds-mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = btn.dataset.val;
+        modeGroup.dataset.mode = val;
+        modeGroup.querySelectorAll('.ds-mode-btn').forEach(b => {
+          const active = b.dataset.val === val;
+          b.style.background = active ? 'var(--admin-accent)' : 'none';
+          b.style.color = active ? '#fff' : (b.dataset.val === 'prepaid' ? '#1d4ed8' : 'var(--admin-muted)');
+        });
+        renderStudentMatrix();
+      });
+    });
+  }
 
   // ─── Export Logic ────────
   function exportToExcel() {
@@ -1761,10 +1797,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Slab-based pro-rata expected fee for a student in a given month
-  // Handles: enrollment check, exemption check, joining-month carry-forward
-  // Slabs: DOJ day 1-10 → full fee that month
-  //        DOJ day 11-20 → ₹0 that month, next month = fee + half (carry-forward)
-  //        DOJ day 21+   → ₹0 that month, next month = normal fee
+  // Prepaid slabs  : DOJ day 1–15 → full fee that month
+  //                  DOJ day 16+  → ₹0 that month, next month = normal fee
+  // Postpaid slabs : DOJ day 1–10 → full fee that month
+  //                  DOJ day 11–20 → ₹0 that month, next month = fee + half carry-forward
+  //                  DOJ day 21+  → ₹0 that month, next month = normal fee
   function getExpectedFee(student, month) {
     const fee = parseInt(student.monthly_fee) || 0;
     if (fee === 0) return 0;
@@ -1775,18 +1812,25 @@ document.addEventListener('DOMContentLoaded', () => {
       const dojMonth = student.doj.substring(0, 7);
       const day = parseInt(student.doj.substring(8, 10)) || 1;
 
-      // Joining month: only charge if joined on or before 10th
-      if (dojMonth === month) {
-        if (day > 10) return 0;
-      }
-
-      // Month after joining: carry forward half fee if joined 11th-20th
-      if (day > 10 && day <= 20) {
-        const [dy, dm] = dojMonth.split('-').map(Number);
-        const nd = new Date(dy, dm, 15); // next month (dm is 1-based → Date treats as 0-based+1 = next)
-        const nextMonth = nd.getFullYear() + '-' + String(nd.getMonth() + 1).padStart(2, '0');
-        if (month === nextMonth) {
-          return fee + Math.round(fee / 2); // e.g. ₹300 + ₹150 = ₹450
+      if (isStudentPrepaid(student)) {
+        // ── Prepaid slabs ──
+        // Joining month: waived if joined after 15th (first full service starts next month)
+        if (dojMonth === month && day > 15) return 0;
+        // All other months (incl. join on or before 15th): full fee
+      } else {
+        // ── Postpaid slabs (legacy) ──
+        // Joining month: only charge if joined on or before 10th
+        if (dojMonth === month) {
+          if (day > 10) return 0;
+        }
+        // Month after joining: carry forward half fee if joined 11th–20th
+        if (day > 10 && day <= 20) {
+          const [dy, dm] = dojMonth.split('-').map(Number);
+          const nd = new Date(dy, dm, 15); // dm is 1-based → next month
+          const nextMonth = nd.getFullYear() + '-' + String(nd.getMonth() + 1).padStart(2, '0');
+          if (month === nextMonth) {
+            return fee + Math.round(fee / 2); // e.g. ₹300 + ₹150 = ₹450
+          }
         }
       }
     }
@@ -2308,7 +2352,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ? `<span style="font-size:0.68rem;background:#dbeafe;color:#1d4ed8;padding:1px 7px;border-radius:4px;font-weight:600;margin-left:5px;vertical-align:middle;">🔵 Prepaid</span>`
           : '';
 
-        // Pro-rata indicator
+        // Pro-rata indicator (postpaid carry-forward only)
         let proRataNote = '';
         if (!exempt && rawFee > 0 && expFee > 0 && expFee > rawFee) {
           const carryAmt = expFee - rawFee;
@@ -2333,23 +2377,22 @@ document.addEventListener('DOMContentLoaded', () => {
           arrearsLine = `<p style="font-size: 0.75rem; margin: 0; color: #b45309;">⚠ ₹${arrears.toLocaleString('en-IN')} overdue from past months · <strong style="color: #dc2626;">Total due: ₹${totalOutstanding.toLocaleString('en-IN')}</strong></p>`;
         }
 
-        // Prepaid advance subtext — shown when next month is uncovered
-        let advanceLine = '';
-        if (showAdvance) {
-          advanceLine = `<p style="font-size: 0.75rem; margin: 0.15rem 0 0; color: #1d4ed8;">📅 ${feeMonthLabel(nextFeeMonth)} advance not yet collected</p>`;
+        // ── Smart Record button for prepaid: if current month settled, default to next month ──
+        // (Advance button removed — handled internally by the Record modal)
+        let smartOverrideMonth = null; // null = use feeCurrentMonth
+        if (prepaid && !exempt && showAdvance && paid >= expFee && arrears === 0) {
+          // Current month fully settled — default Record modal to next month
+          smartOverrideMonth = nextFeeMonth;
         }
+        // Also show Record button if current month settled but next month uncovered
+        const showRecordFinal = showRecord || showAdvance;
 
-        // Exempt toggle button — only show for unpaid students or to restore exemptions
+        // Exempt toggle button
         const exemptBtn = exempt
           ? `<button class="btn-fee-unexempt btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px; color: #7c3aed;" title="Remove exemption">▶ Restore</button>`
           : (rawFee > 0 && paid === 0 && expFee > 0)
             ? `<button class="btn-fee-exempt btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="Exempt this month">⏸ Exempt</button>`
             : '';
-
-        // Advance button — only for prepaid students when next month uncovered
-        const advanceBtn = showAdvance
-          ? `<button class="btn-fee-advance btn-secondary" data-sid="${s.id}" data-name="${escapeHTML(s.student_name)}" data-fee="${nextMonthExpFee}" data-rawfee="${rawFee}" data-month="${nextFeeMonth}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px; background:#dbeafe; color:#1d4ed8; border:1px solid #bfdbfe;" title="Record advance for ${feeMonthLabel(nextFeeMonth)}">📅 Advance</button>`
-          : '';
 
         feed.innerHTML += `
         <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;${exempt ? ' opacity: 0.65;' : ''}">
@@ -2357,13 +2400,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <h4 style="margin-bottom: 0.25rem;">${escapeHTML(s.student_name)}${prepaidBadge}${parentSubtext}</h4>
             ${feeLine}
             ${arrearsLine}
-            ${advanceLine}
           </div>
           <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
             <span class="badge ${statusClass}" style="font-size: 0.75rem;">${statusBadge}</span>
             ${rawFee === 0 ? `<button class="btn-set-fee" data-sid="${s.id}" data-name="${s.student_name}">✎ Set Fee</button>` : ''}
-            ${showRecord ? `<button class="btn-fee-record btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" data-fee="${expFee}" data-rawfee="${rawFee}" data-paid="${paid}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;">💰 Record</button>` : ''}
-            ${advanceBtn}
+            ${showRecordFinal ? `<button class="btn-fee-record btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" data-fee="${smartOverrideMonth ? nextMonthExpFee : expFee}" data-rawfee="${rawFee}" data-paid="${smartOverrideMonth ? 0 : paid}" data-override-month="${smartOverrideMonth || ''}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;">💰 Record</button>` : ''}
             ${showUndo ? `<button class="btn-fee-undo btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="Undo last payment">⟳</button>` : ''}
             ${exemptBtn}
             <button class="btn-fee-history btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="View history">📋</button>
@@ -2385,11 +2426,15 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
     feed.querySelectorAll('.btn-fee-record').forEach(btn => {
-      btn.addEventListener('click', () => openPaymentModal(btn.dataset.sid, btn.dataset.name, parseInt(btn.dataset.fee), parseInt(btn.dataset.paid), parseInt(btn.dataset.rawfee || btn.dataset.fee)));
-    });
-    // Advance button — prepaid students paying for next month
-    feed.querySelectorAll('.btn-fee-advance').forEach(btn => {
-      btn.addEventListener('click', () => openPaymentModal(btn.dataset.sid, btn.dataset.name, parseInt(btn.dataset.fee), 0, parseInt(btn.dataset.rawfee || btn.dataset.fee), btn.dataset.month));
+      btn.addEventListener('click', () => {
+        const overrideMonth = btn.dataset.overrideMonth || null;
+        openPaymentModal(
+          btn.dataset.sid, btn.dataset.name,
+          parseInt(btn.dataset.fee), parseInt(btn.dataset.paid),
+          parseInt(btn.dataset.rawfee || btn.dataset.fee),
+          overrideMonth || undefined
+        );
+      });
     });
     feed.querySelectorAll('.btn-fee-undo').forEach(btn => {
       btn.addEventListener('click', () => undoLastPayment(btn.dataset.sid, btn.dataset.name));
@@ -3925,6 +3970,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="profile-row">
               <span class="profile-label">Monthly Fees</span>
               <span class="profile-value" style="color: var(--admin-accent); font-weight: 700;">₹${parseInt(student.monthly_fee || 0).toLocaleString('en-IN')}.00</span>
+            </div>
+            <div class="profile-row">
+              <span class="profile-label">Fee Mode</span>
+              <span class="profile-value">${student.is_prepaid ? `<span style="background:#dbeafe;color:#1d4ed8;font-size:0.78rem;padding:2px 8px;border-radius:50px;font-weight:600;">🔵 Prepaid</span>` : `<span style="background:#f3f4f6;color:#6b7280;font-size:0.78rem;padding:2px 8px;border-radius:50px;font-weight:600;">Postpaid</span>`}</span>
             </div>
           </div>
 

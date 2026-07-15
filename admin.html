@@ -393,8 +393,8 @@
                   <div class="input-group">
                     <label>Fee Collection Mode</label>
                     <select name="is_prepaid">
-                      <option value="false" selected>Postpaid (Pay after month)</option>
-                      <option value="true">Prepaid (Pay in advance)</option>
+                      <option value="true" selected>Prepaid (Pay in advance)</option>
+                      <option value="false">Postpaid (Pay after month)</option>
                     </select>
                   </div>
                 </div>
@@ -540,6 +540,19 @@
                 </select>
                 <button class="btn-secondary" id="btn-ds-refresh"
                   style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-radius: 50px;">Reset</button>
+                <div style="height: 20px; width: 1px; background: var(--admin-border); margin: 0 0.5rem;"></div>
+
+                <!-- Fee Mode Toggle -->
+                <div id="ds-filter-mode" data-mode="all"
+                  style="display: flex; border: 1px solid var(--admin-border); border-radius: 50px; overflow: hidden; font-size: 0.78rem; background: #fff;">
+                  <button class="ds-mode-btn active" data-val="all"
+                    style="padding: 0.35rem 0.75rem; border: none; cursor: pointer; background: var(--admin-accent); color: #fff; font-weight: 600; transition: background 0.2s;">All</button>
+                  <button class="ds-mode-btn" data-val="prepaid"
+                    style="padding: 0.35rem 0.75rem; border: none; cursor: pointer; background: none; color: #1d4ed8; font-weight: 600; transition: background 0.2s;">🔵 Prepaid</button>
+                  <button class="ds-mode-btn" data-val="postpaid"
+                    style="padding: 0.35rem 0.75rem; border: none; cursor: pointer; background: none; color: var(--admin-muted); font-weight: 600; transition: background 0.2s;">Postpaid</button>
+                </div>
+
                 <div style="height: 20px; width: 1px; background: var(--admin-border); margin: 0 0.5rem;"></div>
 
                 <div class="export-container" style="position: relative; display: inline-block;">
@@ -1197,8 +1210,8 @@
         <div class="modal-field" style="margin-top: 0.75rem;">
           <label class="modal-label" style="color: var(--admin-accent);">Fee Collection Mode</label>
           <select id="input-assign-is-prepaid" class="modal-select">
-            <option value="false">Postpaid (default — pay after month)</option>
             <option value="true">Prepaid (pay in advance)</option>
+            <option value="false">Postpaid (default — pay after month)</option>
           </select>
         </div>
       </div>
@@ -1279,8 +1292,8 @@
         <div class="modal-field">
           <label class="modal-label">Fee Collection Mode</label>
           <select id="edit-is-prepaid" class="modal-select">
-            <option value="false">Postpaid — Pay after month begins</option>
             <option value="true">Prepaid — Pay in advance (25th of prior month)</option>
+            <option value="false">Postpaid — Pay after month begins</option>
           </select>
         </div>
 
