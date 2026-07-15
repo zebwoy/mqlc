@@ -1765,10 +1765,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Safeguard: If auth.js already showed dashboard before admin.js finished, hydrate now
+  // Safeguard: If auth.js already showed dashboard before admin.js finished, hydrate now.
+  // Deferred via setTimeout(0) so ALL let/const declarations below (feeLabel, feeCurrentMonth,
+  // etc.) are initialized before hydrateActiveTab() runs. Without the deferral, Supabase's
+  // onAuthStateChange can fire showDashboard() synchronously during auth.js — setting
+  // dashView to display:grid before admin.js starts — causing a TDZ crash on feeLabel.
   const dashView = document.getElementById('dashboard-view');
   if (dashView && dashView.style.display === 'grid') {
-    window.hydrateActiveTab();
+    setTimeout(() => { if (window.hydrateActiveTab) window.hydrateActiveTab(); }, 0);
   }
 
   // ─── 3g. FEE TRACKER ENGINE ─────────────────────────────────────
