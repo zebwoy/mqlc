@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
   pillNavs.forEach(pill => {
     pill.addEventListener('click', () => {
       const activeTabId = pill.getAttribute('data-sub');
-      
+
       // Save active tab state in localStorage
       localStorage.setItem('mqlc_active_tab', activeTabId);
 
@@ -728,7 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
         feedContainer.innerHTML += `
         <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center;">
           <div class="activity-detail">
-            <h4 style="margin-bottom: 0.25rem;">${escapeHTML(app.student_name)}${app.is_prepaid ? `<span style="font-size:0.65rem;background:#dbeafe;color:#1d4ed8;padding:1px 6px;border-radius:4px;font-weight:600;margin-left:5px;vertical-align:middle;">🔵 Prepaid</span>` : ''}${parentSubtext}</h4>
+            <h4 style="margin-bottom: 0.25rem;">${escapeHTML(app.student_name)}${app.is_prepaid ? `<span style="font-size:0.65rem;background:#dbeafe;color:#1d4ed8;padding:1px 6px;border-radius:4px;font-weight:600;margin-left:5px;vertical-align:middle;">Prepaid</span>` : ''}${parentSubtext}</h4>
             <p style="font-size: 0.8rem; margin-bottom: 0.25rem;">${escapeHTML(app.course_applying)} | Form: ${escapeHTML(app.form_no || 'N/A')}</p>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
               ${app.status === 'left' ? `
@@ -786,7 +786,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fee mode
     const feeModeSel = document.getElementById('edit-is-prepaid');
     if (feeModeSel) feeModeSel.value = student.is_prepaid ? 'true' : 'false';
-    
+
     const statusVal = student.status || 'approved';
     document.getElementById('edit-student-status').value = statusVal;
 
@@ -867,7 +867,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
           const { data: { session } } = await window._supabase.auth.getSession();
           if (session?.user?.email) adminEmail = session.user.email;
-        } catch (_) {}
+        } catch (_) { }
 
         payload.exit_date = document.getElementById('edit-exit-date')?.value || new Date().toISOString().split('T')[0];
         payload.exit_reason = document.getElementById('edit-exit-reason')?.value || 'Other';
@@ -888,20 +888,20 @@ document.addEventListener('DOMContentLoaded', () => {
             .from('student_registrations')
             .select('student_name, father_name, batch, course_applying, status')
             .eq('id', id);
-          
+
           if (!checkError && latest && latest.length > 0) {
             const currentDb = latest[0];
             const changes = [];
-            
+
             if (currentDb.student_name !== original.student_name) changes.push(`Name: "${currentDb.student_name}" (you saw "${original.student_name}")`);
             if (currentDb.father_name !== original.father_name) changes.push(`Father's Name: "${currentDb.father_name}" (you saw "${original.father_name}")`);
             if (currentDb.batch !== original.batch) changes.push(`Batch: "${currentDb.batch}" (you saw "${original.batch}")`);
             if (currentDb.course_applying !== original.course_applying) changes.push(`Course: "${currentDb.course_applying}" (you saw "${original.course_applying}")`);
             if (currentDb.status !== original.status) changes.push(`Status: "${currentDb.status}" (you saw "${original.status}")`);
-            
+
             if (changes.length > 0) {
-              const confirmMsg = `Conflict Warning:\n\nAnother administrator has modified this student's record while you were editing it:\n\n` + 
-                changes.map(c => `• ${c}`).join('\n') + 
+              const confirmMsg = `Conflict Warning:\n\nAnother administrator has modified this student's record while you were editing it:\n\n` +
+                changes.map(c => `• ${c}`).join('\n') +
                 `\n\nDo you want to OVERWRITE their changes and save anyway? Click 'OK' to overwrite, or 'Cancel' to reload the latest details.`;
               if (!confirm(confirmMsg)) {
                 statusMsg.textContent = 'Edit canceled. Reloading...';
@@ -1880,15 +1880,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Filters
-  const feeBatchFilter  = document.getElementById('fee-filter-batch');
-  const feeNameFilter   = document.getElementById('fee-filter-name');
+  const feeBatchFilter = document.getElementById('fee-filter-batch');
+  const feeNameFilter = document.getElementById('fee-filter-name');
   const feeStatusFilter = document.getElementById('fee-filter-status');
-  const feeModeFilter   = document.getElementById('fee-filter-mode');
+  const feeModeFilter = document.getElementById('fee-filter-mode');
 
-  if (feeBatchFilter)  feeBatchFilter.addEventListener('change', renderFeeMatrix);
-  if (feeNameFilter)   feeNameFilter.addEventListener('input', debounce(renderFeeMatrix, 200));
+  if (feeBatchFilter) feeBatchFilter.addEventListener('change', renderFeeMatrix);
+  if (feeNameFilter) feeNameFilter.addEventListener('input', debounce(renderFeeMatrix, 200));
   if (feeStatusFilter) feeStatusFilter.addEventListener('change', renderFeeMatrix);
-  if (feeModeFilter)   feeModeFilter.addEventListener('change', renderFeeMatrix);
+  if (feeModeFilter) feeModeFilter.addEventListener('change', renderFeeMatrix);
 
   // Hook to pill click
   const feePill = document.querySelector('[data-sub="sub-fees"]');
@@ -2195,18 +2195,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const countEl = document.getElementById('fee-filter-count');
     if (!feed) return;
 
-    const batchFilter  = feeBatchFilter  ? feeBatchFilter.value  : 'all';
+    const batchFilter = feeBatchFilter ? feeBatchFilter.value : 'all';
     const statusFilter = feeStatusFilter ? feeStatusFilter.value : 'all';
-    const nameFilter   = feeNameFilter   ? feeNameFilter.value.toLowerCase().trim() : '';
-    const modeFilter   = document.getElementById('fee-filter-mode')?.value || 'all';
+    const nameFilter = feeNameFilter ? feeNameFilter.value.toLowerCase().trim() : '';
+    const modeFilter = document.getElementById('fee-filter-mode')?.value || 'all';
 
     let students = cachedStudents.filter(s => s.status === 'approved' && isEnrolledForMonth(s.doj, feeCurrentMonth));
 
     // Apply Filters (Name, Batch, Status, Fee Mode)
     students = students.filter(s => {
       if (nameFilter && !(s.student_name || '').toLowerCase().includes(nameFilter)) return false;
-      if (modeFilter === 'prepaid'  && !s.is_prepaid)  return false;
-      if (modeFilter === 'postpaid' &&  s.is_prepaid)  return false;
+      if (modeFilter === 'prepaid' && !s.is_prepaid) return false;
+      if (modeFilter === 'postpaid' && s.is_prepaid) return false;
       if (batchFilter !== 'all') {
         if (batchFilter === 'unassigned') {
           if (s.batch && s.batch !== '' && s.batch !== 'null' && s.batch !== 'undefined') return false;
@@ -2349,7 +2349,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Prepaid badge (blue pill next to name)
         const prepaidBadge = prepaid
-          ? `<span style="font-size:0.68rem;background:#dbeafe;color:#1d4ed8;padding:1px 7px;border-radius:4px;font-weight:600;margin-left:5px;vertical-align:middle;">🔵 Prepaid</span>`
+          ? `<span style="font-size:0.68rem;background:#dbeafe;color:#1d4ed8;padding:1px 7px;border-radius:4px;font-weight:600;margin-left:5px;vertical-align:middle;">Prepaid</span>`
           : '';
 
         // Pro-rata indicator (postpaid carry-forward only)
@@ -2461,7 +2461,7 @@ document.addEventListener('DOMContentLoaded', () => {
     feed.querySelectorAll('.btn-fee-unexempt').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (!confirm(`Remove exemption for ${btn.dataset.name} for ${feeMonthLabel(feeCurrentMonth)}?`)) return;
-        
+
         const unexemptPromise = (async () => {
           const { error } = await window._supabase.from('fee_exemptions')
             .delete().eq('student_id', btn.dataset.sid).eq('month', feeCurrentMonth);
@@ -2800,7 +2800,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (bulkPayMonthLabel) {
         bulkPayMonthLabel.textContent = feeMonthLabel(feeCurrentMonth);
       }
-      
+
       if (bulkPaySearch) bulkPaySearch.value = '';
       if (bulkPayBatch) bulkPayBatch.value = 'all';
       if (bulkPaySelectAll) bulkPaySelectAll.checked = false;
@@ -2818,14 +2818,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (s.status !== 'approved') return false;
         if (!isEnrolledForMonth(s.doj, feeCurrentMonth)) return false;
         if (isExemptForMonth(s.id, feeCurrentMonth)) return false;
-        
+
         const expFee = getExpectedFee(s, feeCurrentMonth);
         if (expFee === 0) return false;
         const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
         const remaining = Math.max(0, expFee - paid);
         const arrears = calcArrears(s, feeCurrentMonth);
         const totalOutstanding = remaining + arrears;
-        
+
         return totalOutstanding > 0;
       });
 
@@ -2861,7 +2861,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderBulkPayStudents() {
     if (!bulkPayStudentList) return;
-    
+
     const searchTerm = bulkPaySearch ? bulkPaySearch.value.toLowerCase().trim() : '';
     const batchFilter = bulkPayBatch ? bulkPayBatch.value : 'all';
 
@@ -2893,9 +2893,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const remaining = Math.max(0, expFee - paid);
       const arrears = calcArrears(s, feeCurrentMonth);
       const totalOutstanding = remaining + arrears;
-      
+
       const isChecked = checkedStudentIds.has(s.id.toString());
-      
+
       const item = document.createElement('label');
       item.className = 'bulk-pay-student-item';
       item.style.display = 'flex';
@@ -2928,13 +2928,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           checkedStudentIds.delete(sid);
         }
-        
+
         if (bulkPaySelectAll) {
           const allCheckboxes = bulkPayStudentList.querySelectorAll('input[type="checkbox"]');
           const allChecked = Array.from(allCheckboxes).every(input => input.checked);
           bulkPaySelectAll.checked = allChecked;
         }
-        
+
         updateBulkPayConfirmButton();
       });
 
@@ -2954,7 +2954,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (formBulkPay) {
     formBulkPay.addEventListener('submit', async (e) => {
       e.preventDefault();
-      
+
       const paidOn = document.getElementById('bulk-pay-date').value;
       const notes = document.getElementById('bulk-pay-notes').value.trim();
       const statusMsg = document.getElementById('bulk-pay-status-msg');
@@ -2979,7 +2979,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (session?.user?.email) adminEmail = session.user.email;
 
         const paymentsToInsert = [];
-        
+
         for (const sid of checkedStudentIds) {
           const student = eligibleStudents.find(s => s.id.toString() === sid);
           if (!student) continue;
@@ -3042,7 +3042,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const { error } = await window._supabase.from('fee_payments').insert(paymentsToInsert);
         if (error) throw error;
-        
+
         return paymentsToInsert.length;
       })();
 
@@ -3857,47 +3857,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ─── Student Profile View Controller ─────────────────
   async function openProfileModal(studentId) {
-      const student = cachedStudents.find(s => s.id.toString() === studentId.toString());
-      if (!student) return;
+    const student = cachedStudents.find(s => s.id.toString() === studentId.toString());
+    if (!student) return;
 
-      const modal = document.getElementById('modal-student-profile');
-      const content = document.getElementById('profile-modal-content');
-      if (!modal || !content) return;
+    const modal = document.getElementById('modal-student-profile');
+    const content = document.getElementById('profile-modal-content');
+    if (!modal || !content) return;
 
-      document.getElementById('profile-student-title').textContent = `${student.student_name}'s Profile`;
-      content.innerHTML = '<div style="text-align: center; padding: 2rem;"><span class="loader-dots" style="font-size: 1.5rem;">Loading profile details...</span></div>';
-      modal.showModal();
+    document.getElementById('profile-student-title').textContent = `${student.student_name}'s Profile`;
+    content.innerHTML = '<div style="text-align: center; padding: 2rem;"><span class="loader-dots" style="font-size: 1.5rem;">Loading profile details...</span></div>';
+    modal.showModal();
 
-      let payments = [];
-      if (window._supabase) {
-        try {
-          const { data, error } = await window._supabase
-            .from('fee_payments')
-            .select('*')
-            .eq('student_id', studentId)
-            .order('month', { ascending: false });
-          if (!error && data) payments = data;
-        } catch (err) {
-          console.error('Error fetching payments for profile:', err);
-        }
+    let payments = [];
+    if (window._supabase) {
+      try {
+        const { data, error } = await window._supabase
+          .from('fee_payments')
+          .select('*')
+          .eq('student_id', studentId)
+          .order('month', { ascending: false });
+        if (!error && data) payments = data;
+      } catch (err) {
+        console.error('Error fetching payments for profile:', err);
       }
+    }
 
-      let age = 'N/A';
-      if (student.dob) {
-        const d = new Date(student.dob);
-        if (!isNaN(d)) {
-          age = Math.floor((new Date() - d) / (1000 * 60 * 60 * 24 * 365.25)) + ' years';
-        }
+    let age = 'N/A';
+    if (student.dob) {
+      const d = new Date(student.dob);
+      if (!isNaN(d)) {
+        age = Math.floor((new Date() - d) / (1000 * 60 * 60 * 24 * 365.25)) + ' years';
       }
+    }
 
-      const initials = student.student_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-      let avatarClass = student.gender === 'Female' ? 'female' : '';
-      if (student.status === 'left') avatarClass = 'left';
+    const initials = student.student_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    let avatarClass = student.gender === 'Female' ? 'female' : '';
+    if (student.status === 'left') avatarClass = 'left';
 
-      let exitSectionHtml = '';
-      if (student.status === 'left') {
-        const formattedExitDate = student.exit_date ? new Date(student.exit_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
-        exitSectionHtml = `
+    let exitSectionHtml = '';
+    if (student.status === 'left') {
+      const formattedExitDate = student.exit_date ? new Date(student.exit_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
+      exitSectionHtml = `
           <div class="profile-exit-alert">
             <h4>
               <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;">
@@ -3914,11 +3914,11 @@ document.addEventListener('DOMContentLoaded', () => {
             </p>
           </div>
         `;
-      }
+    }
 
-      let paymentsTableHtml = '<p style="color: var(--admin-muted); font-size: 0.85rem; font-style: italic;">No payment history recorded yet.</p>';
-      if (payments.length > 0) {
-        paymentsTableHtml = `
+    let paymentsTableHtml = '<p style="color: var(--admin-muted); font-size: 0.85rem; font-style: italic;">No payment history recorded yet.</p>';
+    if (payments.length > 0) {
+      paymentsTableHtml = `
           <div style="overflow-x: auto; max-height: 200px; border: 1px solid var(--admin-border); border-radius: 8px;">
             <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left;">
               <thead>
@@ -3940,9 +3940,9 @@ document.addEventListener('DOMContentLoaded', () => {
             </table>
           </div>
         `;
-      }
+    }
 
-      content.innerHTML = `
+    content.innerHTML = `
         ${exitSectionHtml}
         <div class="profile-header">
           <div class="profile-avatar ${avatarClass}">${initials}</div>
@@ -3973,7 +3973,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div class="profile-row">
               <span class="profile-label">Fee Mode</span>
-              <span class="profile-value">${student.is_prepaid ? `<span style="background:#dbeafe;color:#1d4ed8;font-size:0.78rem;padding:2px 8px;border-radius:50px;font-weight:600;">🔵 Prepaid</span>` : `<span style="background:#f3f4f6;color:#6b7280;font-size:0.78rem;padding:2px 8px;border-radius:50px;font-weight:600;">Postpaid</span>`}</span>
+              <span class="profile-value">${student.is_prepaid ? `<span style="background:#dbeafe;color:#1d4ed8;font-size:0.78rem;padding:2px 8px;border-radius:50px;font-weight:600;">Prepaid</span>` : `<span style="background:#f3f4f6;color:#6b7280;font-size:0.78rem;padding:2px 8px;border-radius:50px;font-weight:600;">Postpaid</span>`}</span>
             </div>
           </div>
 
@@ -4022,133 +4022,133 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
 
-      const editBtn = document.getElementById('btn-profile-edit');
-      if (editBtn) {
-        editBtn.replaceWith(editBtn.cloneNode(true));
-        document.getElementById('btn-profile-edit').addEventListener('click', () => {
-          modal.close();
-          openEditModal(studentId);
-        });
-      }
+    const editBtn = document.getElementById('btn-profile-edit');
+    if (editBtn) {
+      editBtn.replaceWith(editBtn.cloneNode(true));
+      document.getElementById('btn-profile-edit').addEventListener('click', () => {
+        modal.close();
+        openEditModal(studentId);
+      });
+    }
+  }
+
+  // ─── Print Position Request Wrapper ─────────────────
+  function requestPrintReceipt(studentId) {
+    const choiceModal = document.getElementById('modal-print-choice');
+    if (!choiceModal) {
+      printReceipt(studentId, 'left');
+      return;
     }
 
-    // ─── Print Position Request Wrapper ─────────────────
-    function requestPrintReceipt(studentId) {
-      const choiceModal = document.getElementById('modal-print-choice');
-      if (!choiceModal) {
-        printReceipt(studentId, 'left');
-        return;
-      }
-      
-      const leftBtn = document.getElementById('btn-print-left');
-      const rightBtn = document.getElementById('btn-print-right');
-      
-      // Clone buttons to clear previous listeners cleanly
-      const newLeftBtn = leftBtn.cloneNode(true);
-      leftBtn.replaceWith(newLeftBtn);
-      const newRightBtn = rightBtn.cloneNode(true);
-      rightBtn.replaceWith(newRightBtn);
-      
-      newLeftBtn.addEventListener('click', () => {
-        choiceModal.close();
-        printReceipt(studentId, 'left');
-      });
-      
-      newRightBtn.addEventListener('click', () => {
-        choiceModal.close();
-        printReceipt(studentId, 'right');
-      });
-      
-      choiceModal.showModal();
+    const leftBtn = document.getElementById('btn-print-left');
+    const rightBtn = document.getElementById('btn-print-right');
+
+    // Clone buttons to clear previous listeners cleanly
+    const newLeftBtn = leftBtn.cloneNode(true);
+    leftBtn.replaceWith(newLeftBtn);
+    const newRightBtn = rightBtn.cloneNode(true);
+    rightBtn.replaceWith(newRightBtn);
+
+    newLeftBtn.addEventListener('click', () => {
+      choiceModal.close();
+      printReceipt(studentId, 'left');
+    });
+
+    newRightBtn.addEventListener('click', () => {
+      choiceModal.close();
+      printReceipt(studentId, 'right');
+    });
+
+    choiceModal.showModal();
+  }
+
+  // ─── Reusable Student Ledger Card Builder ──────────────
+  function buildStudentLedgerCard(s) {
+    const [asy, asm] = ARREARS_START.split('-').map(Number);
+    // Calculate current academic year months (April - March) based on feeCurrentMonth
+    const [currYear, currMonth] = feeCurrentMonth.split('-').map(Number);
+    let startYear = currYear;
+    if (currMonth >= 1 && currMonth <= 3) {
+      startYear = currYear - 1;
     }
 
-    // ─── Reusable Student Ledger Card Builder ──────────────
-    function buildStudentLedgerCard(s) {
-          const [asy, asm] = ARREARS_START.split('-').map(Number);
-          // Calculate current academic year months (April - March) based on feeCurrentMonth
-          const [currYear, currMonth] = feeCurrentMonth.split('-').map(Number);
-          let startYear = currYear;
-          if (currMonth >= 1 && currMonth <= 3) {
-            startYear = currYear - 1;
-          }
-          
-          const monthsList = [];
-          for (let i = 0; i < 12; i++) {
-            const m = (4 + i - 1) % 12 + 1;
-            const y = startYear + Math.floor((4 + i - 1) / 12);
-            monthsList.push(`${y}-${String(m).padStart(2, '0')}`);
-          }
+    const monthsList = [];
+    for (let i = 0; i < 12; i++) {
+      const m = (4 + i - 1) % 12 + 1;
+      const y = startYear + Math.floor((4 + i - 1) / 12);
+      monthsList.push(`${y}-${String(m).padStart(2, '0')}`);
+    }
 
-          // Generate visual annual payment cells
-          function buildCell(m) {
-            const mLabel = new Date(m + '-15').toLocaleDateString('en-US', { month: 'short' });
-            const mExp = getExpectedFee(s, m);
-            const mExempt = isExemptForMonth(s.id, m);
-            
-            let bgColor = '#f1f3f4';
-            let leftColor = '#5f6368';
-            let rightColor = '#5f6368';
-            let leftLabel = '—';
-            let rightLabel = '—';
-            
-            if (m > feeCurrentMonth) {
-              bgColor = '#f1f3f4';
-              leftLabel = 'TBD';
-              rightLabel = 'TBD';
-            } else if (mExempt) {
-              bgColor = '#f1f3f4';
-              leftLabel = 'Exempt';
-              rightLabel = '—';
-            } else if (mExp === 0) {
-              bgColor = '#f1f3f4';
-              leftLabel = 'N/A';
-              rightLabel = '—';
-            } else {
-              // Cumulative expected up to month m
-              let cumulativeExpected = 0;
-              let cur = new Date(asy, asm - 1, 15);
-              const targetEnd = new Date(m + '-15');
-              while (cur <= targetEnd) {
-                const ym = cur.getFullYear() + '-' + String(cur.getMonth() + 1).padStart(2, '0');
-                cumulativeExpected += getExpectedFee(s, ym);
-                cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 15);
-              }
+    // Generate visual annual payment cells
+    function buildCell(m) {
+      const mLabel = new Date(m + '-15').toLocaleDateString('en-US', { month: 'short' });
+      const mExp = getExpectedFee(s, m);
+      const mExempt = isExemptForMonth(s.id, m);
 
-              // Cumulative paid pool up to month m
-              const cumulativePaidPool = cachedFeePayments
-                .filter(pay => pay.student_id === s.id && pay.month >= ARREARS_START && pay.month <= m)
-                .reduce((sum, pay) => sum + (pay.amount || 0), 0);
+      let bgColor = '#f1f3f4';
+      let leftColor = '#5f6368';
+      let rightColor = '#5f6368';
+      let leftLabel = '—';
+      let rightLabel = '—';
 
-              // Cumulative paid before month m
-              const cumulativePaidBefore = cachedFeePayments
-                .filter(pay => pay.student_id === s.id && pay.month >= ARREARS_START && pay.month < m)
-                .reduce((sum, pay) => sum + (pay.amount || 0), 0);
+      if (m > feeCurrentMonth) {
+        bgColor = '#f1f3f4';
+        leftLabel = 'TBD';
+        rightLabel = 'TBD';
+      } else if (mExempt) {
+        bgColor = '#f1f3f4';
+        leftLabel = 'Exempt';
+        rightLabel = '—';
+      } else if (mExp === 0) {
+        bgColor = '#f1f3f4';
+        leftLabel = 'N/A';
+        rightLabel = '—';
+      } else {
+        // Cumulative expected up to month m
+        let cumulativeExpected = 0;
+        let cur = new Date(asy, asm - 1, 15);
+        const targetEnd = new Date(m + '-15');
+        while (cur <= targetEnd) {
+          const ym = cur.getFullYear() + '-' + String(cur.getMonth() + 1).padStart(2, '0');
+          cumulativeExpected += getExpectedFee(s, ym);
+          cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 15);
+        }
 
-              const leftVal = Math.max(0, cumulativeExpected - cumulativePaidBefore);
-              const rightVal = cachedFeePayments
-                .filter(pay => pay.student_id === s.id && pay.month === m)
-                .reduce((sum, pay) => sum + (pay.amount || 0), 0);
+        // Cumulative paid pool up to month m
+        const cumulativePaidPool = cachedFeePayments
+          .filter(pay => pay.student_id === s.id && pay.month >= ARREARS_START && pay.month <= m)
+          .reduce((sum, pay) => sum + (pay.amount || 0), 0);
 
-              leftLabel = `₹${leftVal}`;
-              rightLabel = `₹${rightVal}`;
+        // Cumulative paid before month m
+        const cumulativePaidBefore = cachedFeePayments
+          .filter(pay => pay.student_id === s.id && pay.month >= ARREARS_START && pay.month < m)
+          .reduce((sum, pay) => sum + (pay.amount || 0), 0);
 
-              const remainingLiable = Math.max(0, cumulativeExpected - cumulativePaidPool);
-              if (remainingLiable === 0) {
-                bgColor = '#e6f4ea';
-                leftColor = '#137333';
-                rightColor = '#137333';
-              } else if (rightVal > 0) {
-                bgColor = '#fef7e0';
-                leftColor = '#c5221f';
-                rightColor = '#b06000';
-              } else {
-                bgColor = '#fce8e6';
-                leftColor = '#c5221f';
-                rightColor = '#c5221f';
-              }
-            }
-            
-            return `<td style="width: 16.6%; border: 1.5px solid #2D6A4F; padding: 4px; background-color: ${bgColor}; font-weight: 700; text-align: center;">
+        const leftVal = Math.max(0, cumulativeExpected - cumulativePaidBefore);
+        const rightVal = cachedFeePayments
+          .filter(pay => pay.student_id === s.id && pay.month === m)
+          .reduce((sum, pay) => sum + (pay.amount || 0), 0);
+
+        leftLabel = `₹${leftVal}`;
+        rightLabel = `₹${rightVal}`;
+
+        const remainingLiable = Math.max(0, cumulativeExpected - cumulativePaidPool);
+        if (remainingLiable === 0) {
+          bgColor = '#e6f4ea';
+          leftColor = '#137333';
+          rightColor = '#137333';
+        } else if (rightVal > 0) {
+          bgColor = '#fef7e0';
+          leftColor = '#c5221f';
+          rightColor = '#b06000';
+        } else {
+          bgColor = '#fce8e6';
+          leftColor = '#c5221f';
+          rightColor = '#c5221f';
+        }
+      }
+
+      return `<td style="width: 16.6%; border: 1.5px solid #2D6A4F; padding: 4px; background-color: ${bgColor}; font-weight: 700; text-align: center;">
               <div style="font-size: 0.58rem; text-transform: uppercase; margin-bottom: 4px; color: #5f6368; border-bottom: 1.5px solid #2D6A4F; padding-bottom: 2px;">
                 ${mLabel}
               </div>
@@ -4161,99 +4161,99 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
               </div>
             </td>`;
-          }
+    }
 
-          // Row 1: Apr to Sep
-          let matrixHtml = `<table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.75rem; border: 1.5px solid #2D6A4F;"><tbody><tr>`;
-          for (let i = 0; i < 6; i++) {
-            matrixHtml += buildCell(monthsList[i]);
-          }
-          matrixHtml += `</tr><tr>`;
-          // Row 2: Oct to Mar
-          for (let i = 6; i < 12; i++) {
-            matrixHtml += buildCell(monthsList[i]);
-          }
-          matrixHtml += `</tr></tbody></table>`;
+    // Row 1: Apr to Sep
+    let matrixHtml = `<table style="width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.75rem; border: 1.5px solid #2D6A4F;"><tbody><tr>`;
+    for (let i = 0; i < 6; i++) {
+      matrixHtml += buildCell(monthsList[i]);
+    }
+    matrixHtml += `</tr><tr>`;
+    // Row 2: Oct to Mar
+    for (let i = 6; i < 12; i++) {
+      matrixHtml += buildCell(monthsList[i]);
+    }
+    matrixHtml += `</tr></tbody></table>`;
 
-          // Calculate exact chronological outstanding balance list
-          const [cy, cm] = feeCurrentMonth.split('-').map(Number);
+    // Calculate exact chronological outstanding balance list
+    const [cy, cm] = feeCurrentMonth.split('-').map(Number);
 
-          // Build list of months from ARREARS_START to feeCurrentMonth
-          const allMonthsList = [];
-          let curMonth = new Date(asy, asm - 1, 15);
-          const endMonth = new Date(cy, cm - 1, 15);
-          while (curMonth <= endMonth) {
-            allMonthsList.push(curMonth.getFullYear() + '-' + String(curMonth.getMonth() + 1).padStart(2, '0'));
-            curMonth = new Date(curMonth.getFullYear(), curMonth.getMonth() + 1, 15);
-          }
+    // Build list of months from ARREARS_START to feeCurrentMonth
+    const allMonthsList = [];
+    let curMonth = new Date(asy, asm - 1, 15);
+    const endMonth = new Date(cy, cm - 1, 15);
+    while (curMonth <= endMonth) {
+      allMonthsList.push(curMonth.getFullYear() + '-' + String(curMonth.getMonth() + 1).padStart(2, '0'));
+      curMonth = new Date(curMonth.getFullYear(), curMonth.getMonth() + 1, 15);
+    }
 
-          // Expected fee map
-          const expectedFeeMap = {};
-          allMonthsList.forEach(m => {
-            expectedFeeMap[m] = getExpectedFee(s, m);
-          });
+    // Expected fee map
+    const expectedFeeMap = {};
+    allMonthsList.forEach(m => {
+      expectedFeeMap[m] = getExpectedFee(s, m);
+    });
 
-          // Total payments made by the student from ARREARS_START up to feeCurrentMonth
-          const totalPaidPool = cachedFeePayments
-            .filter(pay => pay.student_id === s.id && pay.month >= ARREARS_START && pay.month <= feeCurrentMonth)
-            .reduce((sum, pay) => sum + (pay.amount || 0), 0);
+    // Total payments made by the student from ARREARS_START up to feeCurrentMonth
+    const totalPaidPool = cachedFeePayments
+      .filter(pay => pay.student_id === s.id && pay.month >= ARREARS_START && pay.month <= feeCurrentMonth)
+      .reduce((sum, pay) => sum + (pay.amount || 0), 0);
 
-          // Distribute pool chronologically to build outstanding due map
-          const outstandingDueMap = {};
-          let pool = totalPaidPool;
-          allMonthsList.forEach(m => {
-            const exp = expectedFeeMap[m];
-            const alloc = Math.min(pool, exp);
-            pool -= alloc;
-            outstandingDueMap[m] = exp - alloc;
-          });
+    // Distribute pool chronologically to build outstanding due map
+    const outstandingDueMap = {};
+    let pool = totalPaidPool;
+    allMonthsList.forEach(m => {
+      const exp = expectedFeeMap[m];
+      const alloc = Math.min(pool, exp);
+      pool -= alloc;
+      outstandingDueMap[m] = exp - alloc;
+    });
 
-          // Compute total outstanding balance
-          const totalOutstanding = allMonthsList.reduce((sum, m) => sum + outstandingDueMap[m], 0);
+    // Compute total outstanding balance
+    const totalOutstanding = allMonthsList.reduce((sum, m) => sum + outstandingDueMap[m], 0);
 
-          // Build outstanding details list (e.g. 100 (April) + 300 (May))
-          const outstandingDetails = [];
-          allMonthsList.forEach(m => {
-            const due = outstandingDueMap[m];
-            if (due > 0) {
-              const [y, mm] = m.split('-').map(Number);
-              const dateObj = new Date(y, mm - 1, 15);
-              const mName = dateObj.toLocaleDateString('en-US', { month: 'long' });
-              outstandingDetails.push(`${due} (${mName})`);
-            }
-          });
+    // Build outstanding details list (e.g. 100 (April) + 300 (May))
+    const outstandingDetails = [];
+    allMonthsList.forEach(m => {
+      const due = outstandingDueMap[m];
+      if (due > 0) {
+        const [y, mm] = m.split('-').map(Number);
+        const dateObj = new Date(y, mm - 1, 15);
+        const mName = dateObj.toLocaleDateString('en-US', { month: 'long' });
+        outstandingDetails.push(`${due} (${mName})`);
+      }
+    });
 
-          let outstandingLabel = totalOutstanding > 0 ? (outstandingDetails.length > 0 ? outstandingDetails.join(' + ') : '₹0') : '₹0';
-          let statusColor = '#137333'; // green
-          if (totalOutstanding > 0) {
-            statusColor = '#c5221f'; // red
-          }
+    let outstandingLabel = totalOutstanding > 0 ? (outstandingDetails.length > 0 ? outstandingDetails.join(' + ') : '₹0') : '₹0';
+    let statusColor = '#137333'; // green
+    if (totalOutstanding > 0) {
+      statusColor = '#c5221f'; // red
+    }
 
-          const receiptNo = `MQLC/${String(s.id).split('-')[0].toUpperCase()}`;
-          const amountWords = totalOutstanding > 0 ? (numberToWords(totalOutstanding) + ' Rupees Only') : 'Nil';
+    const receiptNo = `MQLC/${String(s.id).split('-')[0].toUpperCase()}`;
+    const amountWords = totalOutstanding > 0 ? (numberToWords(totalOutstanding) + ' Rupees Only') : 'Nil';
 
-          function formatDoj(dojStr) {
-            if (!dojStr) return 'N/A';
-            const parts = dojStr.split('-');
-            if (parts.length < 3) return dojStr;
-            const y = parseInt(parts[0]);
-            const m = parseInt(parts[1]);
-            const d = parseInt(parts[2]);
-            const dateObj = new Date(y, m - 1, d);
-            const monthName = dateObj.toLocaleDateString('en-US', { month: 'long' });
-            
-            let suffix = 'th';
-            if (d < 11 || d > 13) {
-              switch (d % 10) {
-                case 1: suffix = 'st'; break;
-                case 2: suffix = 'nd'; break;
-                case 3: suffix = 'rd'; break;
-              }
-            }
-            return `${d}${suffix} ${monthName} ${y}`;
-          }
+    function formatDoj(dojStr) {
+      if (!dojStr) return 'N/A';
+      const parts = dojStr.split('-');
+      if (parts.length < 3) return dojStr;
+      const y = parseInt(parts[0]);
+      const m = parseInt(parts[1]);
+      const d = parseInt(parts[2]);
+      const dateObj = new Date(y, m - 1, d);
+      const monthName = dateObj.toLocaleDateString('en-US', { month: 'long' });
 
-          return `
+      let suffix = 'th';
+      if (d < 11 || d > 13) {
+        switch (d % 10) {
+          case 1: suffix = 'st'; break;
+          case 2: suffix = 'nd'; break;
+          case 3: suffix = 'rd'; break;
+        }
+      }
+      return `${d}${suffix} ${monthName} ${y}`;
+    }
+
+    return `
             <div style="width: 138mm; height: 195mm; border: 2px solid #2D6A4F; border-radius: 16px; padding: 15px; background: #fff; box-shadow: 0 4px 20px rgba(0,0,0,0.05); position: relative; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; overflow: hidden;">
               <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 4rem; font-weight: 800; color: rgba(45, 106, 79, 0.02); pointer-events: none; white-space: nowrap; user-select: none;">MQLC OFFICIAL</div>
               
@@ -4268,7 +4268,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   </div>
                   <div style="text-align: right;">
                     <span style="display: inline-block; background: rgba(45, 106, 79, 0.1); color: #2D6A4F; font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 50px; text-transform: uppercase;">Fee Receipt</span>
-                    ${s.is_prepaid ? `<span style="display: inline-block; background: #dbeafe; color: #1d4ed8; font-size: 0.6rem; font-weight: 700; padding: 2px 7px; border-radius: 50px; margin-left: 4px;">🔵 Prepaid</span>` : ''}
+                    ${s.is_prepaid ? `<span style="display: inline-block; background: #dbeafe; color: #1d4ed8; font-size: 0.6rem; font-weight: 700; padding: 2px 7px; border-radius: 50px; margin-left: 4px;">Prepaid</span>` : ''}
                     <p style="margin: 4px 0 0 0; font-size: 0.72rem; font-weight: 600; color: var(--admin-muted);">${receiptNo}</p>
                   </div>
                 </div>
@@ -4330,237 +4330,237 @@ document.addEventListener('DOMContentLoaded', () => {
               </div>
             </div>
           `;
-        }
+  }
 
-        async function printReceipt(studentId, position = 'left') {
-          if (!window._supabase) {
-            alert('Supabase is not initialized.');
-            return;
-          }
-          const receiptContainer = document.getElementById('print-receipt-container');
-          if (!receiptContainer) return;
+  async function printReceipt(studentId, position = 'left') {
+    if (!window._supabase) {
+      alert('Supabase is not initialized.');
+      return;
+    }
+    const receiptContainer = document.getElementById('print-receipt-container');
+    if (!receiptContainer) return;
 
-          try {
-            const s = cachedStudents.find(student => student.id.toString() === studentId.toString());
-            if (!s) {
-              alert('Student record not found.');
-              return;
-            }
+    try {
+      const s = cachedStudents.find(student => student.id.toString() === studentId.toString());
+      if (!s) {
+        alert('Student record not found.');
+        return;
+      }
 
-            const cardHtml = buildStudentLedgerCard(s);
+      const cardHtml = buildStudentLedgerCard(s);
 
-            if (position === 'left') {
-              receiptContainer.innerHTML = `
+      if (position === 'left') {
+        receiptContainer.innerHTML = `
                 <div class="receipt-page">
                   <div class="receipt-half">${cardHtml}</div>
                   <div class="receipt-half"></div>
                 </div>
               `;
-            } else {
-              receiptContainer.innerHTML = `
+      } else {
+        receiptContainer.innerHTML = `
                 <div class="receipt-page">
                   <div class="receipt-half"></div>
                   <div class="receipt-half">${cardHtml}</div>
                 </div>
               `;
-            }
+      }
 
-            document.body.classList.add('print-mode-receipt');
-            const styleBlock = document.createElement('style');
-            styleBlock.id = 'temp-receipt-print-style';
-            styleBlock.innerHTML = '@page { size: A4 landscape; margin: 0; }';
-            document.head.appendChild(styleBlock);
+      document.body.classList.add('print-mode-receipt');
+      const styleBlock = document.createElement('style');
+      styleBlock.id = 'temp-receipt-print-style';
+      styleBlock.innerHTML = '@page { size: A4 landscape; margin: 0; }';
+      document.head.appendChild(styleBlock);
 
-            window.print();
+      window.print();
 
-            document.body.classList.remove('print-mode-receipt');
-            const tempStyle = document.getElementById('temp-receipt-print-style');
-            if (tempStyle) tempStyle.remove();
-            receiptContainer.innerHTML = '';
-            
-          } catch (err) {
-            console.error('Failed to print receipt:', err);
-            alert('Failed to print receipt: ' + err.message);
-          }
-        }
+      document.body.classList.remove('print-mode-receipt');
+      const tempStyle = document.getElementById('temp-receipt-print-style');
+      if (tempStyle) tempStyle.remove();
+      receiptContainer.innerHTML = '';
 
-        // ─── Bulk print list population and control logic ──────────────
-        const printLedgerTrigger = document.getElementById('btn-fee-print-ledger-trigger');
-        if (printLedgerTrigger) {
-          printLedgerTrigger.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (feeExportDropdown) feeExportDropdown.style.display = 'none';
-            
-            // Populating student checklist modal
-            const students = cachedStudents.filter(s => s.status === 'approved' && isEnrolledForMonth(s.doj, feeCurrentMonth));
-            students.sort((a, b) => (a.student_name || '').localeCompare(b.student_name || ''));
+    } catch (err) {
+      console.error('Failed to print receipt:', err);
+      alert('Failed to print receipt: ' + err.message);
+    }
+  }
 
-            const listContainer = document.getElementById('bulk-print-student-list');
-            if (listContainer) {
-              listContainer.innerHTML = students.map(s => {
-                return `
+  // ─── Bulk print list population and control logic ──────────────
+  const printLedgerTrigger = document.getElementById('btn-fee-print-ledger-trigger');
+  if (printLedgerTrigger) {
+    printLedgerTrigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (feeExportDropdown) feeExportDropdown.style.display = 'none';
+
+      // Populating student checklist modal
+      const students = cachedStudents.filter(s => s.status === 'approved' && isEnrolledForMonth(s.doj, feeCurrentMonth));
+      students.sort((a, b) => (a.student_name || '').localeCompare(b.student_name || ''));
+
+      const listContainer = document.getElementById('bulk-print-student-list');
+      if (listContainer) {
+        listContainer.innerHTML = students.map(s => {
+          return `
                   <label style="display: flex; align-items: center; gap: 0.75rem; padding: 0.4rem 0.5rem; border-radius: 8px; cursor: pointer; user-select: none;" class="bulk-student-item">
                     <input type="checkbox" class="bulk-student-check" value="${s.id}" style="width: 16px; height: 16px; accent-color: var(--admin-accent);">
                     <span style="font-size: 0.88rem; font-weight: 500; color: #333;">${s.student_name}</span>
                     <span style="font-size: 0.72rem; font-weight: 600; background: #e8f0fe; color: #1a73e8; padding: 1px 6px; border-radius: 4px; margin-left: auto;">${s.batch || 'Unassigned'}</span>
                   </label>
                 `;
-              }).join('');
+        }).join('');
 
-              // Add change listeners to individual checks
-              listContainer.querySelectorAll('.bulk-student-check').forEach(cb => {
-                cb.addEventListener('change', updatePrintButtonState);
-              });
-            }
+        // Add change listeners to individual checks
+        listContainer.querySelectorAll('.bulk-student-check').forEach(cb => {
+          cb.addEventListener('change', updatePrintButtonState);
+        });
+      }
 
-            // Reset dialog inputs
-            const searchField = document.getElementById('bulk-print-search');
-            if (searchField) searchField.value = '';
-            const selectAllCheck = document.getElementById('bulk-print-select-all');
-            if (selectAllCheck) selectAllCheck.checked = false;
+      // Reset dialog inputs
+      const searchField = document.getElementById('bulk-print-search');
+      if (searchField) searchField.value = '';
+      const selectAllCheck = document.getElementById('bulk-print-select-all');
+      if (selectAllCheck) selectAllCheck.checked = false;
 
-            updatePrintButtonState();
+      updatePrintButtonState();
 
-            const bulkPrintModal = document.getElementById('modal-bulk-print-select');
-            if (bulkPrintModal) bulkPrintModal.showModal();
-          });
+      const bulkPrintModal = document.getElementById('modal-bulk-print-select');
+      if (bulkPrintModal) bulkPrintModal.showModal();
+    });
+  }
+
+  function updatePrintButtonState() {
+    const checkedChecks = Array.from(document.querySelectorAll('.bulk-student-check:checked'));
+    const count = checkedChecks.length;
+    const btn = document.getElementById('btn-bulk-print-confirm');
+    if (btn) {
+      btn.disabled = count === 0;
+      btn.innerText = count === 1 ? `Print (1)` : `Print (${count})`;
+    }
+  }
+
+  // Live search inside student print checklist modal
+  const bulkSearchField = document.getElementById('bulk-print-search');
+  if (bulkSearchField) {
+    bulkSearchField.addEventListener('input', () => {
+      const q = bulkSearchField.value.toLowerCase().trim();
+      const items = document.querySelectorAll('.bulk-student-item');
+      items.forEach(item => {
+        const name = item.querySelector('span').innerText.toLowerCase();
+        if (name.includes(q)) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
         }
+      });
+    });
+  }
 
-        function updatePrintButtonState() {
-          const checkedChecks = Array.from(document.querySelectorAll('.bulk-student-check:checked'));
-          const count = checkedChecks.length;
-          const btn = document.getElementById('btn-bulk-print-confirm');
-          if (btn) {
-            btn.disabled = count === 0;
-            btn.innerText = count === 1 ? `Print (1)` : `Print (${count})`;
-          }
+  // Select All handler (affects only currently visible/filtered students)
+  const bulkSelectAll = document.getElementById('bulk-print-select-all');
+  if (bulkSelectAll) {
+    bulkSelectAll.addEventListener('change', () => {
+      const isChecked = bulkSelectAll.checked;
+      const items = document.querySelectorAll('.bulk-student-item');
+      items.forEach(item => {
+        if (item.style.display !== 'none') {
+          const cb = item.querySelector('.bulk-student-check');
+          if (cb) cb.checked = isChecked;
         }
+      });
+      updatePrintButtonState();
+    });
+  }
 
-        // Live search inside student print checklist modal
-        const bulkSearchField = document.getElementById('bulk-print-search');
-        if (bulkSearchField) {
-          bulkSearchField.addEventListener('input', () => {
-            const q = bulkSearchField.value.toLowerCase().trim();
-            const items = document.querySelectorAll('.bulk-student-item');
-            items.forEach(item => {
-              const name = item.querySelector('span').innerText.toLowerCase();
-              if (name.includes(q)) {
-                item.style.display = 'flex';
-              } else {
-                item.style.display = 'none';
-              }
-            });
-          });
+  // Confirm Action print spooling trigger
+  const bulkPrintConfirmBtn = document.getElementById('btn-bulk-print-confirm');
+  if (bulkPrintConfirmBtn) {
+    bulkPrintConfirmBtn.addEventListener('click', () => {
+      const checkedChecks = Array.from(document.querySelectorAll('.bulk-student-check:checked'));
+      const selectedIds = checkedChecks.map(cb => cb.value);
+      if (selectedIds.length === 0) return;
+
+      const bulkPrintModal = document.getElementById('modal-bulk-print-select');
+      if (bulkPrintModal) bulkPrintModal.close();
+
+      if (selectedIds.length === 1) {
+        requestPrintReceipt(selectedIds[0]);
+      } else {
+        bulkPrintLedgersForIds(selectedIds, 'left');
+      }
+    });
+  }
+
+  async function bulkPrintLedgersForIds(studentIds, startSide = 'left') {
+    if (studentIds.length === 0) return;
+    const receiptContainer = document.getElementById('print-receipt-container');
+    if (!receiptContainer) return;
+
+    try {
+      let html = '';
+      const cards = [];
+      for (let id of studentIds) {
+        const s = cachedStudents.find(student => student.id.toString() === id.toString());
+        if (s) {
+          const card = buildStudentLedgerCard(s);
+          cards.push(card);
         }
+      }
 
-        // Select All handler (affects only currently visible/filtered students)
-        const bulkSelectAll = document.getElementById('bulk-print-select-all');
-        if (bulkSelectAll) {
-          bulkSelectAll.addEventListener('change', () => {
-            const isChecked = bulkSelectAll.checked;
-            const items = document.querySelectorAll('.bulk-student-item');
-            items.forEach(item => {
-              if (item.style.display !== 'none') {
-                const cb = item.querySelector('.bulk-student-check');
-                if (cb) cb.checked = isChecked;
-              }
-            });
-            updatePrintButtonState();
-          });
-        }
-
-        // Confirm Action print spooling trigger
-        const bulkPrintConfirmBtn = document.getElementById('btn-bulk-print-confirm');
-        if (bulkPrintConfirmBtn) {
-          bulkPrintConfirmBtn.addEventListener('click', () => {
-            const checkedChecks = Array.from(document.querySelectorAll('.bulk-student-check:checked'));
-            const selectedIds = checkedChecks.map(cb => cb.value);
-            if (selectedIds.length === 0) return;
-
-            const bulkPrintModal = document.getElementById('modal-bulk-print-select');
-            if (bulkPrintModal) bulkPrintModal.close();
-
-            if (selectedIds.length === 1) {
-              requestPrintReceipt(selectedIds[0]);
-            } else {
-              bulkPrintLedgersForIds(selectedIds, 'left');
-            }
-          });
-        }
-
-        async function bulkPrintLedgersForIds(studentIds, startSide = 'left') {
-          if (studentIds.length === 0) return;
-          const receiptContainer = document.getElementById('print-receipt-container');
-          if (!receiptContainer) return;
-
-          try {
-            let html = '';
-            const cards = [];
-            for (let id of studentIds) {
-              const s = cachedStudents.find(student => student.id.toString() === id.toString());
-              if (s) {
-                const card = buildStudentLedgerCard(s);
-                cards.push(card);
-              }
-            }
-
-            let idx = 0;
-            if (startSide === 'right') {
-              html += `
+      let idx = 0;
+      if (startSide === 'right') {
+        html += `
                 <div class="receipt-page">
                   <div class="receipt-half"></div>
                   <div class="receipt-half">${cards[idx++]}</div>
                 </div>
               `;
-            }
+      }
 
-            while (idx < cards.length) {
-              const leftCard = cards[idx++];
-              const rightCard = idx < cards.length ? cards[idx++] : '';
-              html += `
+      while (idx < cards.length) {
+        const leftCard = cards[idx++];
+        const rightCard = idx < cards.length ? cards[idx++] : '';
+        html += `
                 <div class="receipt-page">
                   <div class="receipt-half">${leftCard}</div>
                   <div class="receipt-half">${rightCard ? rightCard : ''}</div>
                 </div>
               `;
-            }
+      }
 
-            receiptContainer.innerHTML = html;
+      receiptContainer.innerHTML = html;
 
-            document.body.classList.add('print-mode-receipt');
-            const styleBlock = document.createElement('style');
-            styleBlock.id = 'temp-receipt-print-style';
-            styleBlock.innerHTML = '@page { size: A4 landscape; margin: 0; }';
-            document.head.appendChild(styleBlock);
+      document.body.classList.add('print-mode-receipt');
+      const styleBlock = document.createElement('style');
+      styleBlock.id = 'temp-receipt-print-style';
+      styleBlock.innerHTML = '@page { size: A4 landscape; margin: 0; }';
+      document.head.appendChild(styleBlock);
 
-            window.print();
+      window.print();
 
-            document.body.classList.remove('print-mode-receipt');
-            const tempStyle = document.getElementById('temp-receipt-print-style');
-            if (tempStyle) tempStyle.remove();
-            receiptContainer.innerHTML = '';
-          } catch (err) {
-            console.error('Failed to print bulk ledger sheets:', err);
-            alert('Failed to print: ' + err.message);
-          }
-        }
-
-    // Number conversion helper for India system
-    function numberToWords(num) {
-      const a = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
-      const b = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
-      
-      if ((num = num.toString()).length > 9) return 'overflow';
-      let n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
-      if (!n) return '';
-      let str = '';
-      str += (Number(n[1]) != 0) ? (a[Number(n[1])] || b[Number(n[1].substr(0,1))] + ' ' + a[Number(n[1].substr(1,1))]) + ' crore ' : '';
-      str += (Number(n[2]) != 0) ? (a[Number(n[2])] || b[Number(n[2].substr(0,1))] + ' ' + a[Number(n[2].substr(1,1))]) + ' lakh ' : '';
-      str += (Number(n[3]) != 0) ? (a[Number(n[3])] || b[Number(n[3].substr(0,1))] + ' ' + a[Number(n[3].substr(1,1))]) + ' thousand ' : '';
-      str += (Number(n[4]) != 0) ? (a[Number(n[4])] || b[Number(n[4].substr(0,1))] + ' ' + a[Number(n[4].substr(1,1))]) + ' hundred ' : '';
-      str += (Number(n[5]) != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[Number(n[5].substr(0,1))] + ' ' + a[Number(n[5].substr(1,1))]) : '';
-      return str.trim();
+      document.body.classList.remove('print-mode-receipt');
+      const tempStyle = document.getElementById('temp-receipt-print-style');
+      if (tempStyle) tempStyle.remove();
+      receiptContainer.innerHTML = '';
+    } catch (err) {
+      console.error('Failed to print bulk ledger sheets:', err);
+      alert('Failed to print: ' + err.message);
     }
+  }
+
+  // Number conversion helper for India system
+  function numberToWords(num) {
+    const a = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+    const b = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+
+    if ((num = num.toString()).length > 9) return 'overflow';
+    let n = ('000000000' + num).substr(-9).match(/^(\d{2})(\d{2})(\d{2})(\d{1})(\d{2})$/);
+    if (!n) return '';
+    let str = '';
+    str += (Number(n[1]) != 0) ? (a[Number(n[1])] || b[Number(n[1].substr(0, 1))] + ' ' + a[Number(n[1].substr(1, 1))]) + ' crore ' : '';
+    str += (Number(n[2]) != 0) ? (a[Number(n[2])] || b[Number(n[2].substr(0, 1))] + ' ' + a[Number(n[2].substr(1, 1))]) + ' lakh ' : '';
+    str += (Number(n[3]) != 0) ? (a[Number(n[3])] || b[Number(n[3].substr(0, 1))] + ' ' + a[Number(n[3].substr(1, 1))]) + ' thousand ' : '';
+    str += (Number(n[4]) != 0) ? (a[Number(n[4])] || b[Number(n[4].substr(0, 1))] + ' ' + a[Number(n[4].substr(1, 1))]) + ' hundred ' : '';
+    str += (Number(n[5]) != 0) ? ((str != '') ? 'and ' : '') + (a[Number(n[5])] || b[Number(n[5].substr(0, 1))] + ' ' + a[Number(n[5].substr(1, 1))]) : '';
+    return str.trim();
+  }
 
   // ─── 9. SUPABASE REALTIME DB SYNCHRONIZATION ──────────────────
   if (window._supabase) {

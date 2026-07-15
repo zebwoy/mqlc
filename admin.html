@@ -399,9 +399,9 @@
                     </select>
                   </div>
                   <div class="input-group">
-                    <label>Monthly Fee (₹) <span style="color:var(--admin-muted);font-weight:400;">(optional, default ₹300)</span></label>
-                    <input type="number" name="monthly_fee" min="1" placeholder="300"
-                      style="font-weight: 600;">
+                    <label>Monthly Fee (₹) <span style="color:var(--admin-muted);font-weight:400;">(optional, default
+                        ₹300)</span></label>
+                    <input type="number" name="monthly_fee" min="1" placeholder="300" style="font-weight: 600;">
                   </div>
                 </div>
               </div>
@@ -545,10 +545,12 @@
                   <option value="unassigned">Unassigned</option>
                 </select>
                 <button class="btn-secondary" id="btn-ds-refresh"
-                  style="padding: 0.4rem 0.5rem; border-radius: 50px; display: flex; align-items: center; justify-content: center;" title="Reset filters">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                    <path d="M3 3v5h5"/>
+                  style="padding: 0.4rem 0.5rem; border-radius: 50px; display: flex; align-items: center; justify-content: center;"
+                  title="Reset filters">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                    <path d="M3 3v5h5" />
                   </svg>
                 </button>
                 <div style="height: 20px; width: 1px; background: var(--admin-border); margin: 0 0.5rem;"></div>
@@ -662,7 +664,7 @@
                 <select id="fee-filter-mode"
                   style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; background: #fff; cursor: pointer;">
                   <option value="all">All Modes</option>
-                  <option value="prepaid">🔵 Prepaid</option>
+                  <option value="prepaid">Prepaid</option>
                   <option value="postpaid">Postpaid</option>
                 </select>
                 <div style="height: 20px; width: 1px; background: var(--admin-border); margin: 0 0.25rem;"></div>
@@ -670,7 +672,8 @@
                 <button class="btn-secondary" id="btn-fee-bulk-pay"
                   style="padding: 0.4rem 0.5rem; border-radius: 50px; display: flex; align-items: center; justify-content: center;"
                   title="Bulk Record Payments">
-                  <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="9 11 12 14 22 4"></polyline>
                     <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                   </svg>
@@ -1179,17 +1182,24 @@
     </div>
     <div class="modal-body">
       <div style="margin-bottom: 1rem; display: flex; gap: 1rem; align-items: center;">
-        <input type="text" id="bulk-print-search" placeholder="Search students..." class="modal-input" style="flex: 1; margin: 0; padding: 0.5rem 1rem; border: 1px solid var(--admin-border); border-radius: 50px;">
-        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; user-select: none;">
-          <input type="checkbox" id="bulk-print-select-all" style="width: 16px; height: 16px; accent-color: var(--admin-accent);"> Select All
+        <input type="text" id="bulk-print-search" placeholder="Search students..." class="modal-input"
+          style="flex: 1; margin: 0; padding: 0.5rem 1rem; border: 1px solid var(--admin-border); border-radius: 50px;">
+        <label
+          style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; user-select: none;">
+          <input type="checkbox" id="bulk-print-select-all"
+            style="width: 16px; height: 16px; accent-color: var(--admin-accent);"> Select All
         </label>
       </div>
-      <div id="bulk-print-student-list" style="max-height: 280px; overflow-y: auto; border: 1px solid var(--admin-border); border-radius: 12px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; background: #fafafa;">
+      <div id="bulk-print-student-list"
+        style="max-height: 280px; overflow-y: auto; border: 1px solid var(--admin-border); border-radius: 12px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; background: #fafafa;">
         <!-- Populated dynamically via JS -->
       </div>
-      <div class="modal-actions" style="justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--admin-border); padding-top: 1rem; margin-top: 0.5rem;">
-        <button onclick="document.getElementById('modal-bulk-print-select').close()" class="btn-secondary" style="border-radius: 50px; padding: 0.5rem 1.25rem;">Cancel</button>
-        <button id="btn-bulk-print-confirm" class="btn-primary" style="border-radius: 50px; padding: 0.5rem 1.5rem;" disabled>Print (0)</button>
+      <div class="modal-actions"
+        style="justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--admin-border); padding-top: 1rem; margin-top: 0.5rem;">
+        <button onclick="document.getElementById('modal-bulk-print-select').close()" class="btn-secondary"
+          style="border-radius: 50px; padding: 0.5rem 1.25rem;">Cancel</button>
+        <button id="btn-bulk-print-confirm" class="btn-primary" style="border-radius: 50px; padding: 0.5rem 1.5rem;"
+          disabled>Print (0)</button>
       </div>
     </div>
   </dialog>
@@ -1303,9 +1313,10 @@
         </div>
 
         <!-- Exit Audit Section (Visible only when status is 'left') -->
-        <div id="edit-exit-audit-section" class="exit-audit-section" style="display: none; border-top: 1px dashed var(--admin-border); margin-top: 1rem; padding-top: 1rem;">
+        <div id="edit-exit-audit-section" class="exit-audit-section"
+          style="display: none; border-top: 1px dashed var(--admin-border); margin-top: 1rem; padding-top: 1rem;">
           <h4 style="font-size: 0.9rem; color: var(--admin-danger); margin-bottom: 1rem;">Student Exit Audit</h4>
-          
+
           <div class="modal-field">
             <label class="modal-label">Exit Date</label>
             <input type="hidden" id="edit-exit-date">
@@ -1329,7 +1340,9 @@
 
           <div class="modal-field">
             <label class="modal-label">Exit Notes / Remarks</label>
-            <textarea id="edit-exit-notes" rows="2" placeholder="e.g. Relocated to another city with family. Nazra course incomplete." class="modal-textarea"></textarea>
+            <textarea id="edit-exit-notes" rows="2"
+              placeholder="e.g. Relocated to another city with family. Nazra course incomplete."
+              class="modal-textarea"></textarea>
           </div>
         </div>
 
@@ -1354,9 +1367,12 @@
       <div id="profile-modal-content">
         <!-- Dynamically loaded layout -->
       </div>
-      <div class="modal-actions" style="margin-top: 1.5rem; justify-content: flex-end; border-top: 1px solid var(--admin-border); padding-top: 1.25rem; gap: 0.75rem;">
-        <button id="btn-profile-edit" class="btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.85rem; border-radius: 50px;">✎ Edit Info</button>
-        <button onclick="document.getElementById('modal-student-profile').close()" class="btn-secondary" style="padding: 0.5rem 1.25rem; font-size: 0.85rem; border-radius: 50px;">Close</button>
+      <div class="modal-actions"
+        style="margin-top: 1.5rem; justify-content: flex-end; border-top: 1px solid var(--admin-border); padding-top: 1.25rem; gap: 0.75rem;">
+        <button id="btn-profile-edit" class="btn-secondary"
+          style="padding: 0.5rem 1.25rem; font-size: 0.85rem; border-radius: 50px;">✎ Edit Info</button>
+        <button onclick="document.getElementById('modal-student-profile').close()" class="btn-secondary"
+          style="padding: 0.5rem 1.25rem; font-size: 0.85rem; border-radius: 50px;">Close</button>
       </div>
     </div>
   </dialog>
@@ -1368,10 +1384,14 @@
       <button onclick="document.getElementById('modal-print-choice').close()" class="modal-close-btn">✕</button>
     </div>
     <div class="modal-body" style="padding: 1.5rem; text-align: center;">
-      <p style="font-size: 0.9rem; color: var(--admin-muted); margin-bottom: 1.5rem;">Select where the A5 receipt should print on the A4 landscape page:</p>
+      <p style="font-size: 0.9rem; color: var(--admin-muted); margin-bottom: 1.5rem;">Select where the A5 receipt should
+        print on the A4 landscape page:</p>
       <div style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 0.5rem;">
-        <button id="btn-print-left" class="btn-primary" style="padding: 0.6rem 1.2rem; font-size: 0.85rem; border-radius: 50px;">Left Side</button>
-        <button id="btn-print-right" class="btn-primary" style="padding: 0.6rem 1.2rem; font-size: 0.85rem; border-radius: 50px; background-color: var(--admin-muted);">Right Side</button>
+        <button id="btn-print-left" class="btn-primary"
+          style="padding: 0.6rem 1.2rem; font-size: 0.85rem; border-radius: 50px;">Left Side</button>
+        <button id="btn-print-right" class="btn-primary"
+          style="padding: 0.6rem 1.2rem; font-size: 0.85rem; border-radius: 50px; background-color: var(--admin-muted);">Right
+          Side</button>
       </div>
     </div>
   </dialog>
@@ -1401,7 +1421,9 @@
       </div>
 
       <!-- Prepaid context note (shown only for advance payments) -->
-      <p id="pay-context-note" style="display:none; font-size:0.8rem; background:#dbeafe; color:#1d4ed8; padding:0.4rem 0.75rem; border-radius:6px; margin-bottom:0.75rem; font-weight:500;"></p>
+      <p id="pay-context-note"
+        style="display:none; font-size:0.8rem; background:#dbeafe; color:#1d4ed8; padding:0.4rem 0.75rem; border-radius:6px; margin-bottom:0.75rem; font-weight:500;">
+      </p>
 
       <form id="form-record-payment">
         <input type="hidden" id="pay-student-id">
@@ -1548,29 +1570,35 @@
     <div class="modal-body">
       <div class="modal-context-card" style="margin-bottom: 1rem; padding: 1rem; background: var(--admin-bg);">
         <p style="font-size: 0.85rem; color: var(--admin-muted); margin: 0;">
-          Select students to mark as fully paid for <strong id="bulk-pay-month-label" style="color: var(--admin-accent);"></strong>.
+          Select students to mark as fully paid for <strong id="bulk-pay-month-label"
+            style="color: var(--admin-accent);"></strong>.
         </p>
       </div>
 
       <!-- Controls inside the modal -->
       <div style="margin-bottom: 1rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-        <input type="text" id="bulk-pay-search" placeholder="Search students..." class="modal-input" style="flex: 1; min-width: 150px; margin: 0; padding: 0.5rem 1rem; border: 1px solid var(--admin-border); border-radius: 50px;">
-        
-        <select id="bulk-pay-batch" class="modal-select" style="width: auto; min-width: 120px; padding: 0.5rem 1rem; border-radius: 50px; margin: 0;">
+        <input type="text" id="bulk-pay-search" placeholder="Search students..." class="modal-input"
+          style="flex: 1; min-width: 150px; margin: 0; padding: 0.5rem 1rem; border: 1px solid var(--admin-border); border-radius: 50px;">
+
+        <select id="bulk-pay-batch" class="modal-select"
+          style="width: auto; min-width: 120px; padding: 0.5rem 1rem; border-radius: 50px; margin: 0;">
           <option value="all">All Batches</option>
           <option value="Zuhr">Zuhr</option>
           <option value="Asr">Asr</option>
           <option value="Maghrib">Maghrib</option>
           <option value="unassigned">Unassigned</option>
         </select>
-        
-        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; user-select: none;">
-          <input type="checkbox" id="bulk-pay-select-all" style="width: 16px; height: 16px; accent-color: var(--admin-accent);"> Select All
+
+        <label
+          style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; user-select: none;">
+          <input type="checkbox" id="bulk-pay-select-all"
+            style="width: 16px; height: 16px; accent-color: var(--admin-accent);"> Select All
         </label>
       </div>
 
       <!-- Student Checklist -->
-      <div id="bulk-pay-student-list" style="max-height: 240px; overflow-y: auto; border: 1px solid var(--admin-border); border-radius: 12px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; background: #fafafa;">
+      <div id="bulk-pay-student-list"
+        style="max-height: 240px; overflow-y: auto; border: 1px solid var(--admin-border); border-radius: 12px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; background: #fafafa;">
         <!-- Populated dynamically via JS -->
       </div>
 
@@ -1589,9 +1617,12 @@
 
         <div id="bulk-pay-status-msg" class="status-msg" style="margin-bottom: 1rem;"></div>
 
-        <div class="modal-actions" style="justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--admin-border); padding-top: 1rem; margin-top: 0.5rem;">
-          <button type="button" onclick="document.getElementById('modal-bulk-fee-mark').close()" class="btn-secondary" style="border-radius: 50px; padding: 0.5rem 1.25rem;">Cancel</button>
-          <button type="submit" id="btn-bulk-pay-confirm" class="btn-primary" style="border-radius: 50px; padding: 0.5rem 1.5rem;" disabled>Record Payments (0)</button>
+        <div class="modal-actions"
+          style="justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--admin-border); padding-top: 1rem; margin-top: 0.5rem;">
+          <button type="button" onclick="document.getElementById('modal-bulk-fee-mark').close()" class="btn-secondary"
+            style="border-radius: 50px; padding: 0.5rem 1.25rem;">Cancel</button>
+          <button type="submit" id="btn-bulk-pay-confirm" class="btn-primary"
+            style="border-radius: 50px; padding: 0.5rem 1.5rem;" disabled>Record Payments (0)</button>
         </div>
       </form>
     </div>

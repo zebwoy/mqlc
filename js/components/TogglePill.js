@@ -8,7 +8,7 @@
  * Usage:
  *   const pill = new TogglePill(document.getElementById('my-btn'), [
  *     { value: 'all',      label: 'All',        bg: '#f3f4f6', color: '#6b7280' },
- *     { value: 'prepaid',  label: '🔵 Prepaid', bg: '#dbeafe', color: '#1d4ed8' },
+ *     { value: 'prepaid',  label: 'Prepaid', bg: '#dbeafe', color: '#1d4ed8' },
  *     { value: 'postpaid', label: 'Postpaid',   bg: '#fef9c3', color: '#92400e' },
  *   ], (value, state) => console.log('changed to', value));
  *
