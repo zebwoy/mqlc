@@ -5,3 +5,10 @@ upload_cloudinary.mjs
 
 .vercel
 .env*.local
+
+# Capacitor Android build artifacts (keep source, exclude generated)
+capacitor-app/node_modules/
+capacitor-app/android/.gradle/
+capacitor-app/android/build/
+capacitor-app/android/app/build/
+capacitor-app/android/local.properties
