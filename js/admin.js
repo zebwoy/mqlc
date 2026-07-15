@@ -213,11 +213,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const targetSub = document.getElementById(activeTabId);
       if (targetSub) targetSub.style.display = 'block';
 
-      // 1. If Manual Entry is activated, auto-generate the next Form Number
-      // Guard: function may not yet be defined if this fires during page restore
-      if (activeTabId === 'sub-manual') {
-        if (typeof initManualFormNumber === 'function') initManualFormNumber();
-      }
+      // Form number generation is handled by:
+      //   • hydrateActiveTab() on page load (pre-generates for all tabs)
+      //   • manualPillBtn click listener (inside if(manualForm) block, handles re-visits)
+      // Calling initManualFormNumber here would crash — it's a let in TDZ when
+      // activePill.click() fires during page restore (before its declaration at line ~466).
     });
   });
 
