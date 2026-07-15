@@ -373,11 +373,6 @@
                   </div>
 
                   <div class="input-group">
-                    <label>Monthly Fee (₹) <span style="color:#dc2626;">*</span></label>
-                    <input type="number" name="monthly_fee" required min="1" placeholder="e.g. 300"
-                      style="font-weight: 600;">
-                  </div>
-                  <div class="input-group">
                     <label>Fee Collection Mode</label>
                     <select name="is_prepaid">
                       <option value="true" selected>Prepaid (Pay in advance)</option>
@@ -402,6 +397,11 @@
                       <option value="Qur'an Reading (Nazra)">Qur'an Reading (Nazra)</option>
                       <option value="Qur'an Memorization (Hifz)">Qur'an Memorization (Hifz)</option>
                     </select>
+                  </div>
+                  <div class="input-group">
+                    <label>Monthly Fee (₹) <span style="color:var(--admin-muted);font-weight:400;">(optional, default ₹300)</span></label>
+                    <input type="number" name="monthly_fee" min="1" placeholder="300"
+                      style="font-weight: 600;">
                   </div>
                 </div>
               </div>

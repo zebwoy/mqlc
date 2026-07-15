@@ -483,14 +483,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // Fee from the form field (admin sets it per student at registration)
-      const feeVal = parseInt(fd.get('monthly_fee') || 0) || 0;
-      if (!feeVal) {
-        manualStatusMsg.textContent = 'Please enter the monthly fee before saving.';
-        manualStatusMsg.className = 'status-msg error';
-        manualStatusMsg.style.display = 'block';
-        return;
-      }
+      // Fee from the form field — optional, defaults to ₹300 if not entered
+      const feeVal = parseInt(fd.get('monthly_fee') || 0) || 300;
 
       try {
         const btn = document.getElementById('btn-submit-reg');
