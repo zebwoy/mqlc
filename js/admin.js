@@ -405,7 +405,7 @@ document.addEventListener('DOMContentLoaded', () => {
       feedback.className = 'status-msg';
 
       if (currentDecisionType === 'approve') {
-        const fee = document.getElementById('input-assign-fee').value;
+        const fee = parseInt(document.getElementById('input-assign-fee').value) || 0;
         if (!fee) {
           feedback.textContent = 'Please enter a valid monthly fee.';
           feedback.classList.add('error');
@@ -419,6 +419,10 @@ document.addEventListener('DOMContentLoaded', () => {
             .update({ status: 'approved', monthly_fee: fee, is_prepaid: isPrepaidOnApprove })
             .eq('id', id);
           if (error) throw error;
+
+          // Auto-record the admission payment against the smart month (DOJ slab)
+          const pendingStudent = cachedStudents.find(s => s.id.toString() === id.toString());
+          await recordAdmissionPayment(id, pendingStudent?.doj, fee);
 
           modalDecision.close();
           loadPendingApprovals();
@@ -452,7 +456,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ─── 3e. Manual Form Submission Logic (Legacy Override) ────────
   const manualForm = document.getElementById('registration-form');
   const manualStatusMsg = document.getElementById('reg-status');
 
@@ -480,28 +483,24 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
+      // Fee from the form field (admin sets it per student at registration)
+      const feeVal = parseInt(fd.get('monthly_fee') || 0) || 0;
+      if (!feeVal) {
+        manualStatusMsg.textContent = 'Please enter the monthly fee before saving.';
+        manualStatusMsg.className = 'status-msg error';
+        manualStatusMsg.style.display = 'block';
+        return;
+      }
+
       try {
         const btn = document.getElementById('btn-submit-reg');
         btn.textContent = 'Saving Record...';
         btn.disabled = true;
 
-        // Fetch global monthly fee setting
-        let feeVal = 0;
-        try {
-          const { data: settingData } = await window._supabase
-            .from('site_settings')
-            .select('setting_value')
-            .eq('setting_key', 'monthly_fee')
-            .single();
-          if (settingData && settingData.setting_value) {
-            feeVal = parseInt(settingData.setting_value, 10) || 0;
-          }
-        } catch (feeErr) {
-          console.warn("Failed to retrieve global monthly fee:", feeErr);
-        }
+        const dojVal = fd.get('doj') || null;
 
         const payload = {
-          doj: fd.get('doj') || null,
+          doj: dojVal,
           form_no: fd.get('form_no') || null,
           course_applying: fd.get('course_applying') || 'Unassigned',
           student_name: fd.get('student_name') || null,
@@ -510,8 +509,8 @@ document.addEventListener('DOMContentLoaded', () => {
           dob: fd.get('dob') || null,
           aadhar_no: fd.get('aadhar_no') || null,
           address: fd.get('address') || null,
-          contact_father: fd.get('contact_father') || null,
-          contact_mother: fd.get('contact_mother') || null,
+          contact_father: contactFather || null,
+          contact_mother: contactMother || null,
           current_class: fd.get('current_class') || null,
           school_name: 'N/A',
           school_days: 'N/A',
@@ -524,20 +523,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const { data, error } = await window._supabase
           .from('student_registrations')
-          .insert([payload]);
+          .insert([payload])
+          .select('id, doj');
 
         if (error) throw error;
 
+        // Auto-record the admission payment against the smart month
+        if (data && data[0]) {
+          await recordAdmissionPayment(data[0].id, data[0].doj || dojVal, feeVal);
+        }
+
         manualForm.reset();
-        manualStatusMsg.textContent = 'Student manually registered';
+        manualStatusMsg.textContent = `✅ Student registered and ₹${feeVal.toLocaleString('en-IN')} admission fee recorded for ${feeMonthLabel ? feeMonthLabel(computeAdmissionFeeMonth(dojVal)) : computeAdmissionFeeMonth(dojVal)}.`;
         manualStatusMsg.className = 'status-msg success';
         manualStatusMsg.style.display = 'block';
 
-        // Auto-hide after 3 seconds
+        // Auto-hide after 5 seconds
         setTimeout(() => {
           manualStatusMsg.style.display = 'none';
           manualStatusMsg.textContent = '';
-        }, 3000);
+        }, 5000);
 
         // Regenerate a fresh form number for the next entry
         await initManualFormNumber();
@@ -1794,6 +1799,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const [y, m] = ym.split('-').map(Number);
     const d = new Date(y, m, 15); // m is 1-based, so new Date(y, m, 15) = next month
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+
+  // Determines which month the admission payment (first fee) should be recorded against.
+  // Prepaid slab: DOJ day 1–15 → admission covers joining month.
+  //               DOJ day 16+  → joining month is waived; admission covers next month.
+  // This keeps the billing cycle clean — parents won’t be asked again within days.
+  function computeAdmissionFeeMonth(doj) {
+    if (!doj) return new Date().toISOString().substring(0, 7);
+    const dojMonth = doj.substring(0, 7);
+    const day = parseInt(doj.substring(8, 10)) || 1;
+    return day > 15 ? getNextMonth(dojMonth) : dojMonth;
+  }
+
+  // Auto-records the first (admission) fee payment immediately after registration.
+  // Silently fails so it never blocks the registration success flow.
+  async function recordAdmissionPayment(studentId, doj, feeAmount) {
+    if (!studentId || !feeAmount) return;
+    const feeMonth = computeAdmissionFeeMonth(doj);
+    const paidOn = doj || new Date().toISOString().split('T')[0];
+    try {
+      await window._supabase.from('fee_payments').insert([{
+        student_id: studentId,
+        month: feeMonth,
+        amount: feeAmount,
+        paid_on: paidOn,
+        notes: 'Admission payment (auto-recorded on registration)'
+      }]);
+    } catch (err) {
+      console.warn('Auto-record admission payment failed (non-critical):', err.message);
+    }
   }
 
   // Slab-based pro-rata expected fee for a student in a given month
