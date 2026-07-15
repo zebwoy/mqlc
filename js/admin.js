@@ -572,8 +572,8 @@ document.addEventListener('DOMContentLoaded', () => {
         window._regGender = new RadioGroup(genderHost, {
           name: 'gender',
           options: [
-            { value: 'Male',   label: '\u2642 Male'   },
-            { value: 'Female', label: '\u2640 Female' }
+            { value: 'Male', label: '👨 Male' },
+            { value: 'Female', label: '👩 Female' }
           ],
           value: 'Male'
         });
