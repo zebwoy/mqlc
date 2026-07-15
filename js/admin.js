@@ -1745,14 +1745,36 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Initial hydration is now triggered by auth.js via window.hydrateDashboardAndAnalytics()
-  // when the dashboard becomes visible, eliminating the blind 1s delay.
+  // Initial hydration is now triggered by auth.js via window.hydrateActiveTab()
+  // when the dashboard becomes visible and auth is confirmed.
   window.hydrateDashboardAndAnalytics = hydrateDashboardAndAnalytics;
 
-  // Safeguard: If the dashboard is already made visible by auth.js before admin.js loaded, run hydration now
+  // Master hydration dispatcher — called by auth.js after session is confirmed
+  window.hydrateActiveTab = function hydrateActiveTab() {
+    const savedTab = localStorage.getItem('mqlc_active_tab') || 'sub-dashboard';
+
+    if (savedTab === 'sub-fees') {
+      hydrateFeeTracker();
+    } else if (savedTab === 'sub-manual') {
+      // Manual entry needs form number generated
+      if (manualForm) {
+        const fi = manualForm.querySelector('input[name="form_no"]');
+        if (fi && !fi.value && typeof initManualFormNumber === 'function') {
+          initManualFormNumber();
+        }
+      }
+      // Also hydrate dashboard in background so switching tabs is instant
+      hydrateDashboardAndAnalytics();
+    } else {
+      // sub-dashboard, sub-analytics, or anything else
+      hydrateDashboardAndAnalytics();
+    }
+  };
+
+  // Safeguard: If auth.js already showed dashboard before admin.js finished, hydrate now
   const dashView = document.getElementById('dashboard-view');
   if (dashView && dashView.style.display === 'grid') {
-    hydrateDashboardAndAnalytics();
+    window.hydrateActiveTab();
   }
 
   // ─── 3g. FEE TRACKER ENGINE ─────────────────────────────────────
@@ -1942,28 +1964,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Hook to pill click
   const feePill = document.querySelector('[data-sub="sub-fees"]');
   if (feePill) feePill.addEventListener('click', hydrateFeeTracker);
-
-  // ─── Auto-hydrate the restored tab on page load ───────────────────────
-  // Problem: activePill.click() fires at startup BEFORE per-tab hydration listeners
-  // are attached (feePill/dsPill listeners come later in the file). So refreshing on
-  // fee tracker or manual entry shows a blank view until the user clicks another tab.
-  // Fix: after all listeners are registered, fire the right hydration for the saved tab.
-  ;(function autoHydrateRestoredTab() {
-    const savedTab = localStorage.getItem('mqlc_active_tab') || 'sub-dashboard';
-
-    if (savedTab === 'sub-fees') {
-      // Fee tracker only fetches on pill click — trigger it now on restore
-      hydrateFeeTracker();
-    } else if (savedTab === 'sub-manual' && manualForm) {
-      // initManualFormNumber() may have been undefined when activePill.click() fired;
-      // safely re-run it here now that the if(manualForm) block has executed
-      const fi = manualForm.querySelector('input[name="form_no"]');
-      if (fi && !fi.value && typeof initManualFormNumber === 'function') {
-        initManualFormNumber();
-      }
-    }
-    // sub-dashboard and sub-analytics → auth.js calls window.hydrateDashboardAndAnalytics()
-  })();
 
   async function hydrateFeeTracker() {
     if (!window._supabase) return;

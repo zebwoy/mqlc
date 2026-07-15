@@ -86,8 +86,13 @@ document.addEventListener("DOMContentLoaded", () => {
     authView.style.display = 'none';
     dashView.style.display = 'grid'; // .app-layout is a grid
     // Trigger initial data load immediately — only on first reveal
-    if (!alreadyVisible && typeof window.hydrateDashboardAndAnalytics === 'function') {
-      window.hydrateDashboardAndAnalytics();
+    // hydrateActiveTab dispatches to the correct hydration based on the restored tab
+    if (!alreadyVisible) {
+      if (typeof window.hydrateActiveTab === 'function') {
+        window.hydrateActiveTab();
+      } else if (typeof window.hydrateDashboardAndAnalytics === 'function') {
+        window.hydrateDashboardAndAnalytics();
+      }
     }
   }
 
