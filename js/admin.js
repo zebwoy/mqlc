@@ -1747,21 +1747,20 @@ document.addEventListener('DOMContentLoaded', () => {
   window.hydrateActiveTab = function hydrateActiveTab() {
     const savedTab = localStorage.getItem('mqlc_active_tab') || 'sub-dashboard';
 
+    // ── 1. Load primary data for the restored tab ──────────────────
     if (savedTab === 'sub-fees') {
       hydrateFeeTracker();
-    } else if (savedTab === 'sub-manual') {
-      // Manual entry needs form number generated
-      if (manualForm) {
-        const fi = manualForm.querySelector('input[name="form_no"]');
-        if (fi && !fi.value && typeof initManualFormNumber === 'function') {
-          initManualFormNumber();
-        }
-      }
-      // Also hydrate dashboard in background so switching tabs is instant
-      hydrateDashboardAndAnalytics();
-    } else {
-      // sub-dashboard, sub-analytics, or anything else
-      hydrateDashboardAndAnalytics();
+    }
+    // Dashboard data is always fetched in background (populates student cache so
+    // switching to Dashboard/Analytics/Manual-student-list is instant)
+    hydrateDashboardAndAnalytics();
+
+    // ── 2. Pre-generate form number in background ──────────────────
+    // Always run, regardless of saved tab, so the field is ready the moment
+    // the user navigates to Manual Entry — no wait, no blank field.
+    if (manualForm && typeof initManualFormNumber === 'function') {
+      const fi = manualForm.querySelector('input[name="form_no"]');
+      if (fi && !fi.value) initManualFormNumber();
     }
   };
 
