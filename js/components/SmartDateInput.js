@@ -73,8 +73,9 @@ class SmartDateInput {
       </svg>
     `;
 
-    // Save parent BEFORE moving input into calBtn
+    // ── Capture position reference BEFORE any DOM changes ──────────────
     const parent = this.input.parentNode;
+    const nextSibling = this.input.nextSibling; // anchor for correct insertion
 
     // Position native date input INSIDE calBtn so showPicker() works
     // (it must be rendered/visible; overlapping the button keeps it accessible)
@@ -84,13 +85,13 @@ class SmartDateInput {
       width:100%; height:100%; border:none; padding:0; margin:0;
       font-size:1px;
     `;
-    this.calBtn.appendChild(this.input);
+    this.calBtn.appendChild(this.input); // moves input out of parent into calBtn
 
     this.wrapper.appendChild(this.textInput);
     this.wrapper.appendChild(this.calBtn);
 
-    // Insert wrapper where the input originally was
-    parent.insertBefore(this.wrapper, null);
+    // Insert wrapper exactly where the input was (nextSibling=null → append at end)
+    parent.insertBefore(this.wrapper, nextSibling);
 
     // Sync display if there's already a value
     if (this.input.value) this.textInput.value = this._isoToDisplay(this.input.value);

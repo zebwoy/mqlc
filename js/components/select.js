@@ -42,6 +42,9 @@
       this.nativeSelect.parentNode.insertBefore(this.wrapper, this.nativeSelect);
       this.wrapper.appendChild(this.nativeSelect);
 
+      // Attach instance to wrapper for external access (e.g. form reset syncing)
+      this.wrapper._csInstance = this;
+
       // Transfer layout styles from native select to wrapper
       const stylesToTransfer = ['flex', 'width', 'minWidth', 'maxWidth', 'margin', 'marginLeft', 'marginRight', 'marginTop', 'marginBottom'];
       stylesToTransfer.forEach(styleName => {

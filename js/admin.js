@@ -535,7 +535,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window._regAadhar) window._regAadhar.reset();
         if (window._regDoj) window._regDoj.setValue(new Date().toISOString().split('T')[0]);
         if (window._regDob) window._regDob.reset();
-        (window._regSelects || []).forEach(cs => cs.syncOptions());
+        // Sync all CustomSelect wrappers inside the form back to their reset values
+        manualForm.querySelectorAll('.custom-select-wrapper').forEach(w => {
+          if (w._csInstance) w._csInstance.syncOptions();
+        });
 
         manualStatusMsg.textContent = `✅ Student registered and ₹${feeVal.toLocaleString('en-IN')} admission fee recorded for ${feeMonthLabel ? feeMonthLabel(computeAdmissionFeeMonth(dojVal)) : computeAdmissionFeeMonth(dojVal)}.`;
         manualStatusMsg.className = 'status-msg success';
@@ -562,8 +565,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ─── Initialise reusable components in the manual entry form ────────
-    const _regSelects = [];
-    window._regSelects = _regSelects;
 
     function initManualEntryComponents() {
       // RadioGroup for Gender
@@ -602,16 +603,9 @@ document.addEventListener('DOMContentLoaded', () => {
         window._regDob = new SmartDateInput(dobEl);
       }
 
-      // CustomSelect for all form dropdowns
-      if (typeof CustomSelect !== 'undefined') {
-        ['[name="is_prepaid"]', '[name="batch"]', '[name="course_applying"]'].forEach(sel => {
-          const el = manualForm.querySelector(sel);
-          if (el && !el.dataset.csInit) {
-            el.dataset.csInit = '1';
-            _regSelects.push(new CustomSelect(el));
-          }
-        });
-      }
+      // CustomSelect for form dropdowns is handled globally at startup
+      // (document.querySelectorAll('select') wraps all selects at line ~30).
+      // Re-wrapping here would create a double-dropdown. Skip.
     }
 
     // Init once on first load
