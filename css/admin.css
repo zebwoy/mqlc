@@ -848,6 +848,21 @@ body:has(dialog.admin-modal[open])>*:not(dialog) {
   min-height: 0;
 }
 
+/* ─── SmartDateInput (sdi-wrapper) ─── */
+/* When CustomDatePicker is used inside SmartDateInput its dropdown */
+/* must float above other form fields, not push them down.          */
+.sdi-wrapper {
+  position: relative;
+}
+.sdi-wrapper .datepicker-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 500;
+  margin-top: 4px;
+}
+
 /* ─── Inline Date Picker ─── */
 .inline-datepicker {
   position: relative;

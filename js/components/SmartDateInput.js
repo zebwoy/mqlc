@@ -1,45 +1,57 @@
 /**
- * SmartDateInput — Dual-mode date input (text typing + calendar picker)
- * ───────────────────────────────────────────────────────────────────────
+ * SmartDateInput — Text input + CustomDatePicker calendar button
+ * ─────────────────────────────────────────────────────────────────
  * Wraps an existing <input type="date" name="..."> with:
- *   • A styled text input for fast typing (supports multiple formats)
- *   • A calendar icon button that opens the native date picker
+ *   • A styled text input for fast typing (multiple formats supported)
+ *   • A calendar icon button that opens a CustomDatePicker dropdown
+ *
+ * Requires: js/components/datepicker.js (CustomDatePicker) loaded first.
  *
  * Supported text input formats:
- *   "15 Jul 2026", "15 July 2026"  → parsed via Date constructor
- *   "15/07/2026",  "15-07-2026"    → DD/MM/YYYY or DD-MM-YYYY
- *   "2026-07-15"                   → ISO YYYY-MM-DD
+ *   "27062025"          → DDMMYYYY compact   → 27 Jun 2025
+ *   "15 Jul 2026"       → natural            → 15 Jul 2026
+ *   "15/07/2026"        → DD/MM/YYYY         → 15 Jul 2026
+ *   "15-07-2026"        → DD-MM-YYYY         → 15 Jul 2026
+ *   "2026-07-15"        → ISO YYYY-MM-DD     → 15 Jul 2026
  *
- * The underlying <input type="date"> is kept in the DOM (tiny, overlapping
- * the calendar button) so form.reset() and FormData work without changes.
+ * The underlying <input type="date"> is kept in the DOM with display:none
+ * so FormData / form.reset() still work without changes.
  *
  * Usage:
- *   const sdi = new SmartDateInput(document.getElementById('my-date-input'), {
- *     placeholder: 'DD MMM YYYY',
- *     onChange: (isoString) => {}
- *   });
- *
- *   sdi.getValue()          → "2026-07-15" (ISO)
- *   sdi.setValue("2026-07-15") → sets both text and hidden input
- *   sdi.reset()             → clears everything
+ *   const sdi = new SmartDateInput(document.getElementById('my-date-input'));
+ *   sdi.getValue()           → "2026-07-15" (ISO)
+ *   sdi.setValue("2026-07-15") → sets text display + hidden input
+ *   sdi.reset()              → clears both
  */
 class SmartDateInput {
-  constructor(inputEl, { placeholder = 'DD MMM YYYY  or  DD/MM/YYYY', onChange } = {}) {
-    this.input = typeof inputEl === 'string' ? document.querySelector(inputEl) : inputEl;
+  constructor(inputEl, { placeholder = 'DD MMM YYYY  or  27062025', onChange } = {}) {
+    this.input       = typeof inputEl === 'string' ? document.querySelector(inputEl) : inputEl;
     this.placeholder = placeholder;
-    this.onChange = onChange || null;
+    this.onChange    = onChange || null;
+    this._cdp        = null;
     if (!this.input) return;
     this._init();
   }
 
   _init() {
-    // Wrapper
+    const parent      = this.input.parentNode;
+
+    // ── 1. Hide native input (kept for FormData serialization) ──
+    this.input.style.display = 'none';
+    this.input.removeAttribute('required');
+    // Ensure the hidden input has an ID for CustomDatePicker to target
+    if (!this.input.id) {
+      this.input.id = 'sdi-native-' + Math.random().toString(36).substr(2, 8);
+    }
+
+    // ── 2. Build: [text input] [calendar button ▾] ─────────────
     this.wrapper = document.createElement('div');
+    this.wrapper.className = 'sdi-wrapper';
     this.wrapper.style.cssText = 'display:flex;align-items:stretch;gap:0.35rem;position:relative;';
 
     // Styled text input
     this.textInput = document.createElement('input');
-    this.textInput.type = 'text';
+    this.textInput.type        = 'text';
     this.textInput.placeholder = this.placeholder;
     this.textInput.autocomplete = 'off';
     this.textInput.style.cssText = `
@@ -50,18 +62,17 @@ class SmartDateInput {
       color:var(--admin-text,#1a202c); background:#fff;
     `;
 
-    // Calendar icon button
+    // Calendar icon button (opens CustomDatePicker dropdown)
     this.calBtn = document.createElement('button');
-    this.calBtn.type = 'button';
+    this.calBtn.type  = 'button';
     this.calBtn.title = 'Pick from calendar';
     this.calBtn.style.cssText = `
-      position:relative; padding:0 0.7rem;
+      padding:0 0.7rem;
       border:1.5px solid var(--admin-border,#e2e8f0);
       border-radius:8px; background:#fff; cursor:pointer;
       display:flex; align-items:center; justify-content:center;
       color:var(--admin-muted,#718096); flex-shrink:0;
       transition:border-color 0.15s, color 0.15s;
-      overflow:hidden;
     `;
     this.calBtn.innerHTML = `
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -73,70 +84,75 @@ class SmartDateInput {
       </svg>
     `;
 
-    // ── Capture position reference BEFORE any DOM changes ──────────────
-    const parent = this.input.parentNode;
-    const nextSibling = this.input.nextSibling; // anchor for correct insertion
-
-    // Position native date input INSIDE calBtn so showPicker() works
-    // (it must be rendered/visible; overlapping the button keeps it accessible)
-    this.input.removeAttribute('required'); // avoid confusing native validation on hidden el
-    this.input.style.cssText = `
-      position:absolute; inset:0; opacity:0; cursor:pointer;
-      width:100%; height:100%; border:none; padding:0; margin:0;
-      font-size:1px;
+    // ── 3. Host div for CustomDatePicker dropdown ───────────────
+    // Absolutely positioned so the dropdown floats above other fields.
+    this.dpHost = document.createElement('div');
+    this.dpHost.id = 'sdi-dp-' + Math.random().toString(36).substr(2, 8);
+    this.dpHost.style.cssText = `
+      position:absolute; top:100%; left:0; right:0; z-index:500;
+      margin-top:4px;
     `;
-    this.calBtn.appendChild(this.input); // moves input out of parent into calBtn
 
     this.wrapper.appendChild(this.textInput);
     this.wrapper.appendChild(this.calBtn);
+    this.wrapper.appendChild(this.dpHost);
 
-    // Insert wrapper exactly where the input was (nextSibling=null → append at end)
-    parent.insertBefore(this.wrapper, nextSibling);
+    // ── 4. Insert wrapper before the hidden native input ────────
+    parent.insertBefore(this.wrapper, this.input);
 
-    // Sync display if there's already a value
-    if (this.input.value) this.textInput.value = this._isoToDisplay(this.input.value);
+    // ── 5. Initialise CustomDatePicker (trigger hidden) ─────────
+    if (typeof CustomDatePicker !== 'undefined') {
+      this._cdp = new CustomDatePicker({
+        container:    this.dpHost,
+        input:        this.input,
+        showTrigger:  false,
+        initialDate:  null,          // no pre-selection (setValue() called externally)
+        onSelect:     (date) => {
+          this.textInput.value = this._isoToDisplay(this._toISO(date));
+          if (this.onChange) this.onChange(this._toISO(date));
+        },
+      });
+      // Sync display if native input already has a value (e.g. setValue called before _init)
+      if (this.input.value) {
+        this.textInput.value = this._isoToDisplay(this.input.value);
+        this._cdp.setDate(this.input.value);
+      }
+    }
 
     this._bindEvents();
   }
 
   _bindEvents() {
-    // Calendar button → open native picker
+    // Calendar button → toggle dropdown
     this.calBtn.addEventListener('click', (e) => {
-      // Don't re-trigger if user clicked the native input directly
-      if (e.target === this.input) return;
-      try { this.input.showPicker(); } catch (_) {}
-    });
-
-    // Native date input change → update text display
-    this.input.addEventListener('change', () => {
-      this.textInput.value = this._isoToDisplay(this.input.value);
-      if (this.onChange) this.onChange(this.input.value);
+      e.stopPropagation();
+      if (this._cdp) this._cdp.toggle();
     });
 
     // Text input: parse on blur and Enter
-    this.textInput.addEventListener('blur', () => this._parseAndApply());
+    this.textInput.addEventListener('blur',    () => this._parseAndApply());
     this.textInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); this._parseAndApply(); }
     });
 
-    // Focus styles — text input
+    // Focus / blur styling
     this.textInput.addEventListener('focus', () => {
       this.textInput.style.borderColor = 'var(--admin-accent,#2D6A4F)';
-      this.textInput.style.boxShadow = '0 0 0 2px rgba(45,106,79,0.12)';
+      this.textInput.style.boxShadow   = '0 0 0 2px rgba(45,106,79,0.12)';
     });
     this.textInput.addEventListener('blur', () => {
       this.textInput.style.borderColor = 'var(--admin-border,#e2e8f0)';
-      this.textInput.style.boxShadow = 'none';
+      this.textInput.style.boxShadow   = 'none';
     });
 
-    // Hover styles — calendar button
+    // Hover styling — calendar button
     this.calBtn.addEventListener('mouseenter', () => {
       this.calBtn.style.borderColor = 'var(--admin-accent,#2D6A4F)';
-      this.calBtn.style.color = 'var(--admin-accent,#2D6A4F)';
+      this.calBtn.style.color       = 'var(--admin-accent,#2D6A4F)';
     });
     this.calBtn.addEventListener('mouseleave', () => {
       this.calBtn.style.borderColor = 'var(--admin-border,#e2e8f0)';
-      this.calBtn.style.color = 'var(--admin-muted,#718096)';
+      this.calBtn.style.color       = 'var(--admin-muted,#718096)';
     });
   }
 
@@ -144,36 +160,51 @@ class SmartDateInput {
     const raw = this.textInput.value.trim();
     if (!raw) { this.input.value = ''; return; }
 
-    let parsed = null;
-
-    // ISO: 2026-07-15
-    if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(raw)) {
-      parsed = new Date(raw + 'T12:00:00');
-    }
-    // DD/MM/YYYY or DD-MM-YYYY
-    else if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(raw)) {
-      const [d, m, y] = raw.split(/[\/\-]/).map(Number);
-      parsed = new Date(y, m - 1, d, 12, 0, 0);
-    }
-    // Natural: "15 Jul 2026", "15 July 2026", "July 15, 2026"
-    else {
-      parsed = new Date(raw);
-    }
+    const parsed = this._parseInput(raw);
 
     if (parsed && !isNaN(parsed.getTime())) {
       const iso = this._toISO(parsed);
-      this.input.value = iso;
-      this.textInput.value = this._isoToDisplay(iso);
+      this.input.value      = iso;
+      this.textInput.value  = this._isoToDisplay(iso);
+      if (this._cdp) this._cdp.setDate(iso);
       if (this.onChange) this.onChange(iso);
     } else {
-      // Shake + red border on bad input
+      // Shake + red border to signal bad input
       this.textInput.style.borderColor = '#dc2626';
-      this.textInput.style.boxShadow = '0 0 0 2px rgba(220,38,38,0.15)';
+      this.textInput.style.boxShadow   = '0 0 0 2px rgba(220,38,38,0.15)';
       setTimeout(() => {
         this.textInput.style.borderColor = 'var(--admin-border,#e2e8f0)';
-        this.textInput.style.boxShadow = 'none';
+        this.textInput.style.boxShadow   = 'none';
       }, 1600);
     }
+  }
+
+  _parseInput(s) {
+    // DDMMYYYY compact: "27062025"
+    if (/^\d{8}$/.test(s)) {
+      const d = parseInt(s.substr(0, 2), 10);
+      const m = parseInt(s.substr(2, 2), 10);
+      const y = parseInt(s.substr(4, 4), 10);
+      const date = new Date(y, m - 1, d, 12, 0, 0);
+      if (d >= 1 && d <= 31 && m >= 1 && m <= 12 && y >= 1900) return date;
+    }
+
+    // ISO: 2026-07-15
+    if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(s)) {
+      return new Date(s + 'T12:00:00');
+    }
+
+    // DD/MM/YYYY or DD-MM-YYYY
+    if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(s)) {
+      const [d, m, y] = s.split(/[\/\-]/).map(Number);
+      return new Date(y, m - 1, d, 12, 0, 0);
+    }
+
+    // Natural: "15 Jul 2026", "15 July 2026", "July 15, 2026"
+    const natural = new Date(s);
+    if (!isNaN(natural.getTime())) return natural;
+
+    return null;
   }
 
   _toISO(date) {
@@ -193,16 +224,19 @@ class SmartDateInput {
     });
   }
 
+  // ── Public API ────────────────────────────────────────────────
   getValue() { return this.input?.value || ''; }
 
   setValue(iso) {
     if (!this.input) return;
-    this.input.value = iso || '';
-    this.textInput.value = this._isoToDisplay(iso);
+    this.input.value     = iso || '';
+    if (this.textInput) this.textInput.value = this._isoToDisplay(iso);
+    if (this._cdp && iso) this._cdp.setDate(iso);
   }
 
   reset() {
-    if (this.input) this.input.value = '';
+    if (this.input)     this.input.value = '';
     if (this.textInput) this.textInput.value = '';
+    if (this._cdp)      this._cdp.clear();
   }
 }
