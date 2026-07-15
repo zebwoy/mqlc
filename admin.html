@@ -544,12 +544,13 @@
                   <option value="Qur'an Memorization (Hifz)">Qur'an Memorization (Hifz)</option>
                   <option value="unassigned">Unassigned</option>
                 </select>
-                <!-- Fee Mode: TogglePill — cycles All → Prepaid → Postpaid on click -->
-                <button id="ds-filter-mode-pill" data-value="all"
-                  title="Filter by fee mode"></button>
-
                 <button class="btn-secondary" id="btn-ds-refresh"
-                  style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-radius: 50px;">Reset</button>
+                  style="padding: 0.4rem 0.5rem; border-radius: 50px; display: flex; align-items: center; justify-content: center;" title="Reset filters">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                  </svg>
+                </button>
                 <div style="height: 20px; width: 1px; background: var(--admin-border); margin: 0 0.5rem;"></div>
 
                 <div class="export-container" style="position: relative; display: inline-block;">
@@ -657,6 +658,12 @@
                   <option value="partial">Partial</option>
                   <option value="unpaid">Unpaid</option>
                   <option value="exempt">Exempt</option>
+                </select>
+                <select id="fee-filter-mode"
+                  style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; background: #fff; cursor: pointer;">
+                  <option value="all">All Modes</option>
+                  <option value="prepaid">🔵 Prepaid</option>
+                  <option value="postpaid">Postpaid</option>
                 </select>
                 <div style="height: 20px; width: 1px; background: var(--admin-border); margin: 0 0.25rem;"></div>
                 <input type="file" id="fee-import-file" accept=".xlsx, .xls, .csv" style="display: none;">

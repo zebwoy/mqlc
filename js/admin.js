@@ -632,7 +632,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusFilter = document.getElementById('ds-filter-status')?.value || 'all';
     const batchFilter = document.getElementById('ds-filter-batch')?.value || 'all';
     const courseFilter = document.getElementById('ds-filter-course')?.value || 'all';
-    const modeFilter = document.getElementById('ds-filter-mode-pill')?.dataset.value || 'all';
+
 
     let filtered = [...(cachedStudents || [])].sort((a, b) => new Date(b.created_at || b.doj) - new Date(a.created_at || a.doj));
 
@@ -662,13 +662,6 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         filtered = filtered.filter(s => s.course_applying === courseFilter);
       }
-    }
-
-    // Handle Fee Mode Filter (toggle)
-    if (modeFilter === 'prepaid') {
-      filtered = filtered.filter(s => s.is_prepaid === true);
-    } else if (modeFilter === 'postpaid') {
-      filtered = filtered.filter(s => !s.is_prepaid);
     }
 
     // Handle Text Filter
@@ -1444,9 +1437,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (batchSelect) batchSelect.value = 'all';
       if (courseSelect) courseSelect.value = 'all';
 
-      // Reset fee mode pill
-      if (window._feeModeToggle) window._feeModeToggle.reset();
-
       // Re-trigger matrix rendering with default filters
       renderStudentMatrix();
     });
@@ -1462,15 +1452,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (batchDropdown) batchDropdown.addEventListener('change', renderStudentMatrix);
   if (courseDropdown) courseDropdown.addEventListener('change', renderStudentMatrix);
 
-  // Fee mode TogglePill — cycles All → Prepaid → Postpaid
-  const feeModeBtn = document.getElementById('ds-filter-mode-pill');
-  if (feeModeBtn && typeof TogglePill !== 'undefined') {
-    window._feeModeToggle = new TogglePill(feeModeBtn, [
-      { value: 'all',      label: 'All Modes', bg: '#f3f4f6',  color: '#6b7280'  },
-      { value: 'prepaid',  label: '🔵 Prepaid', bg: '#dbeafe',  color: '#1d4ed8', borderColor: '#bfdbfe' },
-      { value: 'postpaid', label: 'Postpaid',   bg: '#f3f4f6',  color: '#374151'  },
-    ], renderStudentMatrix);
-  }
 
   // ─── Export Logic ────────
   function exportToExcel() {
@@ -1899,13 +1880,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Filters
-  const feeBatchFilter = document.getElementById('fee-filter-batch');
-  const feeNameFilter = document.getElementById('fee-filter-name');
+  const feeBatchFilter  = document.getElementById('fee-filter-batch');
+  const feeNameFilter   = document.getElementById('fee-filter-name');
   const feeStatusFilter = document.getElementById('fee-filter-status');
+  const feeModeFilter   = document.getElementById('fee-filter-mode');
 
-  if (feeBatchFilter) feeBatchFilter.addEventListener('change', renderFeeMatrix);
-  if (feeNameFilter) feeNameFilter.addEventListener('input', debounce(renderFeeMatrix, 200));
+  if (feeBatchFilter)  feeBatchFilter.addEventListener('change', renderFeeMatrix);
+  if (feeNameFilter)   feeNameFilter.addEventListener('input', debounce(renderFeeMatrix, 200));
   if (feeStatusFilter) feeStatusFilter.addEventListener('change', renderFeeMatrix);
+  if (feeModeFilter)   feeModeFilter.addEventListener('change', renderFeeMatrix);
 
   // Hook to pill click
   const feePill = document.querySelector('[data-sub="sub-fees"]');
@@ -2212,15 +2195,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const countEl = document.getElementById('fee-filter-count');
     if (!feed) return;
 
-    const batchFilter = feeBatchFilter ? feeBatchFilter.value : 'all';
+    const batchFilter  = feeBatchFilter  ? feeBatchFilter.value  : 'all';
     const statusFilter = feeStatusFilter ? feeStatusFilter.value : 'all';
-    const nameFilter = feeNameFilter ? feeNameFilter.value.toLowerCase().trim() : '';
+    const nameFilter   = feeNameFilter   ? feeNameFilter.value.toLowerCase().trim() : '';
+    const modeFilter   = document.getElementById('fee-filter-mode')?.value || 'all';
 
     let students = cachedStudents.filter(s => s.status === 'approved' && isEnrolledForMonth(s.doj, feeCurrentMonth));
 
-    // Apply Filters (Name, Batch, Status)
+    // Apply Filters (Name, Batch, Status, Fee Mode)
     students = students.filter(s => {
       if (nameFilter && !(s.student_name || '').toLowerCase().includes(nameFilter)) return false;
+      if (modeFilter === 'prepaid'  && !s.is_prepaid)  return false;
+      if (modeFilter === 'postpaid' &&  s.is_prepaid)  return false;
       if (batchFilter !== 'all') {
         if (batchFilter === 'unassigned') {
           if (s.batch && s.batch !== '' && s.batch !== 'null' && s.batch !== 'undefined') return false;

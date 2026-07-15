@@ -34,6 +34,7 @@ class TogglePill {
     // Base button styles (applied once — states only change colour/text)
     this.el.style.cssText += `
       padding: 0.4rem 0.85rem;
+      background: #fff;
       border-radius: 50px;
       border: 1px solid var(--admin-border, #e2e8f0);
       font-size: 0.82rem;
@@ -58,11 +59,11 @@ class TogglePill {
   /** Apply current state visuals to the button */
   _render(fireCallback) {
     const s = this.states[this.index];
-    this.el.textContent  = s.label;
-    this.el.style.background   = s.bg    || '#f3f4f6';
-    this.el.style.color        = s.color || 'var(--admin-text, #1a202c)';
-    this.el.style.borderColor  = s.borderColor || s.bg || 'var(--admin-border, #e2e8f0)';
-    this.el.dataset.value      = s.value;
+    this.el.textContent = s.label;
+    this.el.style.background = s.bg || '#fff';
+    this.el.style.color = s.color || 'var(--admin-text, #1a202c)';
+    this.el.style.borderColor = s.borderColor || s.bg || 'var(--admin-border, #e2e8f0)';
+    this.el.dataset.value = s.value;
 
     if (fireCallback && this.onChange) {
       this.onChange(s.value, s);
