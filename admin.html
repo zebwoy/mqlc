@@ -544,13 +544,9 @@
                   <option value="Qur'an Memorization (Hifz)">Qur'an Memorization (Hifz)</option>
                   <option value="unassigned">Unassigned</option>
                 </select>
-                <!-- Fee Mode Filter -->
-                <select id="ds-filter-mode"
-                  style="padding: 0.4rem 0.8rem; border: 1px solid var(--admin-border); border-radius: 50px; outline: none; font-size: 0.85rem; background: #fff; cursor: pointer;">
-                  <option value="all">All Modes</option>
-                  <option value="prepaid">🔵 Prepaid</option>
-                  <option value="postpaid">Postpaid</option>
-                </select>
+                <!-- Fee Mode: TogglePill — cycles All → Prepaid → Postpaid on click -->
+                <button id="ds-filter-mode-pill" data-value="all"
+                  title="Filter by fee mode"></button>
 
                 <button class="btn-secondary" id="btn-ds-refresh"
                   style="padding: 0.4rem 0.8rem; font-size: 0.85rem; border-radius: 50px;">Reset</button>
@@ -1165,6 +1161,7 @@
   <script src="js/components/datepicker.js"></script>
   <script src="js/components/select.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/components/TogglePill.js"></script>
   <script src="js/admin.js"></script>
 
   <!-- Bulk Print Select Modal -->

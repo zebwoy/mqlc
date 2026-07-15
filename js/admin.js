@@ -632,7 +632,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusFilter = document.getElementById('ds-filter-status')?.value || 'all';
     const batchFilter = document.getElementById('ds-filter-batch')?.value || 'all';
     const courseFilter = document.getElementById('ds-filter-course')?.value || 'all';
-    const modeFilter = document.getElementById('ds-filter-mode')?.value || 'all';
+    const modeFilter = document.getElementById('ds-filter-mode-pill')?.dataset.value || 'all';
 
     let filtered = [...(cachedStudents || [])].sort((a, b) => new Date(b.created_at || b.doj) - new Date(a.created_at || a.doj));
 
@@ -1444,9 +1444,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (batchSelect) batchSelect.value = 'all';
       if (courseSelect) courseSelect.value = 'all';
 
-      // Reset fee mode filter
-      const modeSelect = document.getElementById('ds-filter-mode');
-      if (modeSelect) modeSelect.value = 'all';
+      // Reset fee mode pill
+      if (window._feeModeToggle) window._feeModeToggle.reset();
 
       // Re-trigger matrix rendering with default filters
       renderStudentMatrix();
@@ -1463,9 +1462,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (batchDropdown) batchDropdown.addEventListener('change', renderStudentMatrix);
   if (courseDropdown) courseDropdown.addEventListener('change', renderStudentMatrix);
 
-  // Fee mode filter
-  const modeDropdown = document.getElementById('ds-filter-mode');
-  if (modeDropdown) modeDropdown.addEventListener('change', renderStudentMatrix);
+  // Fee mode TogglePill — cycles All → Prepaid → Postpaid
+  const feeModeBtn = document.getElementById('ds-filter-mode-pill');
+  if (feeModeBtn && typeof TogglePill !== 'undefined') {
+    window._feeModeToggle = new TogglePill(feeModeBtn, [
+      { value: 'all',      label: 'All Modes', bg: '#f3f4f6',  color: '#6b7280'  },
+      { value: 'prepaid',  label: '🔵 Prepaid', bg: '#dbeafe',  color: '#1d4ed8', borderColor: '#bfdbfe' },
+      { value: 'postpaid', label: 'Postpaid',   bg: '#f3f4f6',  color: '#374151'  },
+    ], renderStudentMatrix);
+  }
 
   // ─── Export Logic ────────
   function exportToExcel() {
