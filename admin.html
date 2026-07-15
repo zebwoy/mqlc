@@ -390,6 +390,13 @@
                       <option value="Qur'an Memorization (Hifz)">Qur'an Memorization (Hifz)</option>
                     </select>
                   </div>
+                  <div class="input-group">
+                    <label>Fee Collection Mode</label>
+                    <select name="is_prepaid">
+                      <option value="false" selected>Postpaid (Pay after month)</option>
+                      <option value="true">Prepaid (Pay in advance)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -1187,6 +1194,13 @@
           <label class="modal-label" style="color: var(--admin-accent);">Monthly Fee Assignment</label>
           <input type="number" id="input-assign-fee" placeholder="e.g. 500" class="modal-input lg">
         </div>
+        <div class="modal-field" style="margin-top: 0.75rem;">
+          <label class="modal-label" style="color: var(--admin-accent);">Fee Collection Mode</label>
+          <select id="input-assign-is-prepaid" class="modal-select">
+            <option value="false">Postpaid (default — pay after month)</option>
+            <option value="true">Prepaid (pay in advance)</option>
+          </select>
+        </div>
       </div>
 
       <!-- Rejection Prompt -->
@@ -1259,6 +1273,14 @@
             <option value="left">Left / Inactive</option>
             <option value="pending">Pending Review</option>
             <option value="rejected">Rejected</option>
+          </select>
+        </div>
+
+        <div class="modal-field">
+          <label class="modal-label">Fee Collection Mode</label>
+          <select id="edit-is-prepaid" class="modal-select">
+            <option value="false">Postpaid — Pay after month begins</option>
+            <option value="true">Prepaid — Pay in advance (25th of prior month)</option>
           </select>
         </div>
 
@@ -1359,6 +1381,9 @@
               id="pay-remaining">₹0</strong></span>
         </div>
       </div>
+
+      <!-- Prepaid context note (shown only for advance payments) -->
+      <p id="pay-context-note" style="display:none; font-size:0.8rem; background:#dbeafe; color:#1d4ed8; padding:0.4rem 0.75rem; border-radius:6px; margin-bottom:0.75rem; font-weight:500;"></p>
 
       <form id="form-record-payment">
         <input type="hidden" id="pay-student-id">

@@ -411,11 +411,12 @@ document.addEventListener('DOMContentLoaded', () => {
           feedback.classList.add('error');
           return;
         }
+        const isPrepaidOnApprove = document.getElementById('input-assign-is-prepaid')?.value === 'true';
 
         try {
           const { error } = await window._supabase
             .from('student_registrations')
-            .update({ status: 'approved', monthly_fee: fee })
+            .update({ status: 'approved', monthly_fee: fee, is_prepaid: isPrepaidOnApprove })
             .eq('id', id);
           if (error) throw error;
 
@@ -517,6 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
           school_time: 'N/A',
           batch: fd.get('batch') || null,
           monthly_fee: feeVal,
+          is_prepaid: fd.get('is_prepaid') === 'true',
           status: 'approved' // explicitly bypass queue and auto-approve manual entries
         };
 
@@ -780,6 +782,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('edit-student-father').value = student.father_name;
     document.getElementById('edit-student-batch').value = student.batch || 'Zuhr';
     document.getElementById('edit-student-course').value = student.course_applying || 'Noorani Qaida';
+
+    // Fee mode
+    const feeModeSel = document.getElementById('edit-is-prepaid');
+    if (feeModeSel) feeModeSel.value = student.is_prepaid ? 'true' : 'false';
     
     const statusVal = student.status || 'approved';
     document.getElementById('edit-student-status').value = statusVal;
@@ -852,7 +858,8 @@ document.addEventListener('DOMContentLoaded', () => {
         father_name: document.getElementById('edit-student-father').value,
         batch: document.getElementById('edit-student-batch').value,
         course_applying: document.getElementById('edit-student-course').value,
-        status: statusVal
+        status: statusVal,
+        is_prepaid: document.getElementById('edit-is-prepaid')?.value === 'true'
       };
 
       if (statusVal === 'left') {
@@ -1740,6 +1747,19 @@ document.addEventListener('DOMContentLoaded', () => {
     return cachedFeeExemptions.find(e => e.student_id === studentId && e.month === month) || null;
   }
 
+  // ─── Prepaid Helpers ─────────────────────────────────────────────
+  // Returns true if the student is on the prepaid fee collection plan
+  function isStudentPrepaid(student) {
+    return student.is_prepaid === true;
+  }
+
+  // Returns the next month string (YYYY-MM) from a given YYYY-MM
+  function getNextMonth(ym) {
+    const [y, m] = ym.split('-').map(Number);
+    const d = new Date(y, m, 15); // m is 1-based, so new Date(y, m, 15) = next month
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+
   // Slab-based pro-rata expected fee for a student in a given month
   // Handles: enrollment check, exemption check, joining-month carry-forward
   // Slabs: DOJ day 1-10 → full fee that month
@@ -2251,6 +2271,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const arrears = calcArrears(s, feeCurrentMonth);
         const totalOutstanding = remaining + arrears;
 
+        // ── Prepaid: check if next month advance is already covered ──
+        const prepaid = isStudentPrepaid(s);
+        const nextFeeMonth = getNextMonth(feeCurrentMonth);
+        let showAdvance = false;
+        let nextMonthExpFee = 0;
+        if (prepaid && !exempt) {
+          nextMonthExpFee = getExpectedFee(s, nextFeeMonth);
+          const nextMonthPaid = cachedFeePayments
+            .filter(p => p.student_id === s.id && p.month === nextFeeMonth)
+            .reduce((sum, p) => sum + (p.amount || 0), 0);
+          if (nextMonthExpFee > 0 && nextMonthPaid < nextMonthExpFee) showAdvance = true;
+        }
+
         let statusBadge, statusClass;
         if (exempt) { statusBadge = '⏸ Exempt'; statusClass = 'pending'; }
         else if (rawFee === 0) { statusBadge = 'No Fee Set'; statusClass = 'pending'; }
@@ -2269,6 +2302,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (s.father_name && s.father_name.trim() !== '' && s.father_name !== 'N/A') {
           parentSubtext = ` <span style="font-size: 0.8rem; font-weight: 500; color: var(--admin-muted);">(${escapeHTML(relation)} of ${escapeHTML(s.father_name)})</span>`;
         }
+
+        // Prepaid badge (blue pill next to name)
+        const prepaidBadge = prepaid
+          ? `<span style="font-size:0.68rem;background:#dbeafe;color:#1d4ed8;padding:1px 7px;border-radius:4px;font-weight:600;margin-left:5px;vertical-align:middle;">🔵 Prepaid</span>`
+          : '';
 
         // Pro-rata indicator
         let proRataNote = '';
@@ -2295,6 +2333,12 @@ document.addEventListener('DOMContentLoaded', () => {
           arrearsLine = `<p style="font-size: 0.75rem; margin: 0; color: #b45309;">⚠ ₹${arrears.toLocaleString('en-IN')} overdue from past months · <strong style="color: #dc2626;">Total due: ₹${totalOutstanding.toLocaleString('en-IN')}</strong></p>`;
         }
 
+        // Prepaid advance subtext — shown when next month is uncovered
+        let advanceLine = '';
+        if (showAdvance) {
+          advanceLine = `<p style="font-size: 0.75rem; margin: 0.15rem 0 0; color: #1d4ed8;">📅 ${feeMonthLabel(nextFeeMonth)} advance not yet collected</p>`;
+        }
+
         // Exempt toggle button — only show for unpaid students or to restore exemptions
         const exemptBtn = exempt
           ? `<button class="btn-fee-unexempt btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px; color: #7c3aed;" title="Remove exemption">▶ Restore</button>`
@@ -2302,17 +2346,24 @@ document.addEventListener('DOMContentLoaded', () => {
             ? `<button class="btn-fee-exempt btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="Exempt this month">⏸ Exempt</button>`
             : '';
 
+        // Advance button — only for prepaid students when next month uncovered
+        const advanceBtn = showAdvance
+          ? `<button class="btn-fee-advance btn-secondary" data-sid="${s.id}" data-name="${escapeHTML(s.student_name)}" data-fee="${nextMonthExpFee}" data-rawfee="${rawFee}" data-month="${nextFeeMonth}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px; background:#dbeafe; color:#1d4ed8; border:1px solid #bfdbfe;" title="Record advance for ${feeMonthLabel(nextFeeMonth)}">📅 Advance</button>`
+          : '';
+
         feed.innerHTML += `
         <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;${exempt ? ' opacity: 0.65;' : ''}">
           <div class="activity-detail" style="flex: 1; min-width: 180px;">
-            <h4 style="margin-bottom: 0.25rem;">${escapeHTML(s.student_name)}${parentSubtext}</h4>
+            <h4 style="margin-bottom: 0.25rem;">${escapeHTML(s.student_name)}${prepaidBadge}${parentSubtext}</h4>
             ${feeLine}
             ${arrearsLine}
+            ${advanceLine}
           </div>
           <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
             <span class="badge ${statusClass}" style="font-size: 0.75rem;">${statusBadge}</span>
             ${rawFee === 0 ? `<button class="btn-set-fee" data-sid="${s.id}" data-name="${s.student_name}">✎ Set Fee</button>` : ''}
             ${showRecord ? `<button class="btn-fee-record btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" data-fee="${expFee}" data-rawfee="${rawFee}" data-paid="${paid}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;">💰 Record</button>` : ''}
+            ${advanceBtn}
             ${showUndo ? `<button class="btn-fee-undo btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="Undo last payment">⟳</button>` : ''}
             ${exemptBtn}
             <button class="btn-fee-history btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="View history">📋</button>
@@ -2335,6 +2386,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     feed.querySelectorAll('.btn-fee-record').forEach(btn => {
       btn.addEventListener('click', () => openPaymentModal(btn.dataset.sid, btn.dataset.name, parseInt(btn.dataset.fee), parseInt(btn.dataset.paid), parseInt(btn.dataset.rawfee || btn.dataset.fee)));
+    });
+    // Advance button — prepaid students paying for next month
+    feed.querySelectorAll('.btn-fee-advance').forEach(btn => {
+      btn.addEventListener('click', () => openPaymentModal(btn.dataset.sid, btn.dataset.name, parseInt(btn.dataset.fee), 0, parseInt(btn.dataset.rawfee || btn.dataset.fee), btn.dataset.month));
     });
     feed.querySelectorAll('.btn-fee-undo').forEach(btn => {
       btn.addEventListener('click', () => undoLastPayment(btn.dataset.sid, btn.dataset.name));
@@ -2460,7 +2515,7 @@ document.addEventListener('DOMContentLoaded', () => {
     preview.style.display = 'block';
   }
 
-  function openPaymentModal(studentId, name, fee, paid, rawFee) {
+  function openPaymentModal(studentId, name, fee, paid, rawFee, overrideMonth) {
     rawFee = rawFee || fee;
     const remaining = Math.max(0, fee - paid);
     const sidEl = document.getElementById('pay-student-id');
@@ -2468,23 +2523,37 @@ document.addEventListener('DOMContentLoaded', () => {
     sidEl.dataset.fee = rawFee; // use raw monthly fee for split calculations
     sidEl.dataset.expfee = fee; // store expected fee for display
 
-    document.getElementById('pay-month').value = feeCurrentMonth;
+    // overrideMonth is set when recording a prepaid advance for the next month
+    const defaultMonth = overrideMonth || feeCurrentMonth;
+
+    document.getElementById('pay-month').value = defaultMonth;
     document.getElementById('pay-student-name').textContent = name;
-    document.getElementById('pay-month-label').textContent = feeMonthLabel(feeCurrentMonth);
+    document.getElementById('pay-month-label').textContent = feeMonthLabel(defaultMonth);
     document.getElementById('pay-expected').textContent = '₹' + fee.toLocaleString('en-IN');
     document.getElementById('pay-already').textContent = '₹' + paid.toLocaleString('en-IN');
     document.getElementById('pay-remaining').textContent = '₹' + remaining.toLocaleString('en-IN');
-    document.getElementById('pay-amount').value = remaining;
+    document.getElementById('pay-amount').value = remaining > 0 ? remaining : fee;
 
-    // Populate month selectors
-    const months = generateMonthOptions(feeCurrentMonth);
+    // Populate month selectors — centre the range around the default month
+    const months = generateMonthOptions(defaultMonth);
     const fromEl = document.getElementById('pay-month-from');
     const toEl = document.getElementById('pay-month-to');
     [fromEl, toEl].forEach(sel => {
       sel.innerHTML = months.map(m =>
-        `<option value="${m}" ${m === feeCurrentMonth ? 'selected' : ''}>${feeMonthLabel(m)}</option>`
+        `<option value="${m}" ${m === defaultMonth ? 'selected' : ''}>${feeMonthLabel(m)}</option>`
       ).join('');
     });
+
+    // Prepaid context note
+    const contextNote = document.getElementById('pay-context-note');
+    if (contextNote) {
+      if (overrideMonth) {
+        contextNote.textContent = `💡 Prepaid advance — recording payment for ${feeMonthLabel(overrideMonth)}`;
+        contextNote.style.display = 'block';
+      } else {
+        contextNote.style.display = 'none';
+      }
+    }
 
     // Set today's date using inline datepicker
     if (paymentDatePicker) {
@@ -2985,7 +3054,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
       const remaining = Math.max(0, expFee - paid);
       let status = exempt ? 'Exempt' : expFee === 0 ? 'No Fee' : paid >= expFee ? 'Paid' : paid > 0 ? 'Partial' : 'Unpaid';
-      return { Name: s.student_name, Batch: s.batch || '', Course: s.course_applying || '', 'Expected (₹)': expFee, 'Paid (₹)': paid, 'Remaining (₹)': remaining, Status: status };
+      return { Name: s.student_name, Batch: s.batch || '', Course: s.course_applying || '', 'Fee Mode': s.is_prepaid ? 'Prepaid' : 'Postpaid', 'Expected (₹)': expFee, 'Paid (₹)': paid, 'Remaining (₹)': remaining, Status: status };
     });
 
     // Smart Sort: Group by status priority, then alphabetical by name
@@ -4150,6 +4219,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   </div>
                   <div style="text-align: right;">
                     <span style="display: inline-block; background: rgba(45, 106, 79, 0.1); color: #2D6A4F; font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 50px; text-transform: uppercase;">Fee Receipt</span>
+                    ${s.is_prepaid ? `<span style="display: inline-block; background: #dbeafe; color: #1d4ed8; font-size: 0.6rem; font-weight: 700; padding: 2px 7px; border-radius: 50px; margin-left: 4px;">🔵 Prepaid</span>` : ''}
                     <p style="margin: 4px 0 0 0; font-size: 0.72rem; font-weight: 600; color: var(--admin-muted);">${receiptNo}</p>
                   </div>
                 </div>
