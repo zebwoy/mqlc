@@ -632,7 +632,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statusFilter = document.getElementById('ds-filter-status')?.value || 'all';
     const batchFilter = document.getElementById('ds-filter-batch')?.value || 'all';
     const courseFilter = document.getElementById('ds-filter-course')?.value || 'all';
-    const modeFilter = document.getElementById('ds-filter-mode')?.dataset.mode || 'all';
+    const modeFilter = document.getElementById('ds-filter-mode')?.value || 'all';
 
     let filtered = [...(cachedStudents || [])].sort((a, b) => new Date(b.created_at || b.doj) - new Date(a.created_at || a.doj));
 
@@ -1444,16 +1444,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (batchSelect) batchSelect.value = 'all';
       if (courseSelect) courseSelect.value = 'all';
 
-      // Reset fee mode toggle to All
-      const modeGroup = document.getElementById('ds-filter-mode');
-      if (modeGroup) {
-        modeGroup.dataset.mode = 'all';
-        modeGroup.querySelectorAll('.ds-mode-btn').forEach(b => {
-          const isAll = b.dataset.val === 'all';
-          b.style.background = isAll ? 'var(--admin-accent)' : 'none';
-          b.style.color = isAll ? '#fff' : (b.dataset.val === 'prepaid' ? '#1d4ed8' : 'var(--admin-muted)');
-        });
-      }
+      // Reset fee mode filter
+      const modeSelect = document.getElementById('ds-filter-mode');
+      if (modeSelect) modeSelect.value = 'all';
 
       // Re-trigger matrix rendering with default filters
       renderStudentMatrix();
@@ -1470,22 +1463,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (batchDropdown) batchDropdown.addEventListener('change', renderStudentMatrix);
   if (courseDropdown) courseDropdown.addEventListener('change', renderStudentMatrix);
 
-  // Fee mode toggle pill handler
-  const modeGroup = document.getElementById('ds-filter-mode');
-  if (modeGroup) {
-    modeGroup.querySelectorAll('.ds-mode-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const val = btn.dataset.val;
-        modeGroup.dataset.mode = val;
-        modeGroup.querySelectorAll('.ds-mode-btn').forEach(b => {
-          const active = b.dataset.val === val;
-          b.style.background = active ? 'var(--admin-accent)' : 'none';
-          b.style.color = active ? '#fff' : (b.dataset.val === 'prepaid' ? '#1d4ed8' : 'var(--admin-muted)');
-        });
-        renderStudentMatrix();
-      });
-    });
-  }
+  // Fee mode filter
+  const modeDropdown = document.getElementById('ds-filter-mode');
+  if (modeDropdown) modeDropdown.addEventListener('change', renderStudentMatrix);
 
   // ─── Export Logic ────────
   function exportToExcel() {
