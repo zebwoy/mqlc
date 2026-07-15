@@ -73,6 +73,9 @@ class SmartDateInput {
       </svg>
     `;
 
+    // Save parent BEFORE moving input into calBtn
+    const parent = this.input.parentNode;
+
     // Position native date input INSIDE calBtn so showPicker() works
     // (it must be rendered/visible; overlapping the button keeps it accessible)
     this.input.removeAttribute('required'); // avoid confusing native validation on hidden el
@@ -86,9 +89,8 @@ class SmartDateInput {
     this.wrapper.appendChild(this.textInput);
     this.wrapper.appendChild(this.calBtn);
 
-    // Insert wrapper where the input was
-    const parent = this.input.parentNode;
-    parent.insertBefore(this.wrapper, this.input);
+    // Insert wrapper where the input originally was
+    parent.insertBefore(this.wrapper, null);
 
     // Sync display if there's already a value
     if (this.input.value) this.textInput.value = this._isoToDisplay(this.input.value);
