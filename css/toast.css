@@ -25,7 +25,8 @@
   }
 }
 
-#toast-container {
+#toast-container,
+#toast-container[popover] {
   position: fixed;
   top: 1.5rem;
   right: 1.5rem;
@@ -36,6 +37,12 @@
   pointer-events: none;
   width: 360px;
   max-width: calc(100vw - 3rem);
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  inset: auto;
 }
 
 /* Slide direction for mobile */

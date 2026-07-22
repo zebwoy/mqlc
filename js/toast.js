@@ -3,13 +3,19 @@
 (function (window) {
   'use strict';
 
-  // Ensure container element exists
+  // Ensure container element exists and enters top layer via popover API if supported
   function getContainer() {
     let container = document.getElementById('toast-container');
     if (!container) {
       container = document.createElement('div');
       container.id = 'toast-container';
+      if (typeof container.showPopover === 'function') {
+        container.setAttribute('popover', 'manual');
+      }
       document.body.appendChild(container);
+    }
+    if (typeof container.showPopover === 'function') {
+      try { container.showPopover(); } catch (_) {}
     }
     return container;
   }

@@ -796,7 +796,7 @@ dialog.admin-modal::backdrop {
    Blurs the app layout instead of the top-layer ::backdrop 
    to prevent Chromium compositing bugs with native shadow-DOM popovers 
    like the <input type="date"> calendar widget. */
-body:has(dialog.admin-modal[open])>*:not(dialog) {
+body:has(dialog.admin-modal[open])>*:not(dialog):not(#toast-container) {
   filter: blur(4px);
   pointer-events: none;
   transition: filter 0.3s ease;
