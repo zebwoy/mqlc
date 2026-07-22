@@ -1581,7 +1581,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const batchSelect = document.getElementById('ds-filter-batch');
       const courseSelect = document.getElementById('ds-filter-course');
 
-      if (searchInput) searchInput.value = '';
+      if (searchInput && searchInput._smartSearch) searchInput._smartSearch.clear();
+      else if (searchInput) searchInput.value = '';
+
       if (statusSelect) statusSelect.value = 'approved';
       if (batchSelect) batchSelect.value = 'all';
       if (courseSelect) courseSelect.value = 'all';
@@ -1591,12 +1593,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Wire real-time cohesive filter events
+  // Wire real-time cohesive filter events with SmartSearch component
   const filterInput = document.getElementById('ds-filter-search');
   const filterDropdown = document.getElementById('ds-filter-status');
   const batchDropdown = document.getElementById('ds-filter-batch');
   const courseDropdown = document.getElementById('ds-filter-course');
-  if (filterInput) filterInput.addEventListener('input', debounce(renderStudentMatrix, 200));
+
+  if (filterInput) {
+    new SmartSearch(filterInput, {
+      debounceMs: 150,
+      onInput: () => renderStudentMatrix(),
+      onClear: () => renderStudentMatrix()
+    });
+  }
+
   if (filterDropdown) filterDropdown.addEventListener('change', renderStudentMatrix);
   if (batchDropdown) batchDropdown.addEventListener('change', renderStudentMatrix);
   if (courseDropdown) courseDropdown.addEventListener('change', renderStudentMatrix);
@@ -3009,7 +3019,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (bulkPaySearch) {
-      bulkPaySearch.addEventListener('input', renderBulkPayStudents);
+      new SmartSearch(bulkPaySearch, {
+        debounceMs: 150,
+        onInput: () => renderBulkPayStudents(),
+        onClear: () => renderBulkPayStudents()
+      });
     }
 
     if (bulkPayBatch) {
@@ -4614,20 +4628,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Live search inside student print checklist modal
+  // Live search inside student print checklist modal using SmartSearch
   const bulkSearchField = document.getElementById('bulk-print-search');
   if (bulkSearchField) {
-    bulkSearchField.addEventListener('input', () => {
-      const q = bulkSearchField.value.toLowerCase().trim();
-      const items = document.querySelectorAll('.bulk-student-item');
-      items.forEach(item => {
-        const name = item.querySelector('span').innerText.toLowerCase();
-        if (name.includes(q)) {
-          item.style.display = 'flex';
-        } else {
-          item.style.display = 'none';
-        }
-      });
+    new SmartSearch(bulkSearchField, {
+      debounceMs: 100,
+      onInput: (val) => {
+        const q = val.toLowerCase();
+        const items = document.querySelectorAll('.bulk-student-item');
+        items.forEach(item => {
+          const name = item.querySelector('span').innerText.toLowerCase();
+          item.style.display = name.includes(q) ? 'flex' : 'none';
+        });
+      }
     });
   }
 

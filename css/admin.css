@@ -2096,4 +2096,95 @@ body:has(dialog.admin-modal[open])>*:not(dialog):not(#toast-container) {
 #bulk-pay-search:focus {
   border-color: var(--admin-accent) !important;
   box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.1) !important;
+}
+
+/* ─── SmartSearch Component Styles ────────────────────────────── */
+.smart-search-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+}
+
+.smart-search-wrapper.pill {
+  border-radius: 50px;
+}
+
+.smart-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--admin-muted, #94a3b8);
+  pointer-events: none;
+  transition: color 0.2s ease;
+  z-index: 2;
+}
+
+.smart-search-wrapper.focused .smart-search-icon {
+  color: var(--admin-accent, #2D6A4F);
+}
+
+.smart-search-input {
+  width: 100%;
+  padding: 0.42rem 2.2rem 0.42rem 2.3rem !important;
+  border: 1px solid var(--admin-border, #e2e8f0) !important;
+  border-radius: 50px !important;
+  outline: none !important;
+  font-size: 0.85rem !important;
+  font-family: inherit !important;
+  background: var(--admin-card-bg, #ffffff) !important;
+  color: var(--admin-text, #1e293b) !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
+}
+
+.smart-search-input::placeholder {
+  color: var(--admin-muted, #94a3b8);
+  font-size: 0.82rem;
+}
+
+.smart-search-input:focus {
+  border-color: var(--admin-accent, #2D6A4F) !important;
+  box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.12) !important;
+}
+
+/* Clear Button (✕) — Sleek, cohesive design with spring entrance */
+.smart-search-clear-btn {
+  position: absolute;
+  right: 0.5rem;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--admin-muted, #64748b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+  opacity: 0;
+  transform: scale(0.6);
+  pointer-events: none;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease, color 0.15s ease;
+  z-index: 2;
+}
+
+.smart-search-clear-btn.visible {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.smart-search-clear-btn:hover {
+  background: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+  transform: scale(1.1);
+}
+
+.smart-search-clear-btn:active {
+  transform: scale(0.95);
 }
