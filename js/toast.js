@@ -308,9 +308,9 @@
     if (card._timeoutId) clearTimeout(card._timeoutId);
     if (card._cleanupVisibility) card._cleanupVisibility();
 
-    // Slide out exit animation transition (leftward for top-left positioning)
+    // Slide out exit animation transition (rightward for top-right positioning)
     card.style.opacity = '0';
-    card.style.transform = 'translateX(-120%) scale(0.9)';
+    card.style.transform = 'translateX(120%) scale(0.9)';
     card.style.maxHeight = '0';
     card.style.paddingTop = '0';
     card.style.paddingBottom = '0';

@@ -29,8 +29,8 @@
 #toast-container[popover] {
   position: fixed;
   top: 1.5rem;
-  left: 1.5rem;
-  right: auto;
+  right: 1.5rem;
+  left: auto;
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -74,7 +74,7 @@
   user-select: none;
   touch-action: none;
   
-  /* Sonner-style top-left graceful entrance */
+  /* Sonner-style top-right graceful entrance */
   opacity: 0;
   transform: translateY(-20px) scale(0.94);
   transition: 
@@ -83,7 +83,7 @@
     max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
     padding 0.35s ease, 
     margin 0.35s ease;
-  transform-origin: top left;
+  transform-origin: top right;
   
   /* Defaults */
   background: white;
