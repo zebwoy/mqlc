@@ -106,6 +106,22 @@ class SmartSearch {
     // Bind event listeners
     this.bindEvents();
 
+    // Intercept programmatic .value assignments on native input to auto-sync clear button
+    const nativeValueDesc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+    if (nativeValueDesc && nativeValueDesc.set) {
+      const self = this;
+      Object.defineProperty(this.nativeInput, 'value', {
+        get() {
+          return nativeValueDesc.get.call(this);
+        },
+        set(val) {
+          nativeValueDesc.set.call(this, val);
+          self.syncClearButton();
+        },
+        configurable: true
+      });
+    }
+
     // Initial check for clear button
     this.syncClearButton();
   }

@@ -2070,7 +2070,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const feeModeFilter = document.getElementById('fee-filter-mode');
 
   if (feeBatchFilter) feeBatchFilter.addEventListener('change', renderFeeMatrix);
-  if (feeNameFilter) feeNameFilter.addEventListener('input', debounce(renderFeeMatrix, 200));
+  if (feeNameFilter) {
+    new SmartSearch(feeNameFilter, {
+      debounceMs: 150,
+      onInput: () => renderFeeMatrix(),
+      onClear: () => renderFeeMatrix()
+    });
+  }
   if (feeStatusFilter) feeStatusFilter.addEventListener('change', renderFeeMatrix);
   if (feeModeFilter) feeModeFilter.addEventListener('change', renderFeeMatrix);
 
