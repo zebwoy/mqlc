@@ -986,6 +986,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const id = document.getElementById('edit-student-id').value;
       const statusMsg = document.getElementById('edit-status-msg');
       const statusVal = document.getElementById('edit-student-status').value;
+      const submitBtn = editForm.querySelector('button[type="submit"]');
+
+      // ── Immediate feedback: disable button, show spinner text ──
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.dataset.originalText = submitBtn.textContent;
+        submitBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:0.4rem;"><svg style="animation:loaderSpin 0.7s linear infinite" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Saving…</span>';
+      }
+
+      // Hide any stale inline status
+      statusMsg.style.display = 'none';
+      statusMsg.textContent = '';
 
       const payload = {
         student_name: document.getElementById('edit-student-name').value,
@@ -1004,7 +1016,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (_) { }
 
         payload.exit_date = document.getElementById('edit-exit-date')?.value || new Date().toISOString().split('T')[0];
-        const rawReason = document.getElementById('edit-exit-reason')?.value || 'Other';
+        const rawReason = document.getElementById('edit-exit-reason')?.value || 'Not Available';
         const otherCustomText = (document.getElementById('edit-exit-other-text')?.value || '').trim();
         payload.exit_reason = (rawReason === 'Other' && otherCustomText)
           ? `Other: ${otherCustomText}`
@@ -1018,7 +1030,7 @@ document.addEventListener('DOMContentLoaded', () => {
         payload.exit_recorded_by = null;
       }
 
-      // Optimistic Concurrency Control Check
+      // ── Optimistic Concurrency Control Check ──
       const original = cachedStudents.find(s => s.id.toString() === id.toString());
       if (original) {
         try {
@@ -1045,10 +1057,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 statusMsg.textContent = 'Edit canceled. Reloading...';
                 statusMsg.className = 'status-msg error';
                 statusMsg.style.display = 'block';
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = submitBtn.dataset.originalText || 'Save Changes'; }
                 await hydrateDashboardAndAnalytics();
-                setTimeout(() => {
-                  document.getElementById('modal-edit-student').close();
-                }, 1000);
+                setTimeout(() => { document.getElementById('modal-edit-student').close(); }, 1000);
                 return;
               }
             }
@@ -1058,32 +1069,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      try {
-        statusMsg.textContent = 'Updating...';
-        statusMsg.className = 'status-msg';
-        statusMsg.style.display = 'block';
-
+      // ── Save via toast.promise() for live notification feedback ──
+      const studentName = document.getElementById('edit-student-name').value || 'Student';
+      const savePromise = (async () => {
         const { error } = await window._supabase
           .from('student_registrations')
           .update(payload)
           .eq('id', id);
-
         if (error) throw error;
-
-        statusMsg.textContent = 'Student updated successfully';
-        statusMsg.className = 'status-msg success';
-
-        // Refresh cache and UI
         await hydrateDashboardAndAnalytics();
+      })();
+
+      toast.promise(savePromise, {
+        loading: `Saving changes for ${studentName}…`,
+        success: `${studentName}'s record updated successfully!`,
+        error: (err) => `Failed to save: ${err.message}`
+      });
+
+      try {
+        await savePromise;
+
+        // Inline success confirmation inside the modal
+        statusMsg.textContent = '✓ Saved successfully';
+        statusMsg.className = 'status-msg success';
+        statusMsg.style.display = 'block';
 
         setTimeout(() => {
           document.getElementById('modal-edit-student').close();
-        }, 1000);
+          statusMsg.style.display = 'none';
+        }, 900);
 
       } catch (err) {
         console.error(err);
-        statusMsg.textContent = 'Failed to update: ' + err.message;
+        // Inline error for detail inside the modal (toast already showed the headline)
+        statusMsg.textContent = err.message;
         statusMsg.className = 'status-msg error';
+        statusMsg.style.display = 'block';
+      } finally {
+        // Always restore the button so the admin can retry or dismiss
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = submitBtn.dataset.originalText || 'Save Changes';
+        }
       }
     });
   }
