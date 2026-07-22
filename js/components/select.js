@@ -80,6 +80,22 @@
       });
       this.observer.observe(this.nativeSelect, { childList: true, subtree: true, attributes: true, attributeFilter: ['selected'] });
 
+      // 5b. Intercept programmatic .value assignments on native select to auto-sync CustomSelect UI
+      const nativeValueDesc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+      if (nativeValueDesc && nativeValueDesc.set) {
+        const self = this;
+        Object.defineProperty(this.nativeSelect, 'value', {
+          get() {
+            return nativeValueDesc.get.call(this);
+          },
+          set(val) {
+            nativeValueDesc.set.call(this, val);
+            self.syncOptions();
+          },
+          configurable: true
+        });
+      }
+
       // 6. Bind Events
       this.trigger.addEventListener('click', (e) => {
         e.stopPropagation();

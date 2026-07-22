@@ -862,26 +862,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const notesInput = document.getElementById('edit-exit-notes');
     if (notesInput) notesInput.value = exitNotesVal;
 
-    const exitSection = document.getElementById('edit-exit-audit-section');
-    if (exitSection && reasonInput) {
-      if (statusVal === 'left') {
-        exitSection.style.display = 'block';
-        reasonInput.required = true;
-      } else {
-        exitSection.style.display = 'none';
-        reasonInput.required = false;
-      }
-    }
-
-    // Handle the non-exit-fields collapsed state on modal open
-    const nonExitFields = document.getElementById('edit-non-exit-fields');
-    if (nonExitFields) {
-      if (statusVal === 'left') {
-        nonExitFields.classList.add('edit-non-exit-fields--collapsed');
-      } else {
-        nonExitFields.classList.remove('edit-non-exit-fields--collapsed');
-      }
-    }
+    // Apply status UX state (collapses/expands non-exit fields and toggles exit section)
+    applyStatusUX(statusVal);
 
     // Handle the Other reason field on modal open
     const otherField = document.getElementById('edit-exit-other-field');
