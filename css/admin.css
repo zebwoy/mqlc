@@ -1737,6 +1737,59 @@ body:has(dialog.admin-modal[open])>*:not(dialog) {
   }
 }
 
+/* Non-exit fields wrapper — collapses when status switches to 'left' */
+.edit-non-exit-fields {
+  max-height: 600px;
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  opacity: 1;
+}
+
+.edit-non-exit-fields--collapsed {
+  max-height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
+/* 'Other' reason inline text field — slide-in animation */
+.exit-other-field {
+  overflow: hidden;
+}
+
+.exit-other-field--visible {
+  animation: otherFieldIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.exit-other-field--hidden {
+  animation: otherFieldOut 0.25s ease-in forwards;
+}
+
+@keyframes otherFieldIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 120px;
+  }
+}
+
+@keyframes otherFieldOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 120px;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+    max-height: 0;
+  }
+}
+
 /* ─── Student Profile Modal Styles ──────────────────────────── */
 .profile-header {
   display: flex;

@@ -1275,22 +1275,33 @@
           <input type="text" id="edit-student-father" required class="modal-input">
         </div>
 
-        <div class="modal-field">
-          <label class="modal-label">Assigned Batch</label>
-          <select id="edit-student-batch" required class="modal-select">
-            <option value="Zuhr">Zuhr</option>
-            <option value="Asr">Asr</option>
-            <option value="Maghrib">Maghrib</option>
-          </select>
-        </div>
+        <!-- Non-exit fields: batch, course, fee mode — hidden when status is 'left' -->
+        <div id="edit-non-exit-fields" class="edit-non-exit-fields">
+          <div class="modal-field">
+            <label class="modal-label">Assigned Batch</label>
+            <select id="edit-student-batch" required class="modal-select">
+              <option value="Zuhr">Zuhr</option>
+              <option value="Asr">Asr</option>
+              <option value="Maghrib">Maghrib</option>
+            </select>
+          </div>
 
-        <div class="modal-field">
-          <label class="modal-label">Studying Course</label>
-          <select id="edit-student-course" required class="modal-select">
-            <option value="Noorani Qaida">Noorani Qaida</option>
-            <option value="Qur'an Reading (Nazra)">Qur'an Reading (Nazra)</option>
-            <option value="Qur'an Memorization (Hifz)">Qur'an Memorization (Hifz)</option>
-          </select>
+          <div class="modal-field">
+            <label class="modal-label">Studying Course</label>
+            <select id="edit-student-course" required class="modal-select">
+              <option value="Noorani Qaida">Noorani Qaida</option>
+              <option value="Qur'an Reading (Nazra)">Qur'an Reading (Nazra)</option>
+              <option value="Qur'an Memorization (Hifz)">Qur'an Memorization (Hifz)</option>
+            </select>
+          </div>
+
+          <div class="modal-field">
+            <label class="modal-label">Fee Collection Mode</label>
+            <select id="edit-is-prepaid" class="modal-select">
+              <option value="true">Prepaid — Pay in advance (25th of prior month)</option>
+              <option value="false">Postpaid — Pay after month begins</option>
+            </select>
+          </div>
         </div>
 
         <div class="modal-field">
@@ -1300,14 +1311,6 @@
             <option value="left">Left / Inactive</option>
             <option value="pending">Pending Review</option>
             <option value="rejected">Rejected</option>
-          </select>
-        </div>
-
-        <div class="modal-field">
-          <label class="modal-label">Fee Collection Mode</label>
-          <select id="edit-is-prepaid" class="modal-select">
-            <option value="true">Prepaid — Pay in advance (25th of prior month)</option>
-            <option value="false">Postpaid — Pay after month begins</option>
           </select>
         </div>
 
@@ -1333,12 +1336,19 @@
               <option value="Irregular Attendance">Irregular Attendance</option>
               <option value="Personal / Family Reasons">Personal / Family Reasons</option>
               <option value="Behavioral / Discipline Issues">Behavioral / Discipline Issues</option>
-              <option value="Other">Other (Specify in notes)</option>
+              <option value="Other">Other</option>
             </select>
           </div>
 
+          <!-- Other Reason field — visible only when 'Other' is selected -->
+          <div id="edit-exit-other-field" class="modal-field exit-other-field" style="display: none;">
+            <label class="modal-label">Specify Reason <span style="color: var(--admin-danger);">*</span></label>
+            <input type="text" id="edit-exit-other-text" class="modal-input"
+              placeholder="e.g. Moved to a different madrasa">
+          </div>
+
           <div class="modal-field">
-            <label class="modal-label">Exit Notes / Remarks</label>
+            <label class="modal-label">Exit Notes / Remarks <span class="optional">(optional)</span></label>
             <textarea id="edit-exit-notes" rows="2"
               placeholder="e.g. Relocated to another city with family. Nazra course incomplete."
               class="modal-textarea"></textarea>

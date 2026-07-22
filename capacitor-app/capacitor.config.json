@@ -3,7 +3,7 @@
   "appName": "MQLC Admin",
   "webDir": "www",
   "server": {
-    "url": "https://mqlc.io/admin.html",
+    "url": "https://mqlc.vercel.app/admin.html",
     "cleartext": false,
     "androidScheme": "https"
   },

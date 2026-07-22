@@ -780,7 +780,13 @@ document.addEventListener('DOMContentLoaded', () => {
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
               ${app.status === 'left' ? `
                 <span style="font-size: 0.7rem; background: #fde8e8; color: #c53030; padding: 2px 6px; border-radius: 4px; font-weight: 600; text-transform: uppercase;">Inactive</span>
-                ${app.exit_reason ? `<span style="font-size: 0.7rem; background: #f3f4f6; color: #4b5563; padding: 2px 6px; border-radius: 4px; font-weight: 500;">Reason: ${escapeHTML(app.exit_reason)}</span>` : ''}
+                ${app.exit_reason ? (() => {
+                  const r = escapeHTML(app.exit_reason);
+                  const displayReason = app.exit_reason.startsWith('Other: ')
+                    ? `Other (${escapeHTML(app.exit_reason.slice(7))})`
+                    : r;
+                  return `<span style="font-size: 0.7rem; background: #f3f4f6; color: #4b5563; padding: 2px 6px; border-radius: 4px; font-weight: 500;">Reason: ${displayReason}</span>`;
+                })() : ''}
               ` : ''}
             </div>
           </div>
@@ -867,8 +873,77 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // Handle the non-exit-fields collapsed state on modal open
+    const nonExitFields = document.getElementById('edit-non-exit-fields');
+    if (nonExitFields) {
+      if (statusVal === 'left') {
+        nonExitFields.classList.add('edit-non-exit-fields--collapsed');
+      } else {
+        nonExitFields.classList.remove('edit-non-exit-fields--collapsed');
+      }
+    }
+
+    // Handle the Other reason field on modal open
+    const otherField = document.getElementById('edit-exit-other-field');
+    const otherText = document.getElementById('edit-exit-other-text');
+    if (otherField && reasonInput) {
+      // Detect if stored reason starts with 'Other: '
+      const isOtherReason = exitReasonVal.startsWith('Other: ') || exitReasonVal === 'Other';
+      if (isOtherReason && statusVal === 'left') {
+        reasonInput.value = 'Other';
+        // Sync the CustomSelect wrapper label to reflect the changed value
+        const csWrap = reasonInput.closest('.custom-select-wrapper') || reasonInput.parentElement?.closest('.custom-select-wrapper');
+        if (csWrap && csWrap._csInstance) csWrap._csInstance.syncOptions();
+        if (otherText && exitReasonVal.startsWith('Other: ')) {
+          otherText.value = exitReasonVal.slice(7); // strip 'Other: ' prefix
+        }
+        otherField.style.display = 'block';
+        otherField.classList.add('exit-other-field--visible');
+        otherText.required = true;
+      } else {
+        otherField.style.display = 'none';
+        otherField.classList.remove('exit-other-field--visible');
+        if (otherText) { otherText.value = ''; otherText.required = false; }
+      }
+    }
+
     document.getElementById('edit-status-msg').style.display = 'none';
     document.getElementById('modal-edit-student').showModal();
+  }
+
+  // ─── Helpers: toggle non-exit fields and exit audit section ───
+  function applyStatusUX(statusVal) {
+    const nonExitFields = document.getElementById('edit-non-exit-fields');
+    const exitSection = document.getElementById('edit-exit-audit-section');
+    const exitReason = document.getElementById('edit-exit-reason');
+
+    if (statusVal === 'left') {
+      // Collapse the non-exit fields with animation
+      if (nonExitFields) {
+        nonExitFields.classList.add('edit-non-exit-fields--collapsed');
+      }
+      if (exitSection) {
+        exitSection.style.display = 'block';
+        // Trigger animation by briefly removing the class then re-adding
+        exitSection.classList.remove('exit-audit-section');
+        void exitSection.offsetWidth; // reflow
+        exitSection.classList.add('exit-audit-section');
+      }
+      if (exitReason) exitReason.required = true;
+
+      // Auto-set today's date if not already set
+      const editExitDate = document.getElementById('edit-exit-date');
+      if (editExitDate && !editExitDate.value && exitDatePicker) {
+        exitDatePicker.selectDate(new Date());
+      }
+    } else {
+      // Restore non-exit fields
+      if (nonExitFields) {
+        nonExitFields.classList.remove('edit-non-exit-fields--collapsed');
+      }
+      if (exitSection) exitSection.style.display = 'none';
+      if (exitReason) exitReason.required = false;
+    }
   }
 
   // Change listener to show/hide exit audit section dynamically
@@ -879,15 +954,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (editStatusSelect && editExitSection) {
     editStatusSelect.addEventListener('change', () => {
-      if (editStatusSelect.value === 'left') {
-        editExitSection.style.display = 'block';
-        if (editExitReason) editExitReason.required = true;
-        if (editExitDate && !editExitDate.value) {
-          if (exitDatePicker) exitDatePicker.selectDate(new Date());
+      applyStatusUX(editStatusSelect.value);
+    });
+  }
+
+  // Show/hide the 'Other' custom text input based on reason selection
+  if (editExitReason) {
+    editExitReason.addEventListener('change', () => {
+      const otherField = document.getElementById('edit-exit-other-field');
+      const otherText = document.getElementById('edit-exit-other-text');
+      if (otherField) {
+        if (editExitReason.value === 'Other') {
+          otherField.style.display = 'block';
+          otherField.classList.remove('exit-other-field--hidden');
+          otherField.classList.add('exit-other-field--visible');
+          if (otherText) otherText.required = true;
+        } else {
+          otherField.classList.remove('exit-other-field--visible');
+          otherField.classList.add('exit-other-field--hidden');
+          setTimeout(() => { otherField.style.display = 'none'; }, 250);
+          if (otherText) { otherText.required = false; otherText.value = ''; }
         }
-      } else {
-        editExitSection.style.display = 'none';
-        if (editExitReason) editExitReason.required = false;
       }
     });
   }
@@ -917,7 +1004,11 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (_) { }
 
         payload.exit_date = document.getElementById('edit-exit-date')?.value || new Date().toISOString().split('T')[0];
-        payload.exit_reason = document.getElementById('edit-exit-reason')?.value || 'Other';
+        const rawReason = document.getElementById('edit-exit-reason')?.value || 'Other';
+        const otherCustomText = (document.getElementById('edit-exit-other-text')?.value || '').trim();
+        payload.exit_reason = (rawReason === 'Other' && otherCustomText)
+          ? `Other: ${otherCustomText}`
+          : rawReason;
         payload.exit_notes = document.getElementById('edit-exit-notes')?.value || '';
         payload.exit_recorded_by = adminEmail;
       } else {
@@ -1399,7 +1490,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const leftStudents = cachedStudents.filter(s => s.status === 'left');
     const churnCount = {};
     leftStudents.forEach(s => {
-      const reason = s.exit_reason || 'Unspecified';
+      let reason = s.exit_reason || 'Unspecified';
+      // Normalize 'Other: <text>' entries into 'Other' for chart grouping
+      if (reason.startsWith('Other: ')) reason = 'Other';
       churnCount[reason] = (churnCount[reason] || 0) + 1;
     });
 
@@ -3980,7 +4073,11 @@ document.addEventListener('DOMContentLoaded', () => {
             </h4>
             <p>
               <strong>Date Left:</strong> ${formattedExitDate}<br>
-              <strong>Reason:</strong> ${student.exit_reason || 'Unspecified'}<br>
+              <strong>Reason:</strong> ${(() => {
+                const r = student.exit_reason || 'Unspecified';
+                if (r.startsWith('Other: ')) return `Other <em style="color: var(--admin-muted); font-weight: 400;">(${r.slice(7)})</em>`;
+                return r;
+              })()}<br>
               <strong>Recorded By:</strong> ${student.exit_recorded_by || 'admin'}<br>
               ${student.exit_notes ? `<strong>Notes:</strong> ${student.exit_notes}` : ''}
             </p>
