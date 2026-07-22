@@ -27,11 +27,13 @@
 
 #toast-container,
 #toast-container[popover] {
-  position: fixed;
-  top: 1.25rem;
-  right: 1.25rem;
-  left: auto;
-  z-index: 9999;
+  position: fixed !important;
+  inset: 1.25rem 1.25rem auto auto !important;
+  top: 1.25rem !important;
+  right: 1.25rem !important;
+  left: auto !important;
+  bottom: auto !important;
+  z-index: 9999 !important;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -43,16 +45,22 @@
   padding: 0;
   margin: 0;
   overflow: visible;
-  inset: auto;
+}
+
+#toast-container::backdrop,
+#toast-container[popover]::backdrop {
+  background: transparent !important;
 }
 
 /* Mobile responsiveness */
 @media (max-width: 480px) {
   #toast-container,
   #toast-container[popover] {
-    top: 1rem;
-    left: 1rem;
-    right: 1rem;
+    inset: 1rem 1rem auto 1rem !important;
+    top: 1rem !important;
+    left: 1rem !important;
+    right: 1rem !important;
+    bottom: auto !important;
     width: auto;
     max-width: none;
   }
