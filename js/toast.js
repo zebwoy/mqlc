@@ -308,9 +308,9 @@
     if (card._timeoutId) clearTimeout(card._timeoutId);
     if (card._cleanupVisibility) card._cleanupVisibility();
 
-    // Slide out exit animation transition
+    // Slide out exit animation transition (leftward for top-left positioning)
     card.style.opacity = '0';
-    card.style.transform = 'translateX(120%) scale(0.9)';
+    card.style.transform = 'translateX(-120%) scale(0.9)';
     card.style.maxHeight = '0';
     card.style.paddingTop = '0';
     card.style.paddingBottom = '0';
@@ -346,13 +346,9 @@
       currentX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
       const deltaX = currentX - startX;
 
-      // Restrict left-swiping slightly to focus flyout towards right edge
-      if (deltaX < 0) {
-        card.style.transform = `translateX(${deltaX * 0.2}px) scale(0.98)`;
-      } else {
-        card.style.transform = `translateX(${deltaX}px) rotate(${deltaX * 0.04}deg) scale(0.98)`;
-        card.style.opacity = Math.max(0.1, 1 - (deltaX / 300));
-      }
+      // Allow dragging both directions, with opacity fade on left drag
+      card.style.transform = `translateX(${deltaX}px) rotate(${deltaX * 0.04}deg) scale(0.98)`;
+      card.style.opacity = Math.max(0.1, 1 - (Math.abs(deltaX) / 300));
     };
 
     const onEnd = () => {
@@ -362,10 +358,11 @@
 
       const deltaX = currentX - startX;
 
-      if (deltaX > swipeThreshold) {
+      if (Math.abs(deltaX) > swipeThreshold) {
+        const dir = deltaX < 0 ? -1 : 1;
         // High velocity fly-out dismiss
         card.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
-        card.style.transform = `translateX(120%) rotate(${deltaX * 0.05}deg)`;
+        card.style.transform = `translateX(${dir * 120}%) rotate(${deltaX * 0.05}deg)`;
         card.style.opacity = '0';
         setTimeout(() => destroyToast(card), 200);
       } else {
