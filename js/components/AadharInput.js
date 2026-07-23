@@ -25,9 +25,9 @@ class AadharInput {
 
   _boxStyle() {
     return `
-      width: 68px; text-align: center; letter-spacing: 0.2em;
-      font-weight: 700; font-size: 1.05rem; font-family: monospace;
-      padding: 0.5rem 0.35rem;
+      flex: 1 1 0%; min-width: 0; max-width: 110px; width: 0; text-align: center; letter-spacing: 0.12em;
+      font-weight: 700; font-size: 0.95rem; font-family: monospace;
+      padding: 0.5rem 0.2rem; box-sizing: border-box;
       border: 1.5px solid var(--admin-border, #e2e8f0);
       border-radius: 8px; outline: none; background: #fff;
       transition: border-color 0.15s, box-shadow 0.15s;
@@ -36,15 +36,15 @@ class AadharInput {
   }
 
   _render() {
-    const sep = '<span style="font-size:1.3rem;font-weight:700;color:var(--admin-muted,#718096);padding:0 2px;line-height:1;">—</span>';
+    const sep = '<span style="font-size:1.1rem;font-weight:700;color:var(--admin-muted,#718096);padding:0 1px;line-height:1;flex-shrink:0;">—</span>';
 
     this.el.innerHTML = `
-      <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
-        <input class="aadhar-box" type="text" inputmode="numeric" maxlength="4" placeholder="XXXX" style="${this._boxStyle()}">
+      <div style="display:flex;align-items:center;gap:0.3rem;width:100%;max-width:100%;flex-wrap:nowrap;box-sizing:border-box;">
+        <input class="aadhar-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="XXXX" style="${this._boxStyle()}">
         ${sep}
-        <input class="aadhar-box" type="text" inputmode="numeric" maxlength="4" placeholder="XXXX" style="${this._boxStyle()}">
+        <input class="aadhar-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="XXXX" style="${this._boxStyle()}">
         ${sep}
-        <input class="aadhar-box" type="text" inputmode="numeric" maxlength="4" placeholder="XXXX" style="${this._boxStyle()}">
+        <input class="aadhar-box" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="XXXX" style="${this._boxStyle()}">
         <input type="hidden" name="${this.name}">
       </div>
     `;

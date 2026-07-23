@@ -3,7 +3,9 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1a202c">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Admin Dashboard | MQLC</title>
 
   <meta name="robots" content="noindex, nofollow">
@@ -401,7 +403,7 @@
                   <div class="input-group">
                     <label>Monthly Fee (₹) <span style="color:var(--admin-muted);font-weight:400;">(optional, default
                         ₹300)</span></label>
-                    <input type="number" name="monthly_fee" min="1" placeholder="300" style="font-weight: 600;">
+                    <input type="number" name="monthly_fee" inputmode="numeric" pattern="[0-9]*" min="1" placeholder="300" style="font-weight: 600;">
                   </div>
                 </div>
               </div>
@@ -457,11 +459,11 @@
                   </div>
                   <div class="input-group">
                     <label>Father's Contact No.</label>
-                    <input type="tel" name="contact_father" placeholder="10-digit mobile no.">
+                    <input type="tel" name="contact_father" inputmode="numeric" pattern="[0-9]*" placeholder="10-digit mobile no.">
                   </div>
                   <div class="input-group">
                     <label>Mother's Contact No.</label>
-                    <input type="tel" name="contact_mother" placeholder="10-digit mobile no.">
+                    <input type="tel" name="contact_mother" inputmode="numeric" pattern="[0-9]*" placeholder="10-digit mobile no.">
                   </div>
                 </div>
               </div>
@@ -1501,7 +1503,7 @@
 
         <div class="modal-field">
           <label class="modal-label">Total Amount (₹)</label>
-          <input type="number" id="pay-amount" required min="1" class="modal-input lg">
+          <input type="number" id="pay-amount" inputmode="numeric" pattern="[0-9]*" required min="1" class="modal-input lg">
         </div>
 
         <!-- Live Breakdown Preview -->
@@ -1574,7 +1576,7 @@
         <input type="hidden" id="setfee-student-id">
         <div class="modal-field">
           <label class="modal-label">Monthly Fee Amount (₹)</label>
-          <input type="number" id="setfee-amount" required min="1" placeholder="e.g. 500" class="modal-input lg">
+          <input type="number" id="setfee-amount" inputmode="numeric" pattern="[0-9]*" required min="1" placeholder="e.g. 500" class="modal-input lg">
         </div>
         <div id="setfee-status-msg" class="status-msg" style="margin-bottom: 1rem;"></div>
         <div class="modal-actions">
