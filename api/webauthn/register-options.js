@@ -13,10 +13,11 @@ const SUPABASE_ANON_KEY   = process.env.SUPABASE_ANON_KEY;
 const SERVICE_ROLE_KEY    = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const RP_ID               = process.env.WEBAUTHN_RP_ID   || 'mqlc.vercel.app';
 const RP_NAME             = process.env.WEBAUTHN_RP_NAME || 'MQLC Admin Portal';
+const EXPECTED_ORIGIN     = process.env.WEBAUTHN_ORIGIN  || 'https://mqlc.vercel.app';
 
 module.exports = async (req, res) => {
   // ── CORS ───────────────────────────────────────────────────────
-  res.setHeader('Access-Control-Allow-Origin', process.env.WEBAUTHN_ORIGIN || 'https://mqlc.vercel.app');
+  res.setHeader('Access-Control-Allow-Origin', EXPECTED_ORIGIN);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();

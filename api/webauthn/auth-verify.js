@@ -62,7 +62,7 @@ module.exports = async (req, res) => {
       .eq('user_id', user.id)
       .eq('used', false)
       .gt('expires_at', new Date().toISOString())
-      .order('enrolled_at', { ascending: false })
+      .order('expires_at', { ascending: false })
       .limit(1);
 
     if (!challengeRows?.length) {
