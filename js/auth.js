@@ -34,6 +34,34 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnLockUsePw    = document.getElementById('btn-lock-use-password');
   const appLockError    = document.getElementById('app-lock-error');
 
+  // Settings Tab Biometric elements
+  const btnSettingsEnroll = document.getElementById('btn-settings-enroll-biometric');
+  const btnSettingsRemove = document.getElementById('btn-settings-remove-biometric');
+  const settingsStatus    = document.getElementById('biometric-settings-status');
+
+  function updateSettingsBiometricUI() {
+    try {
+      const el = document.getElementById('biometric-settings-status');
+      if (!el) return;
+      const enrolled = window.WebAuthnClient?.getEnrolledCredential();
+      const appLockOn = window.WebAuthnClient?.isAppLockEnabled();
+
+      if (enrolled || appLockOn) {
+        el.innerHTML = `<span style="color: #2D6A4F;">🟢 Fingerprint App Lock Active</span> for <strong>${enrolled?.email || 'Admin'}</strong> on this device.`;
+        const btnRem = document.getElementById('btn-settings-remove-biometric');
+        const btnEnr = document.getElementById('btn-settings-enroll-biometric');
+        if (btnRem) btnRem.style.display = 'inline-block';
+        if (btnEnr) btnEnr.textContent = '🔄 Re-enroll Fingerprint';
+      } else {
+        el.innerHTML = `<span style="color: var(--admin-muted);">⚪ App Lock Inactive</span> on this device.`;
+        const btnRem = document.getElementById('btn-settings-remove-biometric');
+        const btnEnr = document.getElementById('btn-settings-enroll-biometric');
+        if (btnRem) btnRem.style.display = 'none';
+        if (btnEnr) btnEnr.textContent = '👆 Enable Fingerprint App Lock';
+      }
+    } catch (_) { /* ignore UI update error */ }
+  }
+
   // ── Password toggle ──────────────────────────────────────────────────────
   if (btnTogglePw && passwordInp) {
     btnTogglePw.addEventListener('click', () => {
@@ -358,26 +386,6 @@ document.addEventListener('DOMContentLoaded', () => {
   window.handleBiometricEnrollment = handleBiometricEnrollment;
 
   // ── 11. Settings Tab Biometric Management ─────────────────────────────────
-  const btnSettingsEnroll = document.getElementById('btn-settings-enroll-biometric');
-  const btnSettingsRemove = document.getElementById('btn-settings-remove-biometric');
-  const settingsStatus    = document.getElementById('biometric-settings-status');
-
-  function updateSettingsBiometricUI() {
-    if (!settingsStatus) return;
-    const enrolled = window.WebAuthnClient?.getEnrolledCredential();
-    const appLockOn = window.WebAuthnClient?.isAppLockEnabled();
-
-    if (enrolled || appLockOn) {
-      settingsStatus.innerHTML = `<span style="color: #2D6A4F;">🟢 Fingerprint App Lock Active</span> for <strong>${enrolled?.email || 'Admin'}</strong> on this device.`;
-      if (btnSettingsRemove) btnSettingsRemove.style.display = 'inline-block';
-      if (btnSettingsEnroll) btnSettingsEnroll.textContent = '🔄 Re-enroll Fingerprint';
-    } else {
-      settingsStatus.innerHTML = `<span style="color: var(--admin-muted);">⚪ App Lock Inactive</span> on this device.`;
-      if (btnSettingsRemove) btnSettingsRemove.style.display = 'none';
-      if (btnSettingsEnroll) btnSettingsEnroll.textContent = '👆 Enable Fingerprint App Lock';
-    }
-  }
-
   if (btnSettingsEnroll) {
     btnSettingsEnroll.addEventListener('click', async () => {
       await handleBiometricEnrollment();
