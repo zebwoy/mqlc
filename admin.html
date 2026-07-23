@@ -1328,18 +1328,45 @@
 
           <div class="modal-field">
             <label class="modal-label">Reason for Leaving</label>
-            <select id="edit-exit-reason" class="modal-select">
-              <option value="" disabled selected>Select a reason...</option>
-              <option value="Unknown">Unknown</option>
-              <option value="Completed Course">Completed Course</option>
-              <option value="Relocation">Relocation</option>
-              <option value="Time Conflict">Time Conflict / Schedule Change</option>
-              <option value="Financial Constraints">Financial Constraints</option>
-              <option value="Irregular Attendance">Irregular Attendance</option>
-              <option value="Personal / Family Reasons">Personal / Family Reasons</option>
-              <option value="Behavioral / Discipline Issues">Behavioral / Discipline Issues</option>
-              <option value="Other">Other</option>
-            </select>
+            <div id="exit-reason-grid" class="exit-reason-grid">
+              <label class="exit-reason-card">
+                <input type="radio" name="exit_reason_choice" value="Unknown">
+                <span>Unknown</span>
+              </label>
+              <label class="exit-reason-card">
+                <input type="radio" name="exit_reason_choice" value="Completed Course">
+                <span>Completed Course</span>
+              </label>
+              <label class="exit-reason-card">
+                <input type="radio" name="exit_reason_choice" value="Relocation">
+                <span>Relocation</span>
+              </label>
+              <label class="exit-reason-card">
+                <input type="radio" name="exit_reason_choice" value="Time Conflict / Schedule Change">
+                <span>Time Conflict</span>
+              </label>
+              <label class="exit-reason-card">
+                <input type="radio" name="exit_reason_choice" value="Financial Constraints">
+                <span>Financial Constraints</span>
+              </label>
+              <label class="exit-reason-card">
+                <input type="radio" name="exit_reason_choice" value="Irregular Attendance">
+                <span>Irregular Attendance</span>
+              </label>
+              <label class="exit-reason-card">
+                <input type="radio" name="exit_reason_choice" value="Personal / Family Reasons">
+                <span>Personal / Family</span>
+              </label>
+              <label class="exit-reason-card">
+                <input type="radio" name="exit_reason_choice" value="Behavioral / Discipline Issues">
+                <span>Discipline Issues</span>
+              </label>
+              <label class="exit-reason-card full-span">
+                <input type="radio" name="exit_reason_choice" value="Other">
+                <span>Other (Specify below)</span>
+              </label>
+            </div>
+            <input type="hidden" id="edit-exit-reason" name="exit_reason">
           </div>
 
           <!-- Other Reason field — visible only when 'Other' is selected -->

@@ -907,41 +907,76 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    const reasonInput = document.getElementById('edit-exit-reason');
-    if (reasonInput) reasonInput.value = exitReasonVal;
     const notesInput = document.getElementById('edit-exit-notes');
     if (notesInput) notesInput.value = exitNotesVal;
 
     // Apply status UX state (collapses/expands non-exit fields and toggles exit section)
     applyStatusUX(statusVal);
 
-    // Handle the Other reason field on modal open
-    const otherField = document.getElementById('edit-exit-other-field');
-    const otherText = document.getElementById('edit-exit-other-text');
-    if (otherField && reasonInput) {
-      // Detect if stored reason starts with 'Other: '
-      const isOtherReason = exitReasonVal.startsWith('Other: ') || exitReasonVal === 'Other';
-      if (isOtherReason && statusVal === 'left') {
-        reasonInput.value = 'Other';
-        // Sync the CustomSelect wrapper label to reflect the changed value
-        const csWrap = reasonInput.closest('.custom-select-wrapper') || reasonInput.parentElement?.closest('.custom-select-wrapper');
-        if (csWrap && csWrap._csInstance) csWrap._csInstance.syncOptions();
-        if (otherText && exitReasonVal.startsWith('Other: ')) {
-          otherText.value = exitReasonVal.slice(7); // strip 'Other: ' prefix
-        }
-        otherField.style.display = 'block';
-        otherField.classList.add('exit-other-field--visible');
-        otherText.required = true;
-      } else {
-        otherField.style.display = 'none';
-        otherField.classList.remove('exit-other-field--visible');
-        if (otherText) { otherText.value = ''; otherText.required = false; }
-      }
-    }
+    // Sync radio grid UI for Exit Reason
+    syncExitReasonRadioUI(exitReasonVal);
 
     document.getElementById('edit-status-msg').style.display = 'none';
     document.getElementById('modal-edit-student').showModal();
   }
+
+  // Helper to sync exit reason radio choices with hidden input & 'Other' field
+  function syncExitReasonRadioUI(rawReasonVal) {
+    const hiddenInput = document.getElementById('edit-exit-reason');
+    const otherField = document.getElementById('edit-exit-other-field');
+    const otherText = document.getElementById('edit-exit-other-text');
+
+    let baseReason = rawReasonVal || '';
+    let customText = '';
+
+    if (baseReason.startsWith('Other: ')) {
+      customText = baseReason.slice(7);
+      baseReason = 'Other';
+    } else if (baseReason === 'Not Available') {
+      baseReason = 'Unknown';
+    }
+
+    if (hiddenInput) hiddenInput.value = baseReason;
+
+    // Update radio checks & card highlight classes
+    const radios = document.querySelectorAll('input[name="exit_reason_choice"]');
+    radios.forEach(radio => {
+      const card = radio.closest('.exit-reason-card');
+      const isMatch = radio.value === baseReason;
+      radio.checked = isMatch;
+      if (card) {
+        if (isMatch) card.classList.add('selected');
+        else card.classList.remove('selected');
+      }
+    });
+
+    // Handle 'Other' text input visibility
+    if (otherField) {
+      if (baseReason === 'Other') {
+        otherField.style.display = 'block';
+        otherField.classList.remove('exit-other-field--hidden');
+        otherField.classList.add('exit-other-field--visible');
+        if (otherText) {
+          otherText.value = customText;
+          otherText.required = true;
+        }
+      } else {
+        otherField.style.display = 'none';
+        otherField.classList.remove('exit-other-field--visible');
+        if (otherText) {
+          otherText.value = '';
+          otherText.required = false;
+        }
+      }
+    }
+  }
+
+  // Bind change listeners to exit reason radio choices
+  document.querySelectorAll('input[name="exit_reason_choice"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      syncExitReasonRadioUI(e.target.value);
+    });
+  });
 
   // ─── Helpers: toggle non-exit fields and exit audit section ───
   function applyStatusUX(statusVal) {

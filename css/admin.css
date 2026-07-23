@@ -1746,9 +1746,63 @@ body:has(dialog.admin-modal[open])>*:not(dialog):not(#toast-container) {
 }
 
 .edit-non-exit-fields--collapsed {
+  display: none !important;
   max-height: 0 !important;
   opacity: 0 !important;
   pointer-events: none;
+}
+
+/* ─── Dedicated 2-Column Exit Reason Radio Grid ─────────────────── */
+.exit-reason-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  background: var(--admin-bg, #f8fafc);
+  padding: 0.65rem;
+  border-radius: 12px;
+  border: 1.5px solid var(--admin-border, #e2e8f0);
+}
+
+.exit-reason-card {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  background: var(--admin-white, #ffffff);
+  border: 1.5px solid var(--admin-border, #e2e8f0);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--admin-text, #1e293b);
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+}
+
+.exit-reason-card.full-span {
+  grid-column: 1 / -1;
+}
+
+.exit-reason-card:hover {
+  border-color: var(--admin-accent, #2D6A4F);
+  background: rgba(45, 106, 79, 0.04);
+}
+
+.exit-reason-card.selected {
+  border-color: var(--admin-accent, #2D6A4F);
+  background: rgba(45, 106, 79, 0.08);
+  color: var(--admin-accent, #2D6A4F);
+  font-weight: 600;
+  box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.12);
+}
+
+.exit-reason-card input[type="radio"] {
+  accent-color: var(--admin-accent, #2D6A4F);
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 /* 'Other' reason inline text field — slide-in animation */
