@@ -154,6 +154,36 @@
 
 
   <!-- ═══════════════════════════════════════════════════════════
+       APP LOCK STATE — Fingerprint Screen Lock when reopening app
+  ════════════════════════════════════════════════════════════ -->
+  <div id="app-lock-view" class="auth-wrapper fullscreen-flex" style="display: none;">
+    <div class="auth-card" style="text-align: center;">
+      <div class="auth-header">
+        <img src="assets/logo.png" alt="MQLC Logo" class="logo-circle">
+        <h2>MQLC Admin</h2>
+        <p class="biometric-user-label">
+          App Locked &bull; <span id="app-lock-email" class="biometric-email-chip"></span>
+        </p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 1.25rem; margin-top: 1rem;">
+        <button id="btn-unlock-app" class="btn-biometric" type="button" data-state="idle">
+          <span class="biometric-pulse-ring"></span>
+          <span class="biometric-icon" aria-hidden="true">👆</span>
+          <span class="biometric-label">Unlock with Fingerprint</span>
+        </button>
+
+        <div id="app-lock-error" class="error-msg" style="display: none; width: 100%; text-align: center;"></div>
+
+        <button id="btn-lock-use-password" type="button" class="btn-text-link">
+          Use password instead
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
        DASHBOARD STATE (Hidden until authorized)
   ════════════════════════════════════════════════════════════ -->
   <div id="dashboard-view" class="app-layout" style="display: none;">

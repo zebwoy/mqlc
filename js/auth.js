@@ -27,8 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnRemoveBiometric  = document.getElementById('btn-remove-biometric');
   const passwordSection     = document.getElementById('password-section');
   const enrollBanner        = document.getElementById('biometric-enroll-banner');
-  const btnEnrollNow        = document.getElementById('btn-enroll-biometric');
-  const btnEnrollDismiss    = document.getElementById('btn-enroll-dismiss');
+  // App Lock UI elements
+  const appLockView     = document.getElementById('app-lock-view');
+  const appLockEmail    = document.getElementById('app-lock-email');
+  const btnUnlockApp    = document.getElementById('btn-unlock-app');
+  const btnLockUsePw    = document.getElementById('btn-lock-use-password');
+  const appLockError    = document.getElementById('app-lock-error');
 
   // ── Password toggle ──────────────────────────────────────────────────────
   if (btnTogglePw && passwordInp) {
@@ -40,44 +44,92 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ── 1. Initial session check ─────────────────────────────────────────────
+  // ── 1. Initial session check & App Lock ──────────────────────────────────
   _supabase.auth.getSession().then(({ data: { session } }) => {
     if (session) {
-      showDashboard();
+      if (shouldShowAppLock()) {
+        showAppLockView(session.user.email);
+      } else {
+        showDashboard();
+      }
     } else {
       initLoginScreen();
+    }
+  });
+
+  function shouldShowAppLock() {
+    return window.WebAuthnClient?.isAppLockEnabled() && !window.WebAuthnClient?.isUnlockedThisSession();
+  }
+
+  // Auto-lock when minimizing / leaving the app
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      if (window.WebAuthnClient?.isAppLockEnabled()) {
+        window.WebAuthnClient.setUnlockedThisSession(false);
+      }
     }
   });
 
   // ── 2. Auth state listener ────────────────────────────────────────────────
   _supabase.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      window.WebAuthnClient?.setUnlockedThisSession(true);
+      if (appLockView) appLockView.style.display = 'none';
       showDashboard();
     } else if (event === 'SIGNED_OUT') {
+      window.WebAuthnClient?.setUnlockedThisSession(false);
+      if (appLockView) appLockView.style.display = 'none';
       initLoginScreen();
     }
   });
 
-  // ── 3. Login screen initialisation ───────────────────────────────────────
+  // ── 3. App Lock Unlock Handlers ──────────────────────────────────────────
+  if (btnUnlockApp) {
+    btnUnlockApp.addEventListener('click', handleAppUnlock);
+  }
+
+  if (btnLockUsePw) {
+    btnLockUsePw.addEventListener('click', () => {
+      if (appLockView) appLockView.style.display = 'none';
+      initLoginScreen();
+    });
+  }
+
+  async function handleAppUnlock() {
+    setBiometricState('loading', btnUnlockApp);
+    try {
+      await handleBiometricLogin();
+      window.WebAuthnClient?.setUnlockedThisSession(true);
+      if (appLockView) appLockView.style.display = 'none';
+      showDashboard();
+    } catch (err) {
+      setBiometricState('error', btnUnlockApp);
+      if (appLockError) {
+        appLockError.textContent = err.message || 'Fingerprint verification failed.';
+        appLockError.style.display = 'block';
+      }
+    }
+  }
+
+  // ── 4. Login screen initialisation ───────────────────────────────────────
   async function initLoginScreen() {
+    if (appLockView) appLockView.style.display = 'none';
     showAuthView();
 
     const enrolled = window.WebAuthnClient?.getEnrolledCredential();
     const biometricSupported = await window.WebAuthnClient?.isBiometricAvailable();
 
     if (enrolled && biometricSupported && biometricSection) {
-      // Show biometric-first screen
       if (biometricEmail) biometricEmail.textContent = enrolled.email;
       biometricSection.style.display  = 'flex';
       if (passwordSection) passwordSection.style.display = 'none';
     } else {
-      // Show standard email/password form
       if (biometricSection) biometricSection.style.display = 'none';
       if (passwordSection) passwordSection.style.display = 'block';
     }
   }
 
-  // ── 4. Biometric login button ─────────────────────────────────────────────
+  // ── 5. Biometric login button ─────────────────────────────────────────────
   if (btnBiometric) {
     btnBiometric.addEventListener('click', handleBiometricLogin);
   }
@@ -287,10 +339,12 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error(verData.error || 'Enrollment verification failed.');
       }
 
-      // 10e. Save credential ID + email locally for next login
+      // 10e. Save credential ID + email locally for next login & enable App Lock
       window.WebAuthnClient.saveEnrolledCredential(session.user.email, verData.credentialId);
+      window.WebAuthnClient.setAppLockEnabled(true);
+      window.WebAuthnClient.setUnlockedThisSession(true);
 
-      toast.success('Fingerprint login enabled! Next time, just tap your finger. 🎉');
+      toast.success('Fingerprint App Lock enabled! Your app is now protected. 🎉');
     } catch (err) {
       if (err.name === 'NotAllowedError' || err.name === 'AbortError') {
         toast.info('Fingerprint enrollment cancelled.');
@@ -311,14 +365,16 @@ document.addEventListener('DOMContentLoaded', () => {
   function updateSettingsBiometricUI() {
     if (!settingsStatus) return;
     const enrolled = window.WebAuthnClient?.getEnrolledCredential();
-    if (enrolled) {
-      settingsStatus.innerHTML = `<span style="color: #2D6A4F;">🟢 Enabled</span> for <strong>${enrolled.email}</strong> on this device.`;
+    const appLockOn = window.WebAuthnClient?.isAppLockEnabled();
+
+    if (enrolled || appLockOn) {
+      settingsStatus.innerHTML = `<span style="color: #2D6A4F;">🟢 Fingerprint App Lock Active</span> for <strong>${enrolled?.email || 'Admin'}</strong> on this device.`;
       if (btnSettingsRemove) btnSettingsRemove.style.display = 'inline-block';
       if (btnSettingsEnroll) btnSettingsEnroll.textContent = '🔄 Re-enroll Fingerprint';
     } else {
-      settingsStatus.innerHTML = `<span style="color: var(--admin-muted);">⚪ Not Enabled</span> on this device.`;
+      settingsStatus.innerHTML = `<span style="color: var(--admin-muted);">⚪ App Lock Inactive</span> on this device.`;
       if (btnSettingsRemove) btnSettingsRemove.style.display = 'none';
-      if (btnSettingsEnroll) btnSettingsEnroll.textContent = '👆 Enable Fingerprint Login';
+      if (btnSettingsEnroll) btnSettingsEnroll.textContent = '👆 Enable Fingerprint App Lock';
     }
   }
 
@@ -331,17 +387,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (btnSettingsRemove) {
     btnSettingsRemove.addEventListener('click', () => {
-      if (!confirm('Remove fingerprint login from this device?')) return;
+      if (!confirm('Remove fingerprint app lock from this device?')) return;
       window.WebAuthnClient?.clearEnrolledCredential();
       updateSettingsBiometricUI();
-      toast.info('Fingerprint login removed from this device.');
+      toast.info('Fingerprint app lock removed from this device.');
     });
   }
 
   // ── UI helpers ────────────────────────────────────────────────────────────
   function showDashboard() {
     const alreadyVisible = dashView.style.display === 'grid';
-    authView.style.display = 'none';
+    if (authView) authView.style.display = 'none';
+    if (appLockView) appLockView.style.display = 'none';
     dashView.style.display = 'grid';
 
     updateSettingsBiometricUI();
@@ -356,7 +413,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function showAppLockView(email) {
+    if (authView) authView.style.display = 'none';
+    if (dashView) dashView.style.display = 'none';
+    if (appLockView) {
+      if (appLockEmail) appLockEmail.textContent = email || 'Admin';
+      appLockView.style.display = 'flex';
+    }
+  }
+
   function showAuthView() {
+    if (appLockView) appLockView.style.display = 'none';
     authView.style.display = 'flex';
     dashView.style.display = 'none';
   }
@@ -372,5 +439,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function hideAuthError() {
     if (authError) authError.style.display = 'none';
     if (biometricAuthError) biometricAuthError.style.display = 'none';
+    if (appLockError) appLockError.style.display = 'none';
   }
 });

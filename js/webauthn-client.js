@@ -168,7 +168,42 @@
    * Remove the enrolled credential metadata (e.g., on "Remove biometric" action).
    */
   function clearEnrolledCredential() {
-    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem('mqlc_app_lock');
+      sessionStorage.removeItem('mqlc_unlocked');
+    } catch { /* ignore */ }
+  }
+
+  // ── App Lock Helpers ──────────────────────────────────────────────────────
+
+  function isAppLockEnabled() {
+    try { return localStorage.getItem('mqlc_app_lock') === '1'; } catch { return false; }
+  }
+
+  function setAppLockEnabled(enabled) {
+    try {
+      if (enabled) {
+        localStorage.setItem('mqlc_app_lock', '1');
+      } else {
+        localStorage.removeItem('mqlc_app_lock');
+        sessionStorage.removeItem('mqlc_unlocked');
+      }
+    } catch { /* ignore */ }
+  }
+
+  function isUnlockedThisSession() {
+    try { return sessionStorage.getItem('mqlc_unlocked') === '1'; } catch { return false; }
+  }
+
+  function setUnlockedThisSession(unlocked) {
+    try {
+      if (unlocked) {
+        sessionStorage.setItem('mqlc_unlocked', '1');
+      } else {
+        sessionStorage.removeItem('mqlc_unlocked');
+      }
+    } catch { /* ignore */ }
   }
 
   // ── Export ────────────────────────────────────────────────────────────────
@@ -180,5 +215,9 @@
     saveEnrolledCredential,
     getEnrolledCredential,
     clearEnrolledCredential,
+    isAppLockEnabled,
+    setAppLockEnabled,
+    isUnlockedThisSession,
+    setUnlockedThisSession,
   };
 })(window);
