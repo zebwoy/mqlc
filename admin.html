@@ -73,134 +73,59 @@
   <div id="print-receipt-container" style="display: none;"></div>
 
   <!-- ═══════════════════════════════════════════════════════════
-       LOGIN STATE — Multi-state: Biometric-first or Email/Password
+       LOGIN STATE — Email / Password
   ════════════════════════════════════════════════════════════ -->
   <div id="auth-view" class="auth-wrapper fullscreen-flex">
     <div class="auth-card">
 
-      <!-- Shared Header -->
       <div class="auth-header">
         <img src="assets/logo.png" alt="MQLC Logo" class="logo-circle">
         <h2>MQLC Admin</h2>
         <p>Restricted access. Please sign in.</p>
       </div>
 
-      <!-- ── STATE A: Biometric Login (shown when device has enrolled credential) ── -->
-      <div id="biometric-section" style="display: none; flex-direction: column; align-items: center; gap: 1rem;">
-
-        <p class="biometric-user-label">
-          Signing in as <span id="biometric-email" class="biometric-email-chip"></span>
-        </p>
-
-        <button id="btn-biometric-login" class="btn-biometric" type="button" data-state="idle">
-          <span class="biometric-pulse-ring"></span>
-          <span class="biometric-icon" aria-hidden="true">👆</span>
-          <span class="biometric-label">Sign in with Fingerprint</span>
-        </button>
-
-        <div id="biometric-auth-error" class="error-msg" style="display: none; width: 100%; text-align: center;"></div>
-
-        <div class="biometric-divider">
-          <span>or</span>
+      <form id="login-form">
+        <div class="input-group">
+          <label for="email">Admin Email</label>
+          <input type="email" id="email" name="email" required autocomplete="email">
+        </div>
+        <div class="input-group">
+          <label for="password">Password</label>
+          <div style="position: relative; display: flex; align-items: center;">
+            <input type="password" id="password" name="password" required autocomplete="current-password"
+              style="width: 100%; padding-right: 2.5rem;">
+            <button type="button" id="btn-toggle-password"
+              style="position: absolute; right: 10px; background: none; border: none; cursor: pointer; color: var(--admin-muted); display: flex; padding: 4px;">
+              <svg id="icon-eye-closed" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none"
+                stroke-width="2" style="display: none;">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+              <svg id="icon-eye-open" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none"
+                stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
         </div>
 
-        <button id="btn-show-password-form" type="button" class="btn-text-link">
-          Use email &amp; password instead
+        <div id="auth-error" class="error-msg" style="display: none;">Invalid credentials</div>
+
+        <button type="submit" id="btn-login" class="btn-primary" style="width: 100%; margin-top: 1rem;">
+          Sign In
         </button>
-
-        <button id="btn-remove-biometric" type="button" class="btn-danger-link">
-          Remove fingerprint from this device
-        </button>
-      </div>
-
-      <!-- ── STATE B: Email/Password (default or fallback) ── -->
-      <div id="password-section">
-        <form id="login-form">
-          <div class="input-group">
-            <label for="email">Admin Email</label>
-            <input type="email" id="email" name="email" required autocomplete="email">
-          </div>
-          <div class="input-group">
-            <label for="password">Password</label>
-            <div style="position: relative; display: flex; align-items: center;">
-              <input type="password" id="password" name="password" required autocomplete="current-password"
-                style="width: 100%; padding-right: 2.5rem;">
-              <button type="button" id="btn-toggle-password"
-                style="position: absolute; right: 10px; background: none; border: none; cursor: pointer; color: var(--admin-muted); display: flex; padding: 4px;">
-                <svg id="icon-eye-closed" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none"
-                  stroke-width="2" style="display: none;">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                  <line x1="1" y1="1" x2="23" y2="23"></line>
-                </svg>
-                <svg id="icon-eye-open" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none"
-                  stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div id="auth-error" class="error-msg" style="display: none;">Invalid credentials</div>
-
-          <button type="submit" id="btn-login" class="btn-primary" style="width: 100%; margin-top: 1rem;">
-            Sign In
-          </button>
-        </form>
-      </div>
+      </form>
 
     </div>
   </div>
 
-
-  <!-- ═══════════════════════════════════════════════════════════
-       APP LOCK STATE — Fingerprint Screen Lock when reopening app
-  ════════════════════════════════════════════════════════════ -->
-  <div id="app-lock-view" class="auth-wrapper fullscreen-flex" style="display: none;">
-    <div class="auth-card" style="text-align: center;">
-      <div class="auth-header">
-        <img src="assets/logo.png" alt="MQLC Logo" class="logo-circle">
-        <h2>MQLC Admin</h2>
-        <p class="biometric-user-label">
-          App Locked &bull; <span id="app-lock-email" class="biometric-email-chip"></span>
-        </p>
-      </div>
-
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 1.25rem; margin-top: 1rem;">
-        <button id="btn-unlock-app" class="btn-biometric" type="button" data-state="idle">
-          <span class="biometric-pulse-ring"></span>
-          <span class="biometric-icon" aria-hidden="true">👆</span>
-          <span class="biometric-label">Unlock with Fingerprint</span>
-        </button>
-
-        <div id="app-lock-error" class="error-msg" style="display: none; width: 100%; text-align: center;"></div>
-
-        <button id="btn-lock-use-password" type="button" class="btn-text-link">
-          Use password instead
-        </button>
-      </div>
-    </div>
-  </div>
 
 
   <!-- ═══════════════════════════════════════════════════════════
        DASHBOARD STATE (Hidden until authorized)
   ════════════════════════════════════════════════════════════ -->
   <div id="dashboard-view" class="app-layout" style="display: none;">
-
-    <!-- ── Biometric Enrollment Banner (slides in after first password login inside dashboard) ── -->
-    <div id="biometric-enroll-banner" class="biometric-enroll-banner" role="dialog" aria-label="Enable fingerprint login">
-      <div class="enroll-banner-icon" aria-hidden="true">👆</div>
-      <div class="enroll-banner-text">
-        <strong>Enable Fingerprint Login?</strong>
-        <span>Sign in instantly next time — no password needed.</span>
-      </div>
-      <div class="enroll-banner-actions">
-        <button id="btn-enroll-biometric" class="btn-primary" style="padding: 0.5rem 1.25rem; font-size: 0.9rem; border-radius: 50px;">Enable</button>
-        <button id="btn-enroll-dismiss" class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem; border-radius: 50px; border-color: transparent;">Not Now</button>
-      </div>
-      <button class="enroll-banner-close" onclick="document.getElementById('biometric-enroll-banner').classList.remove('visible')" aria-label="Close">&times;</button>
-    </div>
 
     <!-- Sidebar Overlay for Mobile -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
@@ -1262,30 +1187,6 @@
           </form>
         </div>
 
-        <!-- ── Security & Biometric Section ── -->
-        <div class="card" style="margin-top: 1.5rem;">
-          <div class="form-section">
-            <h4 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-              <span>👆</span> Fingerprint &amp; Biometric Security
-            </h4>
-            <p style="font-size: 0.85rem; color: var(--admin-muted); margin-bottom: 1.25rem; line-height: 1.5;">
-              Register your phone's fingerprint sensor or face unlock to log in instantly without typing your password.
-            </p>
-
-            <div id="biometric-settings-status" style="margin-bottom: 1.25rem; font-size: 0.9rem; font-weight: 500;">
-              <!-- Dynamically populated by js/auth.js -->
-            </div>
-
-            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
-              <button type="button" id="btn-settings-enroll-biometric" class="btn-primary" style="border-radius: 50px; padding: 0.65rem 1.4rem; font-size: 0.9rem;">
-                👆 Enable Fingerprint Login
-              </button>
-              <button type="button" id="btn-settings-remove-biometric" class="btn-secondary" style="border-radius: 50px; padding: 0.65rem 1.4rem; font-size: 0.9rem; color: #dc2626; border-color: rgba(220,38,38,0.3); display: none;">
-                Remove Fingerprint
-              </button>
-            </div>
-          </div>
-        </div>
       </section>
 
     </main>
@@ -1298,7 +1199,7 @@
   <script src="js/components/utils.js"></script>
   <script src="js/components/datepicker.js"></script>
   <script src="js/components/select.js"></script>
-  <script src="js/webauthn-client.js"></script>
+
   <script src="js/auth.js"></script>
   <script src="js/components/RadioGroup.js"></script>
   <script src="js/components/AadharInput.js"></script>
