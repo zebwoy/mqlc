@@ -202,11 +202,36 @@
     open() {
       // Close any other open custom selects first
       document.querySelectorAll('.custom-select-wrapper.open').forEach(el => {
-        if (el !== this.wrapper) el.classList.remove('open');
+        if (el !== this.wrapper) {
+          el.classList.remove('open');
+          el.classList.remove('drop-up');
+        }
       });
       
-      this.wrapper.classList.add('open');
       this.syncOptions(); // make sure it's fully in sync before displaying
+
+      // Smart direction positioning: calculate space below vs space above
+      const triggerRect = this.trigger.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      const spaceBelow = viewportHeight - triggerRect.bottom;
+      const spaceAbove = triggerRect.top;
+
+      // Check space inside modal body container if applicable
+      const modalBody = this.wrapper.closest('.modal-body, dialog, .admin-modal');
+      let spaceBelowParent = spaceBelow;
+      if (modalBody) {
+        const parentRect = modalBody.getBoundingClientRect();
+        spaceBelowParent = Math.min(spaceBelow, parentRect.bottom - triggerRect.bottom);
+      }
+
+      // If space below is under 220px and there is more room above, open upwards
+      if (spaceBelowParent < 220 && spaceAbove > spaceBelowParent) {
+        this.wrapper.classList.add('drop-up');
+      } else {
+        this.wrapper.classList.remove('drop-up');
+      }
+
+      this.wrapper.classList.add('open');
       
       // Scroll selected option into view if list is long
       const selectedOpt = this.dropdown.querySelector('.custom-select-option.selected');
@@ -217,6 +242,7 @@
 
     close() {
       this.wrapper.classList.remove('open');
+      this.wrapper.classList.remove('drop-up');
     }
 
     destroy() {
