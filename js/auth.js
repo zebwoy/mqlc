@@ -302,11 +302,48 @@ document.addEventListener('DOMContentLoaded', () => {
   // Expose enrollment handler so the settings panel can also call it
   window.handleBiometricEnrollment = handleBiometricEnrollment;
 
+  // ── 11. Settings Tab Biometric Management ─────────────────────────────────
+  const btnSettingsEnroll = document.getElementById('btn-settings-enroll-biometric');
+  const btnSettingsRemove = document.getElementById('btn-settings-remove-biometric');
+  const settingsStatus    = document.getElementById('biometric-settings-status');
+
+  function updateSettingsBiometricUI() {
+    if (!settingsStatus) return;
+    const enrolled = window.WebAuthnClient?.getEnrolledCredential();
+    if (enrolled) {
+      settingsStatus.innerHTML = `<span style="color: #2D6A4F;">🟢 Enabled</span> for <strong>${enrolled.email}</strong> on this device.`;
+      if (btnSettingsRemove) btnSettingsRemove.style.display = 'inline-block';
+      if (btnSettingsEnroll) btnSettingsEnroll.textContent = '🔄 Re-enroll Fingerprint';
+    } else {
+      settingsStatus.innerHTML = `<span style="color: var(--admin-muted);">⚪ Not Enabled</span> on this device.`;
+      if (btnSettingsRemove) btnSettingsRemove.style.display = 'none';
+      if (btnSettingsEnroll) btnSettingsEnroll.textContent = '👆 Enable Fingerprint Login';
+    }
+  }
+
+  if (btnSettingsEnroll) {
+    btnSettingsEnroll.addEventListener('click', async () => {
+      await handleBiometricEnrollment();
+      updateSettingsBiometricUI();
+    });
+  }
+
+  if (btnSettingsRemove) {
+    btnSettingsRemove.addEventListener('click', () => {
+      if (!confirm('Remove fingerprint login from this device?')) return;
+      window.WebAuthnClient?.clearEnrolledCredential();
+      updateSettingsBiometricUI();
+      toast.info('Fingerprint login removed from this device.');
+    });
+  }
+
   // ── UI helpers ────────────────────────────────────────────────────────────
   function showDashboard() {
     const alreadyVisible = dashView.style.display === 'grid';
     authView.style.display = 'none';
     dashView.style.display = 'grid';
+
+    updateSettingsBiometricUI();
 
     if (!alreadyVisible) {
       maybeShowEnrollBanner();

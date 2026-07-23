@@ -50,10 +50,13 @@
   async function isBiometricAvailable() {
     try {
       if (!window.PublicKeyCredential) return false;
-      if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable !== 'function') return false;
-      return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+      if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
+        const platformOk = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+        if (platformOk) return true;
+      }
+      return !!window.PublicKeyCredential;
     } catch {
-      return false;
+      return !!window.PublicKeyCredential;
     }
   }
 

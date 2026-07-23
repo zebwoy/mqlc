@@ -1231,6 +1231,31 @@
             </div>
           </form>
         </div>
+
+        <!-- ── Security & Biometric Section ── -->
+        <div class="card" style="margin-top: 1.5rem;">
+          <div class="form-section">
+            <h4 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+              <span>👆</span> Fingerprint &amp; Biometric Security
+            </h4>
+            <p style="font-size: 0.85rem; color: var(--admin-muted); margin-bottom: 1.25rem; line-height: 1.5;">
+              Register your phone's fingerprint sensor or face unlock to log in instantly without typing your password.
+            </p>
+
+            <div id="biometric-settings-status" style="margin-bottom: 1.25rem; font-size: 0.9rem; font-weight: 500;">
+              <!-- Dynamically populated by js/auth.js -->
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+              <button type="button" id="btn-settings-enroll-biometric" class="btn-primary" style="border-radius: 50px; padding: 0.65rem 1.4rem; font-size: 0.9rem;">
+                👆 Enable Fingerprint Login
+              </button>
+              <button type="button" id="btn-settings-remove-biometric" class="btn-secondary" style="border-radius: 50px; padding: 0.65rem 1.4rem; font-size: 0.9rem; color: #dc2626; border-color: rgba(220,38,38,0.3); display: none;">
+                Remove Fingerprint
+              </button>
+            </div>
+          </div>
+        </div>
       </section>
 
     </main>
