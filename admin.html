@@ -408,14 +408,36 @@
 
               <div class="form-section">
                 <h4>2. Student Identity</h4>
-                <div class="grid-2">
-                  <div class="input-group full-width">
-                    <label>Student Full Name</label>
-                    <input type="text" name="student_name" required>
+                
+                <!-- Sibling / Family Quick-Fill Bar -->
+                <div class="sibling-quickfill-bar" style="background: rgba(45, 106, 79, 0.05); border: 1.5px dashed var(--admin-accent); border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; position: relative;">
+                  <div style="display: flex; align-items: center; gap: 0.6rem; min-width: 220px; flex: 1;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--admin-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <div>
+                      <strong style="font-size: 0.85rem; color: var(--admin-accent);">Enrolling a Sibling?</strong>
+                      <p style="margin: 0; font-size: 0.76rem; color: var(--admin-muted);">Search existing student to auto-fill Parent Name, Address & Contact info.</p>
+                    </div>
                   </div>
-                  <div class="input-group full-width">
+                  <div style="display: flex; gap: 0.5rem; align-items: center; position: relative; flex: 1; max-width: 320px; min-width: 200px;">
+                    <input type="text" id="reg-sibling-search" placeholder="Search sibling by name..." class="modal-input" style="width: 100%; padding: 0.4rem 0.85rem; font-size: 0.82rem; border-radius: 50px; background: #fff;">
+                    <div id="reg-sibling-results" class="sibling-autocomplete-results" style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 100; background: #ffffff; border: 1px solid var(--admin-border); border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.12); max-height: 200px; overflow-y: auto; padding: 0.3rem;"></div>
+                  </div>
+                  <button type="button" id="btn-last-sibling-fill" style="display: none; padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; border-radius: 50px; background: var(--admin-accent); color: #fff; border: none; cursor: pointer; transition: opacity 0.2s;" title="Auto-fill family details from last submitted student">⚡ Quick-fill Last Parent</button>
+                </div>
+
+                <div class="grid-2">
+                  <div class="input-group">
+                    <label>Student Full Name</label>
+                    <input type="text" name="student_name" required placeholder="e.g. Ayaan Kazi">
+                  </div>
+                  <div class="input-group">
                     <label>Father's Name</label>
-                    <input type="text" name="father_name" required>
+                    <input type="text" name="father_name" required placeholder="e.g. Imran Kazi">
                   </div>
                   <div class="input-group">
                     <label>Gender</label>
@@ -427,7 +449,7 @@
                   </div>
                   <div class="input-group full-width">
                     <label>Residential Address</label>
-                    <textarea name="address" rows="2" required></textarea>
+                    <textarea name="address" rows="2" required placeholder="Flat / House No, Building, Colony, City"></textarea>
                   </div>
                   <div class="input-group full-width">
                     <label>Aadhar Number</label>
@@ -435,11 +457,11 @@
                   </div>
                   <div class="input-group">
                     <label>Father's Contact No.</label>
-                    <input type="tel" name="contact_father">
+                    <input type="tel" name="contact_father" placeholder="10-digit mobile no.">
                   </div>
                   <div class="input-group">
                     <label>Mother's Contact No.</label>
-                    <input type="tel" name="contact_mother">
+                    <input type="tel" name="contact_mother" placeholder="10-digit mobile no.">
                   </div>
                 </div>
               </div>

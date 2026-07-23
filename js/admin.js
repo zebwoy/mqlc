@@ -553,6 +553,15 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         await savePromise;
 
+        // Store family info for consecutive sibling quick-fill
+        lastSubmittedFamily = {
+          father_name: fd.get('father_name'),
+          address: fd.get('address'),
+          contact_father: contactFather,
+          contact_mother: contactMother
+        };
+        updateLastSiblingBadge();
+
         manualForm.reset();
 
         // Reset all form components to their defaults
@@ -618,6 +627,46 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    // Session memory for the last submitted parent/family info
+    let lastSubmittedFamily = null;
+
+    function applyFamilyDetails(family) {
+      if (!family) return;
+      const fatherInput = manualForm.querySelector('input[name="father_name"]');
+      const addressInput = manualForm.querySelector('textarea[name="address"]');
+      const fatherTel = manualForm.querySelector('input[name="contact_father"]');
+      const motherTel = manualForm.querySelector('input[name="contact_mother"]');
+
+      if (fatherInput && family.father_name) fatherInput.value = family.father_name;
+      if (addressInput && family.address) addressInput.value = family.address;
+      if (fatherTel && family.contact_father) fatherTel.value = family.contact_father;
+      if (motherTel && family.contact_mother) motherTel.value = family.contact_mother;
+
+      if (typeof toast !== 'undefined') {
+        toast.success(`Auto-filled family details for ${family.father_name || 'parent'}!`);
+      }
+    }
+
+    function updateLastSiblingBadge() {
+      const btn = document.getElementById('btn-last-sibling-fill');
+      if (!btn) return;
+      if (lastSubmittedFamily && lastSubmittedFamily.father_name) {
+        btn.textContent = `⚡ Quick-fill: ${lastSubmittedFamily.father_name}`;
+        btn.style.display = 'inline-block';
+      } else {
+        btn.style.display = 'none';
+      }
+    }
+
+    const btnLastSibling = document.getElementById('btn-last-sibling-fill');
+    if (btnLastSibling) {
+      btnLastSibling.addEventListener('click', () => {
+        if (lastSubmittedFamily) {
+          applyFamilyDetails(lastSubmittedFamily);
+        }
+      });
+    }
+
     // ─── Initialise reusable components in the manual entry form ────────
 
     function initManualEntryComponents() {
@@ -657,9 +706,66 @@ document.addEventListener('DOMContentLoaded', () => {
         window._regDob = new SmartDateInput(dobEl);
       }
 
-      // CustomSelect for form dropdowns is handled globally at startup
-      // (document.querySelectorAll('select') wraps all selects at line ~30).
-      // Re-wrapping here would create a double-dropdown. Skip.
+      // Sibling Search Autocomplete via SmartSearch
+      const siblingSearchInput = document.getElementById('reg-sibling-search');
+      const siblingResultsContainer = document.getElementById('reg-sibling-results');
+
+      if (siblingSearchInput && typeof SmartSearch !== 'undefined' && !siblingSearchInput.dataset.init) {
+        siblingSearchInput.dataset.init = '1';
+        new SmartSearch(siblingSearchInput, {
+          debounceMs: 150,
+          onInput: (val) => {
+            const q = val.trim().toLowerCase();
+            if (!q || !cachedStudents || cachedStudents.length === 0) {
+              if (siblingResultsContainer) siblingResultsContainer.style.display = 'none';
+              return;
+            }
+
+            const matches = cachedStudents.filter(s =>
+              (s.student_name || '').toLowerCase().includes(q) ||
+              (s.father_name || '').toLowerCase().includes(q) ||
+              (s.contact_father || '').includes(q)
+            ).slice(0, 5);
+
+            if (matches.length === 0) {
+              siblingResultsContainer.innerHTML = '<div style="font-size:0.78rem;color:var(--admin-muted);padding:0.4rem;text-align:center;">No matching sibling found</div>';
+              siblingResultsContainer.style.display = 'block';
+              return;
+            }
+
+            siblingResultsContainer.innerHTML = matches.map(s => `
+              <div class="sibling-search-item" data-id="${s.id}">
+                <span class="sibling-item-name">${s.student_name}</span>
+                <span class="sibling-item-meta">Father: ${s.father_name || 'N/A'} • ${s.contact_father || 'No phone'}</span>
+              </div>
+            `).join('');
+
+            siblingResultsContainer.style.display = 'block';
+
+            siblingResultsContainer.querySelectorAll('.sibling-search-item').forEach(item => {
+              item.addEventListener('click', () => {
+                const sid = item.dataset.id;
+                const found = cachedStudents.find(s => s.id.toString() === sid.toString());
+                if (found) {
+                  applyFamilyDetails(found);
+                }
+                siblingResultsContainer.style.display = 'none';
+                siblingSearchInput.value = '';
+                if (siblingSearchInput._smartSearch) siblingSearchInput._smartSearch.syncClearButton();
+              });
+            });
+          },
+          onClear: () => {
+            if (siblingResultsContainer) siblingResultsContainer.style.display = 'none';
+          }
+        });
+
+        document.addEventListener('click', (e) => {
+          if (siblingResultsContainer && !siblingResultsContainer.contains(e.target) && e.target !== siblingSearchInput) {
+            siblingResultsContainer.style.display = 'none';
+          }
+        });
+      }
     }
 
     // Init once on first load

@@ -2255,4 +2255,36 @@ body:has(dialog.admin-modal[open])>*:not(dialog):not(#toast-container) {
 
 .smart-search-clear-btn:active {
   transform: scale(0.95);
+}
+
+/* ─── Sibling Quick-Fill Autocomplete Styles ───────────────────── */
+.sibling-autocomplete-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.sibling-search-item {
+  padding: 0.5rem 0.7rem;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  transition: background 0.15s ease;
+}
+
+.sibling-search-item:hover {
+  background: rgba(45, 106, 79, 0.08);
+}
+
+.sibling-item-name {
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--admin-text, #1e293b);
+}
+
+.sibling-item-meta {
+  font-size: 0.74rem;
+  color: var(--admin-muted, #64748b);
 }
