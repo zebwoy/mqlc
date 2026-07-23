@@ -482,6 +482,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const contactMother = fd.get('contact_mother');
 
       if (!contactFather && !contactMother) {
+        if (typeof toast !== 'undefined') {
+          toast.warning('Please provide at least one contact number (Father or Mother).');
+        }
         manualStatusMsg.textContent = 'Validation Error: Please provide at least one contact number (Father or Mother).';
         manualStatusMsg.className = 'status-msg error';
         manualStatusMsg.style.display = 'block';
@@ -490,36 +493,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Fee from the form field — optional, defaults to ₹300 if not entered
       const feeVal = parseInt(fd.get('monthly_fee') || 0) || 300;
-
-      try {
-        const btn = document.getElementById('btn-submit-reg');
-        btn.textContent = 'Saving Record...';
+      const btn = document.getElementById('btn-submit-reg');
+      if (btn) {
         btn.disabled = true;
+        btn.dataset.originalText = btn.textContent;
+        btn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:0.4rem;"><svg style="animation:loaderSpin 0.7s linear infinite" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Saving Record…</span>';
+      }
 
-        const dojVal = fd.get('doj') || null;
+      const dojVal = fd.get('doj') || null;
 
-        const payload = {
-          doj: dojVal,
-          form_no: fd.get('form_no') || null,
-          course_applying: fd.get('course_applying') || 'Unassigned',
-          student_name: fd.get('student_name') || null,
-          father_name: fd.get('father_name') || null,
-          gender: fd.get('gender') || null,
-          dob: fd.get('dob') || null,
-          aadhar_no: fd.get('aadhar_no') || null,
-          address: fd.get('address') || null,
-          contact_father: contactFather || null,
-          contact_mother: contactMother || null,
-          current_class: fd.get('current_class') || null,
-          school_name: 'N/A',
-          school_days: 'N/A',
-          school_time: 'N/A',
-          batch: fd.get('batch') || null,
-          monthly_fee: feeVal,
-          is_prepaid: fd.get('is_prepaid') === 'true',
-          status: 'approved' // explicitly bypass queue and auto-approve manual entries
-        };
+      const payload = {
+        doj: dojVal,
+        form_no: fd.get('form_no') || null,
+        course_applying: fd.get('course_applying') || 'Unassigned',
+        student_name: fd.get('student_name') || null,
+        father_name: fd.get('father_name') || null,
+        gender: fd.get('gender') || null,
+        dob: fd.get('dob') || null,
+        aadhar_no: fd.get('aadhar_no') || null,
+        address: fd.get('address') || null,
+        contact_father: contactFather || null,
+        contact_mother: contactMother || null,
+        current_class: fd.get('current_class') || null,
+        school_name: 'N/A',
+        school_days: 'N/A',
+        school_time: 'N/A',
+        batch: fd.get('batch') || null,
+        monthly_fee: feeVal,
+        is_prepaid: fd.get('is_prepaid') === 'true',
+        status: 'approved' // explicitly bypass queue and auto-approve manual entries
+      };
 
+      const studentName = fd.get('student_name') || 'Student';
+
+      const savePromise = (async () => {
         const { data, error } = await window._supabase
           .from('student_registrations')
           .insert([payload])
@@ -532,6 +539,20 @@ document.addEventListener('DOMContentLoaded', () => {
           await recordAdmissionPayment(data[0].id, data[0].doj || dojVal, feeVal);
         }
 
+        await hydrateDashboardAndAnalytics();
+      })();
+
+      if (typeof toast !== 'undefined') {
+        toast.promise(savePromise, {
+          loading: `Registering ${studentName}…`,
+          success: `${studentName} registered successfully!`,
+          error: (err) => `Failed to save: ${err.message}`
+        });
+      }
+
+      try {
+        await savePromise;
+
         manualForm.reset();
 
         // Reset all form components to their defaults
@@ -539,7 +560,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window._regAadhar) window._regAadhar.reset();
         if (window._regDoj) window._regDoj.setValue(new Date().toISOString().split('T')[0]);
         if (window._regDob) window._regDob.reset();
-        // Sync all CustomSelect wrappers inside the form back to their reset values
         manualForm.querySelectorAll('.custom-select-wrapper').forEach(w => {
           if (w._csInstance) w._csInstance.syncOptions();
         });
@@ -555,16 +575,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 5000);
 
         // Regenerate a fresh form number for the next entry
-        await initManualFormNumber();
+        if (initManualFormNumber) await initManualFormNumber();
       } catch (err) {
         console.error(err);
         manualStatusMsg.textContent = `Failed to save: ${err.message}`;
         manualStatusMsg.className = 'status-msg error';
         manualStatusMsg.style.display = 'block';
       } finally {
-        const btn = document.getElementById('btn-submit-reg');
-        btn.textContent = 'Submit Registration';
-        btn.disabled = false;
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = btn.dataset.originalText || 'Submit Registration';
+        }
+      }
+    });
+
+    // Handle form reset (Clear Form button)
+    manualForm.addEventListener('reset', () => {
+      setTimeout(async () => {
+        if (window._regGender) window._regGender.setValue('Male');
+        if (window._regAadhar) window._regAadhar.reset();
+        if (window._regDoj) window._regDoj.setValue(new Date().toISOString().split('T')[0]);
+        if (window._regDob) window._regDob.reset();
+        manualForm.querySelectorAll('.custom-select-wrapper').forEach(w => {
+          if (w._csInstance) w._csInstance.syncOptions();
+        });
+        if (manualStatusMsg) {
+          manualStatusMsg.style.display = 'none';
+          manualStatusMsg.textContent = '';
+        }
+        if (initManualFormNumber) await initManualFormNumber();
+      }, 0);
+    });
+
+    // Format contact numbers to 10 digits
+    const fatherTel = manualForm.querySelector('input[name="contact_father"]');
+    const motherTel = manualForm.querySelector('input[name="contact_mother"]');
+    [fatherTel, motherTel].forEach(inp => {
+      if (inp) {
+        inp.addEventListener('input', () => {
+          inp.value = inp.value.replace(/\D/g, '').slice(0, 10);
+        });
       }
     });
 
