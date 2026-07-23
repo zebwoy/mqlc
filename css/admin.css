@@ -2293,13 +2293,29 @@ body:has(dialog.admin-modal[open])>*:not(dialog):not(#toast-container) {
 }
 
 /* ─── Mobile Webview & Responsive Profile Modal Refinements ──────── */
-@media (max-width: 640px) {
+.mobile-safe-top-bar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-safe-top-bar {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: max(calc(var(--sat, 0px) + 26px), 36px);
+    background: var(--admin-sidebar, #1A1A2E);
+    z-index: 99999;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+
   body {
-    padding-top: max(calc(var(--sat) + 10px), 14px);
+    padding-top: max(calc(var(--sat, 0px) + 38px), 48px) !important;
   }
 
   .main-content {
-    padding-top: 0.5rem;
+    padding-top: 0.5rem !important;
   }
 
   /* Profile Modal Responsive Layout Fix (ISSUE 4) */

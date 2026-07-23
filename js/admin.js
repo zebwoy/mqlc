@@ -616,13 +616,25 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 0);
     });
 
-    // Format contact numbers to 10 digits
+    // Format numeric fields to allow only digits
     const fatherTel = manualForm.querySelector('input[name="contact_father"]');
     const motherTel = manualForm.querySelector('input[name="contact_mother"]');
+    const monthlyFeeInp = manualForm.querySelector('input[name="monthly_fee"]');
+    const payAmountInp = document.getElementById('pay-amount');
+    const setfeeAmountInp = document.getElementById('setfee-amount');
+
     [fatherTel, motherTel].forEach(inp => {
       if (inp) {
         inp.addEventListener('input', () => {
           inp.value = inp.value.replace(/\D/g, '').slice(0, 10);
+        });
+      }
+    });
+
+    [monthlyFeeInp, payAmountInp, setfeeAmountInp].forEach(inp => {
+      if (inp) {
+        inp.addEventListener('input', () => {
+          inp.value = inp.value.replace(/\D/g, '');
         });
       }
     });
