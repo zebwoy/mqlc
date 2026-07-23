@@ -616,28 +616,44 @@ document.addEventListener('DOMContentLoaded', () => {
       }, 0);
     });
 
-    // Format numeric fields to allow only digits
-    const fatherTel = manualForm.querySelector('input[name="contact_father"]');
-    const motherTel = manualForm.querySelector('input[name="contact_mother"]');
-    const monthlyFeeInp = manualForm.querySelector('input[name="monthly_fee"]');
-    const payAmountInp = document.getElementById('pay-amount');
-    const setfeeAmountInp = document.getElementById('setfee-amount');
+    // ─── Universal Mobile Numpad Interceptor & Data Sanitizer ───
+    function initNumpadInterceptors() {
+      const numpadInputs = document.querySelectorAll('input[inputmode="numeric"], input[pattern="[0-9]*"]');
+      numpadInputs.forEach(input => {
+        if (input.dataset.numpadInterceptorAttached) return;
+        input.dataset.numpadInterceptorAttached = 'true';
 
-    [fatherTel, motherTel].forEach(inp => {
-      if (inp) {
-        inp.addEventListener('input', () => {
-          inp.value = inp.value.replace(/\D/g, '').slice(0, 10);
-        });
-      }
-    });
+        const sanitize = () => {
+          const selectionStart = input.selectionStart;
+          const rawValue = input.value;
+          const cleanedValue = rawValue.replace(/\D/g, '');
+          let finalValue = cleanedValue;
+          if (input.name === 'contact_father' || input.name === 'contact_mother') {
+            finalValue = cleanedValue.slice(0, 10);
+          } else if (input.maxLength && input.maxLength > 0) {
+            finalValue = cleanedValue.slice(0, input.maxLength);
+          }
+          if (rawValue !== finalValue) {
+            input.value = finalValue;
+            if (selectionStart !== null && selectionStart > 0) {
+              const newPos = Math.min(selectionStart, finalValue.length);
+              try { input.setSelectionRange(newPos, newPos); } catch (_) {}
+            }
+          }
+        };
 
-    [monthlyFeeInp, payAmountInp, setfeeAmountInp].forEach(inp => {
-      if (inp) {
-        inp.addEventListener('input', () => {
-          inp.value = inp.value.replace(/\D/g, '');
+        input.addEventListener('input', sanitize);
+        input.addEventListener('paste', (e) => {
+          setTimeout(sanitize, 0);
         });
-      }
-    });
+      });
+    }
+
+    initNumpadInterceptors();
+    try {
+      const numpadObserver = new MutationObserver(() => initNumpadInterceptors());
+      numpadObserver.observe(document.body, { childList: true, subtree: true });
+    } catch (_) {}
 
     // Session memory for the last submitted parent/family info
     let lastSubmittedFamily = null;

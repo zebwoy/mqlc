@@ -40,11 +40,11 @@ class AadharInput {
 
     this.el.innerHTML = `
       <div style="display:flex;align-items:center;gap:0.3rem;width:100%;max-width:100%;flex-wrap:nowrap;box-sizing:border-box;">
-        <input class="aadhar-box" type="tel" inputmode="tel" pattern="[0-9]*" autocomplete="off" maxlength="4" placeholder="XXXX" style="${this._boxStyle()}">
+        <input class="aadhar-box" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" placeholder="XXXX" style="${this._boxStyle()}">
         ${sep}
-        <input class="aadhar-box" type="tel" inputmode="tel" pattern="[0-9]*" autocomplete="off" maxlength="4" placeholder="XXXX" style="${this._boxStyle()}">
+        <input class="aadhar-box" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" placeholder="XXXX" style="${this._boxStyle()}">
         ${sep}
-        <input class="aadhar-box" type="tel" inputmode="tel" pattern="[0-9]*" autocomplete="off" maxlength="4" placeholder="XXXX" style="${this._boxStyle()}">
+        <input class="aadhar-box" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="4" placeholder="XXXX" style="${this._boxStyle()}">
         <input type="hidden" name="${this.name}">
       </div>
     `;

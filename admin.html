@@ -406,7 +406,7 @@
                   <div class="input-group">
                     <label>Monthly Fee (₹) <span style="color:var(--admin-muted);font-weight:400;">(optional, default
                         ₹300)</span></label>
-                    <input type="tel" name="monthly_fee" inputmode="tel" pattern="[0-9]*" autocomplete="off" placeholder="300" style="font-weight: 600;">
+                    <input type="text" name="monthly_fee" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="300" style="font-weight: 600;">
                   </div>
                 </div>
               </div>
@@ -462,11 +462,11 @@
                   </div>
                   <div class="input-group">
                     <label>Father's Contact No.</label>
-                    <input type="tel" name="contact_father" inputmode="tel" pattern="[0-9]*" autocomplete="off" placeholder="10-digit mobile no.">
+                    <input type="text" name="contact_father" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="10-digit mobile no.">
                   </div>
                   <div class="input-group">
                     <label>Mother's Contact No.</label>
-                    <input type="tel" name="contact_mother" inputmode="tel" pattern="[0-9]*" autocomplete="off" placeholder="10-digit mobile no.">
+                    <input type="text" name="contact_mother" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="10-digit mobile no.">
                   </div>
                 </div>
               </div>
@@ -1506,7 +1506,7 @@
 
         <div class="modal-field">
           <label class="modal-label">Total Amount (₹)</label>
-          <input type="tel" id="pay-amount" inputmode="tel" pattern="[0-9]*" autocomplete="off" required class="modal-input lg">
+          <input type="text" id="pay-amount" inputmode="numeric" pattern="[0-9]*" autocomplete="off" required class="modal-input lg">
         </div>
 
         <!-- Live Breakdown Preview -->
@@ -1579,7 +1579,7 @@
         <input type="hidden" id="setfee-student-id">
         <div class="modal-field">
           <label class="modal-label">Monthly Fee Amount (₹)</label>
-          <input type="tel" id="setfee-amount" inputmode="tel" pattern="[0-9]*" autocomplete="off" required placeholder="e.g. 500" class="modal-input lg">
+          <input type="text" id="setfee-amount" inputmode="numeric" pattern="[0-9]*" autocomplete="off" required placeholder="e.g. 500" class="modal-input lg">
         </div>
         <div id="setfee-status-msg" class="status-msg" style="margin-bottom: 1rem;"></div>
         <div class="modal-actions">

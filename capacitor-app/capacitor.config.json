@@ -22,7 +22,8 @@
       "style": "DARK"
     },
     "Keyboard": {
-      "resize": "none"
+      "resize": "body",
+      "style": "DARK"
     }
   }
 }
