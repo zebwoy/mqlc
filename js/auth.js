@@ -181,6 +181,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  const biometricAuthError = document.getElementById('biometric-auth-error');
+
   // ── 7. Email/password login form ──────────────────────────────────────────
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -190,7 +192,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const loginPromise = (async () => {
       const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      if (error) {
+        showAuthError(error.message);
+        throw error;
+      }
       return data;
     })();
 
@@ -260,7 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // 10b. Collect device name for labelling
       const deviceName = navigator.userAgent.includes('Android')
-        ? (navigator.userAgent.match(/\(([^;]+)/) || [])[1] || 'Android Device')
+        ? ((navigator.userAgent.match(/\(([^;]+)/) || [])[1] || 'Android Device')
         : 'Unknown Device';
 
       // 10c. Trigger the fingerprint scanner
@@ -318,12 +323,16 @@ document.addEventListener('DOMContentLoaded', () => {
     dashView.style.display = 'none';
   }
 
-  function showAuthError(msg) {
-    authError.textContent = msg || 'Authentication failed.';
-    authError.style.display = 'block';
+  function showAuthError(msg, isBiometric = false) {
+    const target = isBiometric ? biometricAuthError : authError;
+    if (target) {
+      target.textContent = msg || 'Authentication failed.';
+      target.style.display = 'block';
+    }
   }
 
   function hideAuthError() {
-    authError.style.display = 'none';
+    if (authError) authError.style.display = 'none';
+    if (biometricAuthError) biometricAuthError.style.display = 'none';
   }
 });

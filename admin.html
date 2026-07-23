@@ -98,7 +98,7 @@
           <span class="biometric-label">Sign in with Fingerprint</span>
         </button>
 
-        <div id="auth-error" class="error-msg" style="display: none; width: 100%; text-align: center;"></div>
+        <div id="biometric-auth-error" class="error-msg" style="display: none; width: 100%; text-align: center;"></div>
 
         <div class="biometric-divider">
           <span>or</span>
@@ -152,25 +152,25 @@
     </div>
   </div>
 
-  <!-- ── Biometric Enrollment Banner (slides in after first password login) ── -->
-  <div id="biometric-enroll-banner" class="biometric-enroll-banner" role="dialog" aria-label="Enable fingerprint login">
-    <div class="enroll-banner-icon" aria-hidden="true">👆</div>
-    <div class="enroll-banner-text">
-      <strong>Enable Fingerprint Login?</strong>
-      <span>Sign in instantly next time — no password needed.</span>
-    </div>
-    <div class="enroll-banner-actions">
-      <button id="btn-enroll-biometric" class="btn-primary" style="padding: 0.5rem 1.25rem; font-size: 0.9rem; border-radius: 50px;">Enable</button>
-      <button id="btn-enroll-dismiss" class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem; border-radius: 50px; border-color: transparent;">Not Now</button>
-    </div>
-    <button class="enroll-banner-close" onclick="document.getElementById('biometric-enroll-banner').classList.remove('visible')" aria-label="Close">&times;</button>
-  </div>
-
 
   <!-- ═══════════════════════════════════════════════════════════
        DASHBOARD STATE (Hidden until authorized)
   ════════════════════════════════════════════════════════════ -->
   <div id="dashboard-view" class="app-layout" style="display: none;">
+
+    <!-- ── Biometric Enrollment Banner (slides in after first password login inside dashboard) ── -->
+    <div id="biometric-enroll-banner" class="biometric-enroll-banner" role="dialog" aria-label="Enable fingerprint login">
+      <div class="enroll-banner-icon" aria-hidden="true">👆</div>
+      <div class="enroll-banner-text">
+        <strong>Enable Fingerprint Login?</strong>
+        <span>Sign in instantly next time — no password needed.</span>
+      </div>
+      <div class="enroll-banner-actions">
+        <button id="btn-enroll-biometric" class="btn-primary" style="padding: 0.5rem 1.25rem; font-size: 0.9rem; border-radius: 50px;">Enable</button>
+        <button id="btn-enroll-dismiss" class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem; border-radius: 50px; border-color: transparent;">Not Now</button>
+      </div>
+      <button class="enroll-banner-close" onclick="document.getElementById('biometric-enroll-banner').classList.remove('visible')" aria-label="Close">&times;</button>
+    </div>
 
     <!-- Sidebar Overlay for Mobile -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
