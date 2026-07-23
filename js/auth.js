@@ -217,17 +217,18 @@ document.addEventListener('DOMContentLoaded', () => {
   async function maybeShowEnrollBanner() {
     if (!enrollBanner) return;
 
-    // Already dismissed or enrolled on this device?
-    const alreadyEnrolled  = !!window.WebAuthnClient?.getEnrolledCredential();
-    const dismissed        = sessionStorage.getItem('biometric_banner_dismissed');
+    // Already enrolled on this device?
+    const alreadyEnrolled    = !!window.WebAuthnClient?.getEnrolledCredential();
     const biometricSupported = await window.WebAuthnClient?.isBiometricAvailable();
 
-    if (alreadyEnrolled || dismissed || !biometricSupported) return;
+    if (alreadyEnrolled || !biometricSupported) return;
 
-    // Slight delay so the dashboard has time to render first
+    // Show banner after dashboard renders
     setTimeout(() => {
-      enrollBanner.classList.add('visible');
-    }, 1200);
+      if (dashView && dashView.style.display !== 'none') {
+        enrollBanner.classList.add('visible');
+      }
+    }, 800);
   }
 
   if (btnEnrollNow) {

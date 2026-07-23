@@ -49,14 +49,9 @@
    */
   async function isBiometricAvailable() {
     try {
-      if (!window.PublicKeyCredential) return false;
-      if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
-        const platformOk = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-        if (platformOk) return true;
-      }
-      return !!window.PublicKeyCredential;
+      return !!(window.PublicKeyCredential && typeof navigator.credentials?.create === 'function');
     } catch {
-      return !!window.PublicKeyCredential;
+      return false;
     }
   }
 
