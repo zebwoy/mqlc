@@ -135,11 +135,15 @@ a {
 
 /* ─── Auth / Login View ──────────────────────────────────────── */
 .fullscreen-flex {
+  /* Use dvh so the login card fills *exactly* the visible viewport on mobile */
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  /* Prevent the login screen itself from being scrollable */
+  overflow: hidden;
 }
 
 .auth-card {
@@ -2322,6 +2326,36 @@ body:has(dialog.admin-modal[open])>*:not(dialog):not(#toast-container) {
 
   .main-content {
     padding-top: 0.75rem !important;
+  }
+
+  /* ── Login Page: prevent scroll on mobile ── */
+  .fullscreen-flex {
+    /* Account for the top safe bar height so the card is centred in the remaining space */
+    min-height: calc(100dvh - max(calc(var(--sat, 0px) + 44px), 54px));
+    padding: 0.75rem;
+    align-items: center;
+  }
+
+  .auth-card {
+    padding: 1.75rem 1.25rem;
+    border-radius: 10px;
+  }
+
+  .auth-header {
+    margin-bottom: 1.25rem;
+  }
+
+  .auth-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .auth-header p {
+    font-size: 0.82rem;
+  }
+
+  .logo-circle {
+    width: 44px;
+    height: 44px;
   }
 
   /* Profile Modal Responsive Layout Fix (ISSUE 4) */
