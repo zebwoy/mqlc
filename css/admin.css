@@ -156,6 +156,225 @@ a {
   border: 1px solid var(--admin-border);
 }
 
+/* ─── Biometric / WebAuthn Login UI ─────────────────────────────── */
+
+/* Displayed email of the enrolled user */
+.biometric-user-label {
+  font-size: 0.85rem;
+  color: var(--admin-muted);
+  margin: 0;
+  text-align: center;
+}
+.biometric-email-chip {
+  display: inline-block;
+  background: rgba(45, 106, 79, 0.08);
+  color: var(--admin-accent, #2D6A4F);
+  border: 1px solid rgba(45, 106, 79, 0.18);
+  border-radius: 50px;
+  padding: 0.15rem 0.65rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* The big fingerprint button */
+.btn-biometric {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 1.5rem 1rem;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #1A1A2E 0%, #16213E 50%, #0F3460 100%);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow:
+    0 4px 20px rgba(15, 52, 96, 0.35),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+  overflow: hidden;
+}
+.btn-biometric:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(15, 52, 96, 0.5);
+}
+.btn-biometric:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.btn-biometric:disabled {
+  cursor: default;
+}
+
+/* State-based styling */
+.btn-biometric[data-state="loading"] {
+  background: linear-gradient(135deg, #2D3748 0%, #1a202c 100%);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.btn-biometric[data-state="success"] {
+  background: linear-gradient(135deg, #2D6A4F 0%, #1e4f3a 100%);
+  box-shadow: 0 4px 20px rgba(45, 106, 79, 0.5);
+}
+.btn-biometric[data-state="error"] {
+  background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
+  box-shadow: 0 4px 20px rgba(153, 27, 27, 0.4);
+}
+
+/* Fingerprint icon */
+.biometric-icon {
+  font-size: 2.2rem;
+  line-height: 1;
+  transition: transform 0.3s ease;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
+}
+.btn-biometric[data-state="idle"]:hover .biometric-icon {
+  transform: scale(1.1);
+}
+
+/* Label */
+.biometric-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  opacity: 0.95;
+}
+
+/* Animated pulse ring behind the button */
+.biometric-pulse-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  border: 2px solid rgba(212, 160, 23, 0.35);
+  animation: biometricPulse 2.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes biometricPulse {
+  0%   { opacity: 0.7; transform: scale(1); }
+  50%  { opacity: 0.2; transform: scale(1.03); }
+  100% { opacity: 0.7; transform: scale(1); }
+}
+.btn-biometric:not([data-state="idle"]) .biometric-pulse-ring {
+  animation: none;
+  opacity: 0;
+}
+
+/* Divider */
+.biometric-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  color: var(--admin-muted);
+  font-size: 0.82rem;
+}
+.biometric-divider::before,
+.biometric-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--admin-border);
+}
+
+/* Link-style buttons */
+.btn-text-link {
+  background: none;
+  border: none;
+  color: var(--admin-accent, #2D6A4F);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+  padding: 0.25rem 0;
+  transition: color 0.2s;
+}
+.btn-text-link:hover { color: #1e4f3a; }
+
+.btn-danger-link {
+  background: none;
+  border: none;
+  color: var(--admin-muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  transition: color 0.2s;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 3px;
+}
+.btn-danger-link:hover { color: #dc2626; }
+
+/* ─── Enrollment Banner ──────────────────────────────────────────── */
+.biometric-enroll-banner {
+  position: fixed;
+  bottom: -120px; /* starts off-screen */
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(460px, calc(100vw - 2rem));
+  background: var(--admin-white);
+  border: 1px solid var(--admin-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.06);
+  padding: 1rem 1.25rem 1rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  z-index: 9000;
+  transition: bottom 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.biometric-enroll-banner.visible {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 1.25rem);
+}
+.enroll-banner-icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.enroll-banner-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.enroll-banner-text strong {
+  font-size: 0.9rem;
+  color: var(--admin-text);
+}
+.enroll-banner-text span {
+  font-size: 0.78rem;
+  color: var(--admin-muted);
+  line-height: 1.4;
+}
+.enroll-banner-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  align-items: center;
+}
+.enroll-banner-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.6rem;
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: var(--admin-muted);
+  cursor: pointer;
+  line-height: 1;
+  padding: 0.2rem;
+  border-radius: 4px;
+  transition: color 0.2s;
+}
+.enroll-banner-close:hover { color: var(--admin-text); }
+
 .auth-header {
   text-align: center;
   margin-bottom: 2rem;
