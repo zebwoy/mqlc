@@ -2,11 +2,10 @@
 /* Handles admin authentication: email / password only                        */
 /* Demo Mode: login with demo@mqlc.app to enter a fully sandboxed demo.       */
 
-const _supabase = window._supabase;
-
 const DEMO_EMAIL = 'demo@mqlc.app';
 
 document.addEventListener('DOMContentLoaded', () => {
+  const _supabase = window._supabase;
   if (!_supabase) return;
 
   // ── DOM References ──────────────────────────────────────────────────────
@@ -32,28 +31,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ── 1. Initial session check ─────────────────────────────────────────────
-  _supabase.auth.getSession().then(({ data: { session } }) => {
-    if (session) {
-      if (session.user.email === DEMO_EMAIL) activateDemoMode();
-      showDashboard();
-    } else {
-      showAuthView();
-    }
-  });
-
-  // ── 2. Auth state listener ────────────────────────────────────────────────
+  // ── Auth state listener (handles ALL events incl. INITIAL_SESSION) ────────
+  // This is the single source of truth — we no longer use getSession() separately.
+  // Supabase fires INITIAL_SESSION on every page load (with or without session),
+  // SIGNED_IN on fresh login, TOKEN_REFRESHED on token renewal, SIGNED_OUT on logout.
   _supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-      if (session && session.user.email === DEMO_EMAIL) activateDemoMode();
-      showDashboard();
+    if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      if (session) {
+        if (session.user.email === DEMO_EMAIL) activateDemoMode();
+        showDashboard();
+      } else {
+        // INITIAL_SESSION with no session = not logged in
+        showAuthView();
+      }
     } else if (event === 'SIGNED_OUT') {
       window.DEMO_MODE = false;
       showAuthView();
     }
   });
 
-  // ── 3. Email / password login form ────────────────────────────────────────
+  // ── Email / password login form ────────────────────────────────────────
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -78,14 +75,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ── 4. Logout ─────────────────────────────────────────────────────────────
+  // ── Logout ─────────────────────────────────────────────────────────────
   if (btnLogout) {
     btnLogout.addEventListener('click', async () => {
       await _supabase.auth.signOut();
     });
   }
 
-  // ── 5. Demo Mode Activation ───────────────────────────────────────────────
+  // ── Demo Mode Activation ───────────────────────────────────────────────
   function activateDemoMode() {
     window.DEMO_MODE = true;
 
@@ -106,11 +103,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (dashView) dashView.style.display = 'grid';
 
     if (!alreadyVisible) {
-      if (typeof window.hydrateActiveTab === 'function') {
-        window.hydrateActiveTab();
-      } else if (typeof window.hydrateDashboardAndAnalytics === 'function') {
-        window.hydrateDashboardAndAnalytics();
-      }
+      // Defer by one tick so admin.js's hydrateActiveTab and DEMO_MODE are both
+      // fully set before hydration begins (avoids race with admin.js DOMContentLoaded).
+      setTimeout(() => {
+        if (typeof window.hydrateActiveTab === 'function') {
+          window.hydrateActiveTab();
+        } else if (typeof window.hydrateDashboardAndAnalytics === 'function') {
+          window.hydrateDashboardAndAnalytics();
+        }
+      }, 0);
     }
   }
 
