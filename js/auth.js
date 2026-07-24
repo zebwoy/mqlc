@@ -2,31 +2,31 @@
 /* Handles admin authentication: email / password only                        */
 /* Demo Mode: login with demo@mqlc.app to enter a fully sandboxed demo.       */
 
-const DEMO_EMAIL = 'demo@mqlc.app';
+const DEMO_EMAIL = 'demo@mqlc.com';
 
 document.addEventListener('DOMContentLoaded', () => {
   const _supabase = window._supabase;
   if (!_supabase) return;
 
   // ── DOM References ──────────────────────────────────────────────────────
-  const authView  = document.getElementById('auth-view');
-  const dashView  = document.getElementById('dashboard-view');
+  const authView = document.getElementById('auth-view');
+  const dashView = document.getElementById('dashboard-view');
   const loginForm = document.getElementById('login-form');
   const authError = document.getElementById('auth-error');
   const btnLogout = document.getElementById('btn-logout');
 
   // Password visibility toggle
-  const btnTogglePw  = document.getElementById('btn-toggle-password');
-  const passwordInp  = document.getElementById('password');
-  const iconEyeOpen  = document.getElementById('icon-eye-open');
+  const btnTogglePw = document.getElementById('btn-toggle-password');
+  const passwordInp = document.getElementById('password');
+  const iconEyeOpen = document.getElementById('icon-eye-open');
   const iconEyeClose = document.getElementById('icon-eye-closed');
 
   // ── Password toggle ──────────────────────────────────────────────────────
   if (btnTogglePw && passwordInp) {
     btnTogglePw.addEventListener('click', () => {
       const show = passwordInp.type === 'password';
-      passwordInp.type           = show ? 'text' : 'password';
-      iconEyeOpen.style.display  = show ? 'none'  : 'block';
+      passwordInp.type = show ? 'text' : 'password';
+      iconEyeOpen.style.display = show ? 'none' : 'block';
       iconEyeClose.style.display = show ? 'block' : 'none';
     });
   }
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const email    = document.getElementById('email').value;
+      const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       hideAuthError();
 
