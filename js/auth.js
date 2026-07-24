@@ -1,7 +1,10 @@
 /* ─── js/auth.js ─────────────────────────────────────────────────────────── */
 /* Handles admin authentication: email / password only                        */
+/* Demo Mode: login with demo@mqlc.app to enter a fully sandboxed demo.       */
 
 const _supabase = window._supabase;
+
+const DEMO_EMAIL = 'demo@mqlc.app';
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!_supabase) return;
@@ -32,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── 1. Initial session check ─────────────────────────────────────────────
   _supabase.auth.getSession().then(({ data: { session } }) => {
     if (session) {
+      if (session.user.email === DEMO_EMAIL) activateDemoMode();
       showDashboard();
     } else {
       showAuthView();
@@ -41,8 +45,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── 2. Auth state listener ────────────────────────────────────────────────
   _supabase.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      if (session && session.user.email === DEMO_EMAIL) activateDemoMode();
       showDashboard();
     } else if (event === 'SIGNED_OUT') {
+      window.DEMO_MODE = false;
       showAuthView();
     }
   });
@@ -66,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       toast.promise(loginPromise, {
         loading: 'Authenticating credentials…',
-        success: 'Welcome back!',
+        success: email === DEMO_EMAIL ? '👋 Welcome to the MQLC SIS Demo!' : 'Welcome back!',
         error: (err) => `Authentication failed: ${err.message}`,
       });
     });
@@ -77,6 +83,20 @@ document.addEventListener('DOMContentLoaded', () => {
     btnLogout.addEventListener('click', async () => {
       await _supabase.auth.signOut();
     });
+  }
+
+  // ── 5. Demo Mode Activation ───────────────────────────────────────────────
+  function activateDemoMode() {
+    window.DEMO_MODE = true;
+
+    // Show demo badge
+    const badge = document.getElementById('demo-mode-badge');
+    if (badge) badge.style.display = 'flex';
+
+    // Hide Jamat Timings and Global Settings from sidebar + mobile nav
+    document.querySelectorAll(
+      '[data-target="tab-jamat"], [data-target="tab-settings"]'
+    ).forEach(btn => btn.style.display = 'none');
   }
 
   // ── UI helpers ────────────────────────────────────────────────────────────

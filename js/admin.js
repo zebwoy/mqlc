@@ -170,6 +170,13 @@ document.addEventListener('DOMContentLoaded', () => {
           if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
           if (e.type === 'keydown') e.preventDefault();
 
+          // Demo Mode: show restriction modal instead of opening Cloudinary widget
+          if (window.DEMO_MODE) {
+            const restrictModal = document.getElementById('demo-restriction-modal');
+            if (restrictModal) restrictModal.showModal();
+            return;
+          }
+
           if (statusEl) statusEl.innerHTML = 'Loading Uploader...';
           widget.open();
         };
@@ -472,6 +479,36 @@ document.addEventListener('DOMContentLoaded', () => {
         if (manualStatusMsg) {
           manualStatusMsg.textContent = 'Error: Supabase client is not initialized.';
           manualStatusMsg.className = 'status-msg error';
+        }
+        return;
+      }
+
+      // ── Demo Mode guard: add student to in-memory cache only ────────────────
+      if (window.DEMO_MODE) {
+        e.preventDefault();
+        const fd2 = new FormData(manualForm);
+        const demoStudent = {
+          id: Date.now(),
+          form_no: fd2.get('form_no') || 'DEMO-' + Date.now(),
+          student_name: fd2.get('student_name') || 'Demo Student',
+          father_name: fd2.get('father_name') || '',
+          gender: fd2.get('gender') || null,
+          dob: fd2.get('dob') || null,
+          doj: fd2.get('doj') || new Date().toISOString().split('T')[0],
+          batch: fd2.get('batch') || null,
+          course_applying: fd2.get('course_applying') || 'Unassigned',
+          current_class: fd2.get('current_class') || null,
+          monthly_fee: parseInt(fd2.get('monthly_fee') || 0) || 300,
+          is_prepaid: fd2.get('is_prepaid') === 'true',
+          status: 'approved',
+          created_at: new Date().toISOString(),
+          area: null
+        };
+        cachedStudents.unshift(demoStudent);
+        await hydrateDashboardAndAnalytics();
+        manualForm.reset();
+        if (typeof toast !== 'undefined') {
+          toast.info('\uD83C\uDFAD Demo: Student added in-memory. Changes won\'t persist after sign-out.');
         }
         return;
       }
@@ -1317,6 +1354,26 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function hydrateDashboardAndAnalytics() {
+    // ── Demo Mode: load from mock dataset ──────────────────────────────────
+    if (window.DEMO_MODE && window.DEMO_DATA) {
+      cachedStudents = [...window.DEMO_DATA.students];
+      const approved = cachedStudents.filter(s => s.status === 'approved');
+      const pending  = cachedStudents.filter(s => s.status === 'pending');
+
+      const actEl = document.getElementById('ds-active-students');
+      if (actEl) actEl.textContent = approved.length;
+      const pendEl = document.getElementById('ds-pending-reviews');
+      if (pendEl) pendEl.textContent = pending.length;
+      const revEl = document.getElementById('ds-est-revenue');
+      if (revEl) revEl.textContent = '\u20B9' + approved.reduce((s, st) => s + (parseInt(st.monthly_fee) || 0), 0).toLocaleString('en-IN');
+      const pinEl = document.getElementById('ds-valid-pins');
+      if (pinEl) pinEl.textContent = 7;
+
+      renderStudentMatrix();
+      renderCharts(approved);
+      initialLoadDone = true;
+      return;
+    }
     if (!window._supabase) return;
 
     // Inline loader in activity feed — skeletons in KPI cards handle the rest
@@ -2179,6 +2236,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Silently fails so it never blocks the registration success flow.
   async function recordAdmissionPayment(studentId, doj, feeAmount) {
     if (!studentId || !feeAmount) return;
+    if (window.DEMO_MODE) return; // demo: no DB writes
     const feeMonth = computeAdmissionFeeMonth(doj);
     const paidOn = doj || new Date().toISOString().split('T')[0];
     try {
@@ -2304,6 +2362,17 @@ document.addEventListener('DOMContentLoaded', () => {
   if (feePill) feePill.addEventListener('click', hydrateFeeTracker);
 
   async function hydrateFeeTracker() {
+    // ── Demo Mode: load from mock fee dataset ──────────────────────────────
+    if (window.DEMO_MODE && window.DEMO_DATA) {
+      if (!cachedStudents || !cachedStudents.length) {
+        cachedStudents = [...window.DEMO_DATA.students];
+      }
+      cachedFeePayments   = [...window.DEMO_DATA.feePayments];
+      cachedFeeExemptions = [...window.DEMO_DATA.feeExemptions];
+      if (feeLabel) feeLabel.textContent = feeMonthLabel(feeCurrentMonth);
+      renderFeeMatrix();
+      return;
+    }
     if (!window._supabase) return;
     if (feeLabel) feeLabel.textContent = feeMonthLabel(feeCurrentMonth);
 
@@ -3067,6 +3136,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
       btn.textContent = 'Recording...';
       btn.disabled = true;
+
+      // ── Demo Mode guard: update in-memory cache only ──────────────────────
+      if (window.DEMO_MODE) {
+        const split = computeSplit(fromMonth, toMonth, totalAmount, fee);
+        split.forEach(s => {
+          cachedFeePayments.push({
+            id: Date.now() + Math.random(),
+            student_id: Number(studentId),
+            month: s.month,
+            amount: s.amount,
+            paid_on: paidOn,
+            notes: notes || null
+          });
+        });
+        renderFeeMatrix();
+        document.getElementById('modal-record-payment')?.close();
+        btn.textContent = 'Record Payment';
+        btn.disabled = false;
+        toast.info('🎭 Demo: Payment recorded in-memory. Won\'t persist after sign-out.');
+        return;
+      }
 
       const recordPromise = (async () => {
         let adminEmail = 'admin';
@@ -4070,6 +4160,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const lbCount = document.getElementById('lb-entry-count');
 
   async function loadQuizList() {
+    // ── Demo Mode: populate from seeded quiz data ───────────────────────────
+    if (window.DEMO_MODE && window.DEMO_DATA && lbSelect) {
+      lbSelect.innerHTML = '<option value="">\u2500\u2500 Select a Quiz \u2500\u2500</option>';
+      window.DEMO_DATA.leaderboardQuizzes.forEach(q => {
+        const opt = document.createElement('option');
+        opt.value = q.quiz_id;
+        opt.textContent = q.quiz_id;
+        lbSelect.appendChild(opt);
+      });
+      return;
+    }
     if (!window._supabase || !lbSelect) return;
 
     try {
@@ -4097,6 +4198,34 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function loadLeaderboard(quizId) {
+    // ── Demo Mode: render from seeded leaderboard data ─────────────────────
+    if (window.DEMO_MODE && window.DEMO_DATA && lbTbody) {
+      const quiz = window.DEMO_DATA.leaderboardQuizzes.find(q => q.quiz_id === quizId);
+      if (!quiz || !quiz.entries.length) {
+        lbTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--admin-muted);">No entries for this quiz.</td></tr>';
+        if (lbCount) lbCount.textContent = '';
+        return;
+      }
+      if (lbCount) lbCount.textContent = quiz.entries.length + ' entries';
+      const medals = ['\uD83E\uDD47', '\uD83E\uDD48', '\uD83E\uDD49'];
+      lbTbody.innerHTML = '';
+      quiz.entries.forEach((row, i) => {
+        const rank = i + 1;
+        const medal = medals[i] || rank;
+        const mins = Math.floor(row.time_taken / 60);
+        const secs = row.time_taken % 60;
+        const timeStr = mins > 0 ? mins + 'm ' + secs + 's' : secs + 's';
+        const bgColor = i % 2 === 0 ? 'transparent' : 'var(--admin-bg)';
+        lbTbody.innerHTML += '<tr style="background:' + bgColor + ';border-bottom:1px solid var(--admin-border);">'
+          + '<td style="padding:0.75rem 0.5rem;font-weight:600;font-size:1rem;">' + medal + '</td>'
+          + '<td style="padding:0.75rem 0.5rem;font-weight:600;">' + row.player_name + '</td>'
+          + '<td style="padding:0.75rem 0.5rem;color:var(--admin-muted);">' + (row.area || '\u2014') + '</td>'
+          + '<td style="padding:0.75rem 0.5rem;"><span style="background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:12px;font-weight:600;font-size:0.85rem;">' + row.score + '</span></td>'
+          + '<td style="padding:0.75rem 0.5rem;color:var(--admin-muted);font-size:0.85rem;">' + timeStr + '</td>'
+          + '</tr>';
+      });
+      return;
+    }
     if (!window._supabase || !lbTbody) return;
 
     lbTbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--admin-muted);">Loading...</td></tr>';
