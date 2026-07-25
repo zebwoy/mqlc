@@ -3903,15 +3903,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
       orderedBatches.forEach((batchName, bIdx) => {
         const batchStudents = groups[batchName];
-        const pending = batchStudents.filter(e => e.status === 'Unpaid' || e.status === 'Partial');
+
+        // List in collection matrix: Unpaid, Partial, Exempt, No Fee (Excludes Paid)
+        const reportTableList = batchStudents.filter(e => e.status !== 'Paid');
         const paidList = batchStudents.filter(e => e.status === 'Paid');
+
+        // Cash collection calculations ONLY from Unpaid & Partial (excludes Exempt & Trustee/No Fee)
+        const collectibleList = batchStudents.filter(e => e.status === 'Unpaid' || e.status === 'Partial');
         const exemptList = batchStudents.filter(e => e.status === 'Exempt' || e.status === 'No Fee');
-        const totalToCollect = pending.reduce((s, e) => s + e.totalDue, 0);
+
+        const totalToCollect = collectibleList.reduce((s, e) => s + e.totalDue, 0);
+        const totalRemaining = collectibleList.reduce((s, e) => s + e.remaining, 0);
+        const totalArrears = collectibleList.reduce((s, e) => s + e.arrears, 0);
+
         const pageBreak = bIdx > 0 ? 'page-break-before:always;' : '';
 
-        // Sort pending: Unpaid first, then Partial, then alphabetical
-        pending.sort((a, b) => {
-          if (a.status !== b.status) return a.status === 'Unpaid' ? -1 : 1;
+        // Sort: Unpaid first, then Partial, then Exempt/No Fee, then alphabetical
+        const statusOrder = { 'Unpaid': 1, 'Partial': 2, 'Exempt': 3, 'No Fee': 4 };
+        reportTableList.sort((a, b) => {
+          const sA = statusOrder[a.status] || 5;
+          const sB = statusOrder[b.status] || 5;
+          if (sA !== sB) return sA - sB;
           return (a.student.student_name || '').localeCompare(b.student.student_name || '');
         });
 
@@ -3922,15 +3934,16 @@ document.addEventListener('DOMContentLoaded', () => {
               <div style="font-size:11pt;font-weight:700;">${batchName} Batch — Fee Collection Report</div>
               <div style="font-size:9pt;">${feeMonthLabel(feeCurrentMonth)}</div>
             </div>
-            <div style="display:flex;gap:1.5rem;background:#f0fdf4;padding:6px 14px;border-radius:0 0 6px 6px;border:1px solid #d1fae5;font-size:8pt;font-family:'Inter',sans-serif;margin-bottom:10px;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+            <div style="display:flex;gap:1.2rem;background:#f0fdf4;padding:6px 14px;border-radius:0 0 6px 6px;border:1px solid #d1fae5;font-size:8pt;font-family:'Inter',sans-serif;margin-bottom:10px;-webkit-print-color-adjust:exact;print-color-adjust:exact;flex-wrap:wrap;">
               <span><strong>Total Students:</strong> ${batchStudents.length}</span>
-              <span><strong>Pending:</strong> <span style="color:#dc2626;font-weight:700;">${pending.length}</span></span>
+              <span><strong>Pending:</strong> <span style="color:#dc2626;font-weight:700;">${collectibleList.length}</span></span>
+              <span><strong>Exempt/Trustee:</strong> <span style="color:#7c3aed;font-weight:700;">${exemptList.length}</span></span>
               <span><strong>Paid:</strong> <span style="color:#16a34a;font-weight:700;">${paidList.length}</span></span>
               <span><strong>To Collect:</strong> <span style="color:#dc2626;font-weight:700;">₹${totalToCollect.toLocaleString('en-IN')}</span></span>
             </div>`;
 
-        // Main table — Pending students
-        if (pending.length > 0) {
+        // Main table — Pending + Exempt/Trustee students
+        if (reportTableList.length > 0) {
           tableHTML += `
             <table style="width:100%;border-collapse:collapse;font-family:'Inter',sans-serif;margin-bottom:8px;">
               <thead>
@@ -3949,30 +3962,38 @@ document.addEventListener('DOMContentLoaded', () => {
               </thead>
               <tbody>`;
 
-          pending.forEach((e, i) => {
+          reportTableList.forEach((e, i) => {
             const bg = i % 2 === 0 ? '#fff' : '#fafafa';
-            const statusColor = e.status === 'Unpaid' ? '#dc2626' : '#d97706';
-            const statusBg = e.status === 'Unpaid' ? '#fef2f2' : '#fffbeb';
+            const isCollectible = e.status === 'Unpaid' || e.status === 'Partial';
+            
+            let statusColor = '#dc2626';
+            let statusBg = '#fef2f2';
+            if (e.status === 'Partial') { statusColor = '#d97706'; statusBg = '#fffbeb'; }
+            else if (e.status === 'Exempt') { statusColor = '#7c3aed'; statusBg = '#f3e8ff'; }
+            else if (e.status === 'No Fee') { statusColor = '#4b5563'; statusBg = '#f3f4f6'; }
+
+            const monthDisp = isCollectible ? `₹${e.remaining.toLocaleString('en-IN')}` : '—';
+            const arrearsDisp = isCollectible && e.arrears > 0 ? `₹${e.arrears.toLocaleString('en-IN')}` : '—';
+            const totalDisp = isCollectible ? `₹${e.totalDue.toLocaleString('en-IN')}` : '—';
+
             tableHTML += `
                 <tr style="background:${bg};">
                   <td style="${tdStyleC}">${i + 1}</td>
                   <td style="${tdStyle}font-weight:600;">${e.student.student_name || ''}</td>
                   <td style="${tdStyle}">${e.student.father_name || '—'}</td>
                   <td style="${tdStyle}">${e.contact}</td>
-                  <td style="${tdStyleR}">₹${e.remaining.toLocaleString('en-IN')}</td>
-                  <td style="${tdStyleR}${e.arrears > 0 ? 'color:#dc2626;font-weight:600;' : ''}">${e.arrears > 0 ? '₹' + e.arrears.toLocaleString('en-IN') : '—'}</td>
-                  <td style="${tdStyleR}font-weight:700;">₹${e.totalDue.toLocaleString('en-IN')}</td>
+                  <td style="${tdStyleR}">${monthDisp}</td>
+                  <td style="${tdStyleR}${isCollectible && e.arrears > 0 ? 'color:#dc2626;font-weight:600;' : ''}">${arrearsDisp}</td>
+                  <td style="${tdStyleR}${isCollectible ? 'font-weight:700;' : 'color:var(--admin-muted);'}">${totalDisp}</td>
                   <td style="${tdStyleC}"><span style="background:${statusBg};color:${statusColor};padding:2px 6px;border-radius:4px;font-size:7pt;font-weight:600;">${e.status}</span></td>
-                  <td style="${tdStyleC}font-size:12pt;">☐</td>
+                  <td style="${tdStyleC}font-size:12pt;">${isCollectible ? '☐' : '—'}</td>
                 </tr>`;
           });
 
-          // Total row
-          const totalRemaining = pending.reduce((s, e) => s + e.remaining, 0);
-          const totalArrears = pending.reduce((s, e) => s + e.arrears, 0);
+          // Total row (Sums ONLY collectible Unpaid/Partial students)
           tableHTML += `
                 <tr style="background:#f0f0f0;font-weight:700;">
-                  <td colspan="4" style="${tdStyle}text-align:right;font-size:8pt;">TOTAL</td>
+                  <td colspan="4" style="${tdStyle}text-align:right;font-size:8pt;">TOTAL TO COLLECT</td>
                   <td style="${tdStyleR}">₹${totalRemaining.toLocaleString('en-IN')}</td>
                   <td style="${tdStyleR}color:#dc2626;">₹${totalArrears.toLocaleString('en-IN')}</td>
                   <td style="${tdStyleR}">₹${totalToCollect.toLocaleString('en-IN')}</td>
