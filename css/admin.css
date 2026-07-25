@@ -712,11 +712,19 @@ a {
     font-size: 10pt;
   }
 
-  /* Hide the ENTIRE dashboard UI — we only want the table */
+  /* Hide the ENTIRE dashboard UI and mobile overlays — we only want the table */
   #auth-view,
   #dashboard-view,
   .sidebar,
-  .horizontal-nav {
+  .horizontal-nav,
+  .mobile-safe-top-bar,
+  .global-loader,
+  #history-drawer,
+  #history-backdrop,
+  .toast-container,
+  .mobile-bottom-nav,
+  #mobile-more-menu,
+  dialog {
     display: none !important;
   }
 
