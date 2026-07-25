@@ -3917,24 +3917,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Batch header
         tableHTML += `
-          <div style="${pageBreak}margin-bottom:1.5rem;">
-            <div style="display:flex;justify-content:space-between;align-items:center;background:#2D6A4F;color:#fff;padding:8px 14px;border-radius:6px;margin-bottom:3px;font-family:'Inter',sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
-              <div style="font-size:11pt;font-weight:700;">${batchName} Batch — Fee Collection Report</div>
-              <div style="font-size:9pt;">${feeMonthLabel(feeCurrentMonth)}</div>
-            </div>
-            <div style="display:flex;gap:1.5rem;background:#f0fdf4;padding:6px 14px;border-radius:0 0 6px 6px;border:1px solid #d1fae5;font-size:8pt;font-family:'Inter',sans-serif;margin-bottom:10px;">
-              <span><strong>Total Students:</strong> ${batchStudents.length}</span>
-              <span><strong>Pending:</strong> <span style="color:#dc2626;font-weight:700;">${pending.length}</span></span>
-              <span><strong>Paid:</strong> <span style="color:#16a34a;font-weight:700;">${paidList.length}</span></span>
-              <span><strong>To Collect:</strong> <span style="color:#dc2626;font-weight:700;">₹${totalToCollect.toLocaleString('en-IN')}</span></span>
-            </div>`;
+          <div style="${pageBreak}margin-bottom:1.5rem;">`;
 
         // Main table — Pending students
         if (pending.length > 0) {
           tableHTML += `
             <table style="width:100%;border-collapse:collapse;font-family:'Inter',sans-serif;margin-bottom:8px;">
               <thead>
-                <tr>
+                <!-- Batch title row — repeats on every page -->
+                <tr style="-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+                  <th colspan="9" style="background:#2D6A4F;color:#fff;padding:8px 14px;font-size:11pt;font-weight:700;border:none;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <span>${batchName} Batch — Fee Collection Report</span>
+                      <span style="font-size:9pt;font-weight:400;">${feeMonthLabel(feeCurrentMonth)}</span>
+                    </div>
+                  </th>
+                </tr>
+                <!-- Stats summary row — repeats on every page -->
+                <tr style="-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+                  <td colspan="9" style="background:#f0fdf4;padding:5px 14px;border:1px solid #d1fae5;font-size:8pt;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+                    <span style="margin-right:1.5rem;"><strong>Total:</strong> ${batchStudents.length}</span>
+                    <span style="margin-right:1.5rem;"><strong>Pending:</strong> <span style="color:#dc2626;font-weight:700;">${pending.length}</span></span>
+                    <span style="margin-right:1.5rem;"><strong>Paid:</strong> <span style="color:#16a34a;font-weight:700;">${paidList.length}</span></span>
+                    <span><strong>To Collect:</strong> <span style="color:#dc2626;font-weight:700;">₹${totalToCollect.toLocaleString('en-IN')}</span></span>
+                  </td>
+                </tr>
+                <!-- Column headers -->
+                <tr style="-webkit-print-color-adjust:exact;print-color-adjust:exact;">
                   <th style="${thStyleC}width:4%;">#</th>
                   <th style="${thStyle}width:18%;">Student Name</th>
                   <th style="${thStyle}width:14%;">Father's Name</th>
