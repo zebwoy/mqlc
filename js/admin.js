@@ -3985,7 +3985,7 @@ document.addEventListener('DOMContentLoaded', () => {
           tableHTML += `<p style="font-size:7.5pt;color:#6b7280;margin:2px 0;font-family:'Inter',sans-serif;"><strong style="color:#7c3aed;">⊘ Exempt/No Fee (${exemptList.length}):</strong> ${exemptNames}</p>`;
         }
 
-          </div>`);
+        tableHTML += `</div>`;
       });
 
       // ─── Render & Print ───
