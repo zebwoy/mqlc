@@ -1590,11 +1590,21 @@ document.addEventListener('DOMContentLoaded', () => {
   async function renderCharts(approvedData) {
     if (typeof Chart === 'undefined') return;
 
-    // Destroy existing chart instances to allow clean redrawing with updated cache data
+    // Destroy tracked instances
     Object.keys(chartInstances).forEach(key => {
       if (chartInstances[key]) {
         chartInstances[key].destroy();
         chartInstances[key] = null;
+      }
+    });
+
+    // Safety net: destroy any orphaned Chart.js instances on canvases
+    // (handles race conditions where chartInstances wasn't updated but canvas is still in use)
+    ['chart-school', 'chart-batch', 'chart-course', 'chart-gender', 'chart-age', 'chart-churn', 'chart-departures', 'chart-growth', 'chart-fee-status'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        const existing = Chart.getChart(el);
+        if (existing) existing.destroy();
       }
     });
 
