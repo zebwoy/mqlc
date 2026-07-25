@@ -3954,9 +3954,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const trusteeList = batchStudents.filter(e => e.student.is_trustee);
 
         // Main collection checklist table: includes Unpaid, Partial, and Exited students with outstanding dues!
-        const pending = collectionList.filter(e => e.totalDue > 0 && e.status !== 'Exempt' && e.status !== 'No Fee');
-        const paidList = collectionList.filter(e => e.totalDue === 0 && e.status !== 'Exempt' && e.status !== 'No Fee');
+        const pending = collectionList.filter(e => (e.totalDue > 0 || e.status === 'Unpaid' || e.status === 'Partial') && e.status !== 'Exempt' && e.status !== 'No Fee');
+        const paidList = collectionList.filter(e => e.status === 'Paid' && e.student.status !== 'left');
         const exemptList = collectionList.filter(e => e.status === 'Exempt' || e.status === 'No Fee');
+        const exitedSettledList = collectionList.filter(e => e.student.status === 'left' && e.totalDue === 0 && e.status !== 'Exempt' && e.status !== 'No Fee');
+
         const totalToCollect = pending.reduce((s, e) => s + e.totalDue, 0);
         const pageBreak = bIdx > 0 ? 'page-break-before:always;' : '';
 
@@ -4059,6 +4061,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (exemptList.length > 0) {
           const exemptNames = exemptList.map(e => e.student.student_name).sort().join(', ');
           tableHTML += `<p style="font-size:7.5pt;color:#6b7280;margin:2px 0;font-family:'Inter',sans-serif;"><strong style="color:#7c3aed;">⊘ Exempt/No Fee (${exemptList.length}):</strong> ${exemptNames}</p>`;
+        }
+
+        // Compact reference — Exited students (Settled)
+        if (exitedSettledList.length > 0) {
+          const exitedNames = exitedSettledList.map(e => e.student.student_name).sort().join(', ');
+          tableHTML += `<p style="font-size:7.5pt;color:#6b7280;margin:2px 0;font-family:'Inter',sans-serif;"><strong style="color:#dc2626;">🚫 Exited/Left (${exitedSettledList.length}):</strong> ${exitedNames}</p>`;
         }
 
         // Trustee Accounts reference — Excluded from collection checklist
