@@ -2368,6 +2368,32 @@ document.addEventListener('DOMContentLoaded', () => {
     return dojMonth <= feeMonth; // string comparison works for YYYY-MM
   }
 
+  // Returns true if student is eligible for fee tracking & collection for a given feeMonth
+  // Accounts for approved active students, month-of-exit students, and exited students with pending dues
+  function isStudentEligibleForFeeMonth(s, feeMonth) {
+    if (!s) return false;
+    if (!isEnrolledForMonth(s.doj, feeMonth)) return false;
+
+    // Case 1: Approved / Active students
+    if (s.status === 'approved') return true;
+
+    // Case 2: Exited / Left students
+    if (s.status === 'left') {
+      const exitMonth = s.exit_date ? s.exit_date.substring(0, 7) : null;
+      // Active during this fee month (left during or after feeMonth)
+      if (exitMonth && exitMonth >= feeMonth) return true;
+
+      // Left in a prior month, but still has unpaid dues or arrears!
+      const expFee = getExpectedFee(s, feeMonth);
+      const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
+      const remaining = Math.max(0, expFee - paid);
+      const arrears = calcArrears(s, feeMonth);
+      if ((remaining + arrears) > 0) return true;
+    }
+
+    return false;
+  }
+
   // Arrears floor — ignore all months before this
   const ARREARS_START = '2026-03';
 
@@ -2436,6 +2462,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fee === 0) return 0;
     if (!isEnrolledForMonth(student.doj, month)) return 0;
     if (isExemptForMonth(student.id, month)) return 0;
+
+    // Exited/left student check: no NEW monthly fee generated for months AFTER exit date
+    if (student.status === 'left' && student.exit_date) {
+      const exitMonth = student.exit_date.substring(0, 7);
+      if (month > exitMonth) return 0;
+    }
 
     if (student.doj) {
       const dojMonth = student.doj.substring(0, 7);
@@ -2851,7 +2883,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const nameFilter = feeNameFilter ? feeNameFilter.value.toLowerCase().trim() : '';
     const modeFilter = document.getElementById('fee-filter-mode')?.value || 'all';
 
-    let students = cachedStudents.filter(s => s.status === 'approved' && isEnrolledForMonth(s.doj, feeCurrentMonth));
+    let students = cachedStudents.filter(s => isStudentEligibleForFeeMonth(s, feeCurrentMonth));
 
     // Apply Filters (Name, Batch, Status, Fee Mode)
     students = students.filter(s => {
@@ -2980,14 +3012,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         let statusBadge, statusClass;
-        if (exempt) { statusBadge = '⏸ Exempt'; statusClass = 'pending'; }
+        if (s.status === 'left') { statusBadge = '🚫 Exited'; statusClass = 'rejected'; }
+        else if (exempt) { statusBadge = '⏸ Exempt'; statusClass = 'pending'; }
         else if (rawFee === 0) { statusBadge = 'No Fee Set'; statusClass = 'pending'; }
         else if (expFee === 0) { statusBadge = 'N/A'; statusClass = 'pending'; }
         else if (paid >= expFee) { statusBadge = '✅ Paid'; statusClass = 'approved'; }
         else if (paid > 0) { statusBadge = '⚠️ Partial'; statusClass = 'pending'; }
         else { statusBadge = 'Unpaid'; statusClass = 'rejected'; }
 
-        const showRecord = !exempt && expFee > 0 && (paid < expFee || arrears > 0);
+        const showRecord = !exempt && ((expFee > 0 && paid < expFee) || arrears > 0 || (s.status === 'left' && totalOutstanding > 0));
         const showUndo = curPayments.length > 0;
 
         let relation = 'child';
@@ -3001,6 +3034,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Prepaid badge (blue pill next to name)
         const prepaidBadge = prepaid
           ? `<span style="font-size:0.68rem;background:#dbeafe;color:#1d4ed8;padding:1px 7px;border-radius:4px;font-weight:600;margin-left:5px;vertical-align:middle;">Prepaid</span>`
+          : '';
+
+        // Exited badge (red pill next to name)
+        const exitedBadge = s.status === 'left'
+          ? `<span style="font-size:0.68rem;background:#fee2e2;color:#991b1b;padding:1px 7px;border-radius:4px;font-weight:600;margin-left:5px;vertical-align:middle;">Exited (${s.exit_date ? s.exit_date.substring(5) : 'Left'})</span>`
           : '';
 
         // Pro-rata indicator (postpaid carry-forward only)
@@ -3487,8 +3525,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       eligibleStudents = cachedStudents.filter(s => {
-        if (s.status !== 'approved') return false;
-        if (!isEnrolledForMonth(s.doj, feeCurrentMonth)) return false;
+        if (!isStudentEligibleForFeeMonth(s, feeCurrentMonth)) return false;
         if (isExemptForMonth(s.id, feeCurrentMonth)) return false;
 
         const expFee = getExpectedFee(s, feeCurrentMonth);
@@ -3761,7 +3798,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function getFeeExportData() {
     const batchFilter = feeBatchFilter ? feeBatchFilter.value : 'all';
-    let students = cachedStudents.filter(s => s.status === 'approved' && isEnrolledForMonth(s.doj, feeCurrentMonth));
+    let students = cachedStudents.filter(s => isStudentEligibleForFeeMonth(s, feeCurrentMonth));
     if (batchFilter !== 'all') {
       if (batchFilter === 'unassigned') {
         students = students.filter(s => !s.batch || s.batch === '' || s.batch === 'null' || s.batch === 'undefined');
@@ -3774,7 +3811,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const exempt = isExemptForMonth(s.id, feeCurrentMonth);
       const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
       const remaining = Math.max(0, expFee - paid);
-      let status = exempt ? 'Exempt' : expFee === 0 ? 'No Fee' : paid >= expFee ? 'Paid' : paid > 0 ? 'Partial' : 'Unpaid';
+      let status = s.status === 'left' ? 'Exited' : exempt ? 'Exempt' : expFee === 0 ? 'No Fee' : paid >= expFee ? 'Paid' : paid > 0 ? 'Partial' : 'Unpaid';
       return { Name: s.student_name, Batch: s.batch || '', Course: s.course_applying || '', 'Fee Mode': s.is_prepaid ? 'Prepaid' : 'Postpaid', 'Expected (₹)': expFee, 'Paid (₹)': paid, 'Remaining (₹)': remaining, Status: status };
     });
 
@@ -3858,7 +3895,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // ─── Gather student data with arrears ───
       const batchFilter = feeBatchFilter ? feeBatchFilter.value : 'all';
-      let students = cachedStudents.filter(s => s.status === 'approved' && isEnrolledForMonth(s.doj, feeCurrentMonth));
+      let students = cachedStudents.filter(s => isStudentEligibleForFeeMonth(s, feeCurrentMonth));
       if (batchFilter !== 'all') {
         if (batchFilter === 'unassigned') {
           students = students.filter(s => !s.batch || s.batch === '' || s.batch === 'null' || s.batch === 'undefined');
@@ -3876,7 +3913,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const remaining = Math.max(0, expFee - paid);
         const arrears = calcArrears(s, feeCurrentMonth);
         const totalDue = remaining + arrears;
-        let status = exempt ? 'Exempt' : expFee === 0 ? 'No Fee' : paid >= expFee ? 'Paid' : paid > 0 ? 'Partial' : 'Unpaid';
+        let status = s.status === 'left' ? 'Exited' : exempt ? 'Exempt' : expFee === 0 ? 'No Fee' : paid >= expFee ? 'Paid' : paid > 0 ? 'Partial' : 'Unpaid';
         return {
           student: s,
           expFee, paid, remaining, arrears, totalDue, status,
@@ -5117,7 +5154,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (feeExportDropdown) feeExportDropdown.style.display = 'none';
 
       // Populating student checklist modal
-      const students = cachedStudents.filter(s => s.status === 'approved' && isEnrolledForMonth(s.doj, feeCurrentMonth));
+      const students = cachedStudents.filter(s => isStudentEligibleForFeeMonth(s, feeCurrentMonth));
       students.sort((a, b) => (a.student_name || '').localeCompare(b.student_name || ''));
 
       const listContainer = document.getElementById('bulk-print-student-list');
