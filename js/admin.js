@@ -3881,7 +3881,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       // ─── Styles ───
-      const thStyle = 'padding:6px 8px;text-align:left;border:1px solid #ccc;font-size:8pt;font-weight:700;background:#2D6A4F;color:#fff;';
+      const thStyle = 'padding:6px 8px;text-align:left;border:1px solid #ccc;font-size:8pt;font-weight:700;background:#2D6A4F;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;';
       const thStyleR = thStyle + 'text-align:right;';
       const thStyleC = thStyle + 'text-align:center;';
       const tdStyle = 'padding:5px 8px;border:1px solid #ddd;font-size:8pt;';
@@ -3908,7 +3908,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Batch header
         tableHTML += `
           <div style="${pageBreak}margin-bottom:1.5rem;">
-            <div style="display:flex;justify-content:space-between;align-items:center;background:#2D6A4F;color:#fff;padding:8px 14px;border-radius:6px;margin-bottom:3px;font-family:'Inter',sans-serif;">
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#2D6A4F;color:#fff;padding:8px 14px;border-radius:6px;margin-bottom:3px;font-family:'Inter',sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
               <div style="font-size:11pt;font-weight:700;">${batchName} Batch — Fee Collection Report</div>
               <div style="font-size:9pt;">${feeMonthLabel(feeCurrentMonth)}</div>
             </div>
@@ -3985,23 +3985,7 @@ document.addEventListener('DOMContentLoaded', () => {
           tableHTML += `<p style="font-size:7.5pt;color:#6b7280;margin:2px 0;font-family:'Inter',sans-serif;"><strong style="color:#7c3aed;">⊘ Exempt/No Fee (${exemptList.length}):</strong> ${exemptNames}</p>`;
         }
 
-        // Signature line
-        tableHTML += `
-            <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:16px;padding-top:16px;border-top:1.5px solid #d1d5db;font-size:8pt;color:#6b7280;font-family:'Inter',sans-serif;">
-              <div style="text-align:center; margin-top:40px;">
-                <div style="width:180px;border-bottom:1px solid #9ca3af;margin-bottom:4px;">&nbsp;</div>
-                Teacher's Signature
-              </div>
-              <div style="text-align:center; margin-top:40px;">
-                <div style="width:180px;border-bottom:1px solid #9ca3af;margin-bottom:4px;">&nbsp;</div>
-                Trustee's Signature
-              </div>
-              <div style="text-align:center; margin-top:40px;">
-                <div style="width:140px;border-bottom:1px solid #9ca3af;margin-bottom:4px;">&nbsp;</div>
-                Date
-              </div>
-            </div>
-          </div>`;
+          </div>`);
       });
 
       // ─── Render & Print ───
