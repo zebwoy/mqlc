@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const newVal = newPayload[field] !== undefined && newPayload[field] !== null ? String(newPayload[field]) : null;
       if (oldVal !== newVal) {
         rows.push({
-          student_id:  Number(studentId),
+          student_id:  studentId,    // uuid — pass as-is, do NOT cast to Number
           field_name:  label,
           old_value:   oldVal,
           new_value:   newVal,
