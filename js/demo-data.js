@@ -108,5 +108,23 @@ window.DEMO_DATA = (() => {
     ]},
   ];
 
-  return { students, feePayments, feeExemptions: [], leaderboardQuizzes };
+  // ── Student History (Audit Log) ───────────────────────────────────────────
+  const studentHistory = [
+    // Ibrahim Khan (id:4) — batch transfer + course upgrade
+    { id: 1, student_id: 4, field_name: 'Batch',           old_value: 'Asr',     new_value: 'Maghrib',  changed_by: 'admin@mqlc.com', changed_at: '2026-05-10T09:14:00Z', reason: 'Asr batch at full capacity' },
+    { id: 2, student_id: 4, field_name: 'Course',          old_value: 'Nazira',  new_value: 'Hifz',     changed_by: 'admin@mqlc.com', changed_at: '2026-05-10T09:14:00Z', reason: 'Completed Nazira — enrolled in Hifz' },
+    { id: 3, student_id: 4, field_name: 'Monthly Fee',     old_value: '600',     new_value: '800',      changed_by: 'admin@mqlc.com', changed_at: '2026-05-10T09:15:00Z', reason: 'Hifz course rate' },
+
+    // Hamza Qureshi (id:8) — fee mode switch + batch change
+    { id: 4, student_id: 8, field_name: 'Fee Mode',        old_value: 'false',   new_value: 'true',     changed_by: 'admin@mqlc.com', changed_at: '2026-04-18T11:30:00Z', reason: 'Parent requested prepaid plan' },
+    { id: 5, student_id: 8, field_name: 'Batch',           old_value: 'Asr',     new_value: 'Maghrib',  changed_by: 'admin@mqlc.com', changed_at: '2026-04-01T08:00:00Z', reason: null },
+
+    // Bilal Memon (id:12) — status change and course progression
+    { id: 6, student_id: 12, field_name: 'Status',         old_value: 'pending', new_value: 'approved', changed_by: 'admin@mqlc.com', changed_at: '2026-05-16T10:05:00Z', reason: null },
+    { id: 7, student_id: 12, field_name: 'Batch',          old_value: 'Zuhr',    new_value: 'Maghrib',  changed_by: 'admin@mqlc.com', changed_at: '2026-06-01T09:00:00Z', reason: 'Better timing for family' },
+    { id: 8, student_id: 12, field_name: "Father's Name",  old_value: 'Farhan',  new_value: 'Farhan Memon', changed_by: 'admin@mqlc.com', changed_at: '2026-06-05T14:22:00Z', reason: 'Correction — full name' },
+  ];
+
+  return { students, feePayments, feeExemptions: [], leaderboardQuizzes, studentHistory };
 })();
+

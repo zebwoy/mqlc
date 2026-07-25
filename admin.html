@@ -1214,7 +1214,30 @@
   <script src="js/components/SmartSearch.js"></script>
   <script src="js/admin.js"></script>
 
+  <!-- ─── Student History Drawer ─────────────────────────────────────────── -->
+  <div id="history-backdrop" class="history-backdrop"></div>
+  <div id="history-drawer" class="history-drawer" role="complementary" aria-label="Student change history">
+    <div class="history-drawer-header">
+      <div>
+        <h3>📋 Change History</h3>
+        <p id="history-drawer-subtitle">Loading…</p>
+      </div>
+      <button id="history-drawer-close" class="history-drawer-close" title="Close" aria-label="Close history drawer">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="history-drawer-body">
+      <div id="history-drawer-content">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
   <!-- ─── Demo Mode: Upload Restriction Modal ───────────────────────────── -->
+
   <dialog id="demo-restriction-modal" class="admin-modal" style="max-width: 420px; border-radius: 20px; text-align: center;">
     <div class="modal-body" style="padding: 2.5rem 2rem;">
       <div style="font-size: 2.5rem; margin-bottom: 1rem;">🔒</div>

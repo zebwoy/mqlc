@@ -98,6 +98,45 @@ document.addEventListener('DOMContentLoaded', () => {
       await window._supabase.auth.signOut();
     });
   }
+  // ─── AUDIT LOG CONSTANTS ─────────────────────────────────────────────────
+  // Fields tracked in student_history and their human-readable labels.
+  const AUDITED_FIELDS = {
+    batch:           'Batch',
+    course_applying: 'Course',
+    status:          'Status',
+    monthly_fee:     'Monthly Fee',
+    is_prepaid:      'Fee Mode',
+    student_name:    'Name',
+    father_name:     'Father\'s Name',
+  };
+
+  // Writes one row per changed field into student_history.
+  async function writeAuditLog(studentId, original, newPayload, adminEmail, reason) {
+    if (!window._supabase || !studentId) return;
+    const rows = [];
+    for (const [field, label] of Object.entries(AUDITED_FIELDS)) {
+      if (!(field in newPayload)) continue;
+      const oldVal = original[field] !== undefined ? String(original[field]) : null;
+      const newVal = newPayload[field] !== undefined && newPayload[field] !== null ? String(newPayload[field]) : null;
+      if (oldVal !== newVal) {
+        rows.push({
+          student_id:  Number(studentId),
+          field_name:  label,
+          old_value:   oldVal,
+          new_value:   newVal,
+          changed_by:  adminEmail || 'admin',
+          reason:      reason || null
+        });
+      }
+    }
+    if (rows.length === 0) return;
+    try {
+      await window._supabase.from('student_history').insert(rows);
+    } catch (err) {
+      console.warn('Audit log write failed (non-critical):', err.message);
+    }
+  }
+
   // ─── 2. CLOUDINARY MEDIA WIDGET ───────────────────────────────
   const cardUploadUpdates = document.getElementById('card-upload-updates');
   const cardUploadBulletin = document.getElementById('card-upload-bulletin');
@@ -1024,6 +1063,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
               </svg>
             </button>
+            <button class="btn-student-history" data-id="${app.id}" data-name="${escapeHTML(app.student_name)}" title="View Change History">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+              </svg>
+            </button>
           </div>
         </div>`;
       });
@@ -1037,6 +1082,15 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
+    // Hook up History buttons
+    document.querySelectorAll('.btn-student-history').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id   = e.currentTarget.getAttribute('data-id');
+        const name = e.currentTarget.getAttribute('data-name');
+        openHistoryDrawer(id, name);
+      });
+    });
+
     // Hook up View Profile buttons
     document.querySelectorAll('.btn-view-profile').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -1044,6 +1098,96 @@ document.addEventListener('DOMContentLoaded', () => {
         openProfileModal(id);
       });
     });
+  }
+
+  // ─── Open History Drawer ────────────────────────────────────────────────────
+  const historyDrawer   = document.getElementById('history-drawer');
+  const historyBackdrop = document.getElementById('history-backdrop');
+  const historyContent  = document.getElementById('history-drawer-content');
+  const historySubtitle = document.getElementById('history-drawer-subtitle');
+  const historyClose    = document.getElementById('history-drawer-close');
+
+  function closeHistoryDrawer() {
+    historyDrawer?.classList.remove('open');
+    historyBackdrop?.classList.remove('open');
+  }
+  if (historyClose)    historyClose.addEventListener('click', closeHistoryDrawer);
+  if (historyBackdrop) historyBackdrop.addEventListener('click', closeHistoryDrawer);
+
+  async function openHistoryDrawer(studentId, studentName) {
+    if (!historyDrawer) return;
+
+    // Open drawer immediately with loading state
+    if (historySubtitle) historySubtitle.textContent = studentName || 'Student';
+    if (historyContent)  historyContent.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--admin-muted);"><div class="mini-spinner" style="margin:0 auto 0.75rem;"></div>Loading history…</div>';
+    historyDrawer.classList.add('open');
+    historyBackdrop.classList.add('open');
+
+    // ── Demo Mode: serve seeded history ────────────────────────────────────
+    if (window.DEMO_MODE && window.DEMO_DATA) {
+      const entries = (window.DEMO_DATA.studentHistory || []).filter(h => h.student_id.toString() === studentId.toString());
+      renderHistoryTimeline(entries, studentName);
+      return;
+    }
+
+    if (!window._supabase) return;
+    try {
+      const { data, error } = await window._supabase
+        .from('student_history')
+        .select('*')
+        .eq('student_id', studentId)
+        .order('changed_at', { ascending: false });
+      if (error) throw error;
+      renderHistoryTimeline(data || [], studentName);
+    } catch (err) {
+      if (historyContent) historyContent.innerHTML = '<p style="color:var(--admin-danger);text-align:center;padding:2rem;">Failed to load history.</p>';
+      console.error('History load error:', err);
+    }
+  }
+
+  function renderHistoryTimeline(entries, studentName) {
+    if (!historyContent) return;
+    if (historySubtitle) historySubtitle.textContent = studentName + ' • ' + entries.length + ' change' + (entries.length === 1 ? '' : 's');
+
+    if (entries.length === 0) {
+      historyContent.innerHTML = `
+        <div class="audit-empty">
+          <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" fill="none" stroke-width="1.5" display="block" style="margin:0 auto 0.75rem">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <p>No changes recorded yet.</p>
+          <p style="font-size:0.78rem;margin-top:0.4rem;">History appears here the first time<br>this student\'s record is edited.</p>
+        </div>`;
+      return;
+    }
+
+    const feeFields    = new Set(['Monthly Fee', 'Fee Mode']);
+    const statusFields = new Set(['Status']);
+
+    const rows = entries.map(e => {
+      const isStatus = statusFields.has(e.field_name);
+      const isFee    = feeFields.has(e.field_name);
+      const cls      = isStatus ? 'status-change' : isFee ? 'fee-change' : '';
+      const dt       = e.changed_at ? new Date(e.changed_at) : null;
+      const dtStr    = dt ? dt.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) + ' ' + dt.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' }) : '';
+      const oldDisp  = e.old_value !== null && e.old_value !== undefined ? e.old_value : '—';
+      const newDisp  = e.new_value !== null && e.new_value !== undefined ? e.new_value : '—';
+      return `
+        <div class="audit-entry ${cls}">
+          <div class="audit-entry-header">
+            <span class="audit-field-badge">${escapeHTML(e.field_name)}</span>
+          </div>
+          <div class="audit-change-row">
+            <span class="audit-old-val">${escapeHTML(oldDisp)}</span>
+            <span class="audit-arrow">→</span>
+            <span class="audit-new-val">${escapeHTML(newDisp)}</span>
+          </div>
+          <div class="audit-meta">${dtStr ? dtStr + ' · ' : ''}${escapeHTML(e.changed_by || 'admin')}${e.reason ? ' · ' + escapeHTML(e.reason) : ''}</div>
+        </div>`;
+    }).join('');
+
+    historyContent.innerHTML = '<div class="audit-timeline">' + rows + '</div>';
   }
 
   // ─── Edit Student Logic ────────
@@ -1309,6 +1453,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // ── Save via toast.promise() for live notification feedback ──
       const studentName = document.getElementById('edit-student-name').value || 'Student';
+
+      // ── Write audit log before updating ────────────────────────────────────
+      let adminEmailForAudit = 'admin';
+      try {
+        const { data: { session } } = await window._supabase.auth.getSession();
+        if (session?.user?.email) adminEmailForAudit = session.user.email;
+      } catch (_) { }
+      if (!window.DEMO_MODE) {
+        await writeAuditLog(id, original, payload, adminEmailForAudit);
+      }
+
       const savePromise = (async () => {
         const { error } = await window._supabase
           .from('student_registrations')
