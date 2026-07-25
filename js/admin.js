@@ -4693,9 +4693,19 @@ document.addEventListener('DOMContentLoaded', () => {
               <span class="profile-value">${student.father_name || 'N/A'}</span>
             </div>
             <div class="profile-row">
-              <span class="profile-label">Phone Contact</span>
+              <span class="profile-label">Father's Contact</span>
               <span class="profile-value">
-                ${student.parent_phone ? `<a href="tel:${student.parent_phone}" style="color: var(--admin-accent); font-weight: 700; text-decoration: none;">📞 ${student.parent_phone}</a>` : 'N/A'}
+                ${student.contact_father
+                  ? `<a href="tel:${student.contact_father}" style="color: var(--admin-accent); font-weight: 700; text-decoration: none;">📞 ${student.contact_father}</a>`
+                  : '<span style="color:var(--admin-muted);font-style:italic;">Not recorded</span>'}
+              </span>
+            </div>
+            <div class="profile-row">
+              <span class="profile-label">Mother's Contact</span>
+              <span class="profile-value">
+                ${student.contact_mother
+                  ? `<a href="tel:${student.contact_mother}" style="color: var(--admin-accent); font-weight: 700; text-decoration: none;">📞 ${student.contact_mother}</a>`
+                  : '<span style="color:var(--admin-muted);font-style:italic;">Not recorded</span>'}
               </span>
             </div>
           </div>
