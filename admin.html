@@ -396,6 +396,14 @@
                   </div>
 
                   <div class="input-group">
+                    <label>Account Category</label>
+                    <select name="is_trustee">
+                      <option value="false" selected>Regular Student Account</option>
+                      <option value="true">Trustee Account (Exclude from Teacher Collection Report)</option>
+                    </select>
+                  </div>
+
+                  <div class="input-group">
                     <label>Assigned Batch (Optional)</label>
                     <select name="batch">
                       <option value="" selected>Unassigned</option>
@@ -1381,6 +1389,14 @@
             <select id="edit-is-prepaid" class="modal-select">
               <option value="true">Prepaid — Pay in advance (25th of prior month)</option>
               <option value="false">Postpaid — Pay after month begins</option>
+            </select>
+          </div>
+
+          <div class="modal-field">
+            <label class="modal-label">Account Category</label>
+            <select id="edit-is-trustee" class="modal-select">
+              <option value="false">Regular Student Account</option>
+              <option value="true">Trustee Account (Exclude from Teacher Collection Report)</option>
             </select>
           </div>
         </div>

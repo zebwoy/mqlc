@@ -106,6 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
     status:          'Status',
     monthly_fee:     'Monthly Fee',
     is_prepaid:      'Fee Mode',
+    is_trustee:      'Account Category',
     student_name:    'Name',
     father_name:     'Father\'s Name',
   };
@@ -539,6 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
           current_class: fd2.get('current_class') || null,
           monthly_fee: parseInt(fd2.get('monthly_fee') || 0) || 300,
           is_prepaid: fd2.get('is_prepaid') === 'true',
+          is_trustee: fd2.get('is_trustee') === 'true',
           status: 'approved',
           created_at: new Date().toISOString(),
           area: null
@@ -597,6 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
         batch: fd.get('batch') || null,
         monthly_fee: feeVal,
         is_prepaid: fd.get('is_prepaid') === 'true',
+        is_trustee: fd.get('is_trustee') === 'true',
         status: 'approved' // explicitly bypass queue and auto-approve manual entries
       };
 
@@ -1035,7 +1038,7 @@ document.addEventListener('DOMContentLoaded', () => {
         feedContainer.innerHTML += `
         <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center;">
           <div class="activity-detail">
-            <h4 style="margin-bottom: 0.25rem;">${escapeHTML(app.student_name)}${app.is_prepaid ? `<span style="font-size:0.65rem;background:#dbeafe;color:#1d4ed8;padding:1px 6px;border-radius:4px;font-weight:600;margin-left:5px;vertical-align:middle;">Prepaid</span>` : ''}${parentSubtext}</h4>
+            <h4 style="margin-bottom: 0.25rem;">${escapeHTML(app.student_name)}${app.is_prepaid ? `<span style="font-size:0.65rem;background:#dbeafe;color:#1d4ed8;padding:1px 6px;border-radius:4px;font-weight:600;margin-left:5px;vertical-align:middle;">Prepaid</span>` : ''}${app.is_trustee ? `<span style="font-size:0.65rem;background:#ede9fe;color:#6d28d9;padding:1px 6px;border-radius:4px;font-weight:600;margin-left:5px;vertical-align:middle;">Trustee Account</span>` : ''}${parentSubtext}</h4>
             <p style="font-size: 0.8rem; margin-bottom: 0.25rem;">${escapeHTML(app.course_applying)} | Form: ${escapeHTML(app.form_no || 'N/A')}</p>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
               ${app.status === 'left' ? `
@@ -1204,6 +1207,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Fee mode
     const feeModeSel = document.getElementById('edit-is-prepaid');
     if (feeModeSel) feeModeSel.value = student.is_prepaid ? 'true' : 'false';
+
+    // Trustee Category
+    const trusteeSel = document.getElementById('edit-is-trustee');
+    if (trusteeSel) trusteeSel.value = student.is_trustee ? 'true' : 'false';
 
     const statusVal = student.status || 'approved';
     document.getElementById('edit-student-status').value = statusVal;
@@ -1387,7 +1394,8 @@ document.addEventListener('DOMContentLoaded', () => {
         batch: document.getElementById('edit-student-batch').value,
         course_applying: document.getElementById('edit-student-course').value,
         status: statusVal,
-        is_prepaid: document.getElementById('edit-is-prepaid')?.value === 'true'
+        is_prepaid: document.getElementById('edit-is-prepaid')?.value === 'true',
+        is_trustee: document.getElementById('edit-is-trustee')?.value === 'true'
       };
 
       if (statusVal === 'left') {
@@ -3903,9 +3911,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
       orderedBatches.forEach((batchName, bIdx) => {
         const batchStudents = groups[batchName];
-        const pending = batchStudents.filter(e => e.status === 'Unpaid' || e.status === 'Partial');
-        const paidList = batchStudents.filter(e => e.status === 'Paid');
-        const exemptList = batchStudents.filter(e => e.status === 'Exempt' || e.status === 'No Fee');
+
+        // Filter out Trustee accounts (is_trustee === true) from the Teacher's collection checklist
+        const collectionList = batchStudents.filter(e => !e.student.is_trustee);
+        const trusteeList = batchStudents.filter(e => e.student.is_trustee);
+
+        const pending = collectionList.filter(e => e.status === 'Unpaid' || e.status === 'Partial');
+        const paidList = collectionList.filter(e => e.status === 'Paid');
+        const exemptList = collectionList.filter(e => e.status === 'Exempt' || e.status === 'No Fee');
         const totalToCollect = pending.reduce((s, e) => s + e.totalDue, 0);
         const pageBreak = bIdx > 0 ? 'page-break-before:always;' : '';
 
@@ -3922,14 +3935,14 @@ document.addEventListener('DOMContentLoaded', () => {
               <div style="font-size:11pt;font-weight:700;">${batchName} Batch — Fee Collection Report</div>
               <div style="font-size:9pt;">${feeMonthLabel(feeCurrentMonth)}</div>
             </div>
-            <div style="display:flex;gap:1.5rem;background:#f0fdf4;padding:6px 14px;border-radius:0 0 6px 6px;border:1px solid #d1fae5;font-size:8pt;font-family:'Inter',sans-serif;margin-bottom:10px;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
+            <div style="display:flex;gap:1.5rem;background:#f0fdf4;padding:6px 14px;border-radius:0 0 6px 6px;border:1px solid #d1fae5;font-size:8pt;font-family:'Inter',sans-serif;margin-bottom:10px;-webkit-print-color-adjust:exact;print-color-adjust:exact;flex-wrap:wrap;">
               <span><strong>Total Students:</strong> ${batchStudents.length}</span>
               <span><strong>Pending:</strong> <span style="color:#dc2626;font-weight:700;">${pending.length}</span></span>
               <span><strong>Paid:</strong> <span style="color:#16a34a;font-weight:700;">${paidList.length}</span></span>
               <span><strong>To Collect:</strong> <span style="color:#dc2626;font-weight:700;">₹${totalToCollect.toLocaleString('en-IN')}</span></span>
             </div>`;
 
-        // Main table — Pending students
+        // Main table — Pending students (Regular accounts)
         if (pending.length > 0) {
           tableHTML += `
             <table style="width:100%;border-collapse:collapse;font-family:'Inter',sans-serif;margin-bottom:8px;">
@@ -3981,7 +3994,7 @@ document.addEventListener('DOMContentLoaded', () => {
               </tbody>
             </table>`;
         } else {
-          tableHTML += `<p style="font-size:8.5pt;color:#16a34a;font-style:italic;margin:6px 0;font-family:'Inter',sans-serif;">✓ All students in this batch have paid for ${feeMonthLabel(feeCurrentMonth)}.</p>`;
+          tableHTML += `<p style="font-size:8.5pt;color:#16a34a;font-style:italic;margin:6px 0;font-family:'Inter',sans-serif;">✓ All regular students in this batch have paid for ${feeMonthLabel(feeCurrentMonth)}.</p>`;
         }
 
         // Compact reference — Paid students
@@ -3994,6 +4007,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (exemptList.length > 0) {
           const exemptNames = exemptList.map(e => e.student.student_name).sort().join(', ');
           tableHTML += `<p style="font-size:7.5pt;color:#6b7280;margin:2px 0;font-family:'Inter',sans-serif;"><strong style="color:#7c3aed;">⊘ Exempt/No Fee (${exemptList.length}):</strong> ${exemptNames}</p>`;
+        }
+
+        // Trustee Accounts reference — Excluded from collection checklist
+        if (trusteeList.length > 0) {
+          const trusteeNames = trusteeList.map(e => `${e.student.student_name} (${e.status}${e.totalDue > 0 ? ' - ₹' + e.totalDue.toLocaleString('en-IN') : ''})`).sort().join(', ');
+          tableHTML += `<p style="font-size:7.5pt;color:#1e40af;margin:2px 0;font-family:'Inter',sans-serif;"><strong style="color:#1d4ed8;">🏛️ Trustee Accounts (Excluded from Collection):</strong> ${trusteeNames}</p>`;
         }
 
         tableHTML += `</div>`;
