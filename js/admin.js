@@ -3953,15 +3953,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const collectionList = batchStudents.filter(e => !e.student.is_trustee);
         const trusteeList = batchStudents.filter(e => e.student.is_trustee);
 
-        const pending = collectionList.filter(e => e.status === 'Unpaid' || e.status === 'Partial');
-        const paidList = collectionList.filter(e => e.status === 'Paid');
+        // Main collection checklist table: includes Unpaid, Partial, and Exited students with outstanding dues!
+        const pending = collectionList.filter(e => e.totalDue > 0 && e.status !== 'Exempt' && e.status !== 'No Fee');
+        const paidList = collectionList.filter(e => e.totalDue === 0 && e.status !== 'Exempt' && e.status !== 'No Fee');
         const exemptList = collectionList.filter(e => e.status === 'Exempt' || e.status === 'No Fee');
         const totalToCollect = pending.reduce((s, e) => s + e.totalDue, 0);
         const pageBreak = bIdx > 0 ? 'page-break-before:always;' : '';
 
-        // Sort pending: Unpaid first, then Partial, then alphabetical
+        // Sort pending: Unpaid first, then Partial, then Exited, then alphabetical
         pending.sort((a, b) => {
-          if (a.status !== b.status) return a.status === 'Unpaid' ? -1 : 1;
+          if (a.student.status !== b.student.status) {
+            if (a.student.status === 'approved' && b.student.status === 'left') return -1;
+            if (a.student.status === 'left' && b.student.status === 'approved') return 1;
+          }
           return (a.student.student_name || '').localeCompare(b.student.student_name || '');
         });
 
@@ -3974,12 +3978,12 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div style="display:flex;gap:1.5rem;background:#f0fdf4;padding:6px 14px;border-radius:0 0 6px 6px;border:1px solid #d1fae5;font-size:8pt;font-family:'Inter',sans-serif;margin-bottom:10px;-webkit-print-color-adjust:exact;print-color-adjust:exact;flex-wrap:wrap;">
               <span><strong>Total Students:</strong> ${batchStudents.length}</span>
-              <span><strong>Pending:</strong> <span style="color:#dc2626;font-weight:700;">${pending.length}</span></span>
+              <span><strong>Pending Dues:</strong> <span style="color:#dc2626;font-weight:700;">${pending.length}</span></span>
               <span><strong>Paid:</strong> <span style="color:#16a34a;font-weight:700;">${paidList.length}</span></span>
               <span><strong>To Collect:</strong> <span style="color:#dc2626;font-weight:700;">₹${totalToCollect.toLocaleString('en-IN')}</span></span>
             </div>`;
 
-        // Main table — Pending students (Regular accounts)
+        // Main table — Pending students (Regular accounts + Exited with dues)
         if (pending.length > 0) {
           tableHTML += `
             <table style="width:100%;border-collapse:collapse;font-family:'Inter',sans-serif;margin-bottom:8px;">
@@ -4001,18 +4005,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
           pending.forEach((e, i) => {
             const bg = i % 2 === 0 ? '#fff' : '#fafafa';
-            const statusColor = e.status === 'Unpaid' ? '#dc2626' : '#d97706';
-            const statusBg = e.status === 'Unpaid' ? '#fef2f2' : '#fffbeb';
+            let statusColor = '#dc2626';
+            let statusBg = '#fef2f2';
+            let displayStatus = e.status;
+
+            if (e.student.status === 'left') {
+              displayStatus = 'Exited';
+              statusColor = '#991b1b';
+              statusBg = '#fee2e2';
+            } else if (e.status === 'Partial') {
+              statusColor = '#d97706';
+              statusBg = '#fffbeb';
+            }
+
             tableHTML += `
                 <tr style="background:${bg};">
                   <td style="${tdStyleC}">${i + 1}</td>
-                  <td style="${tdStyle}font-weight:600;">${e.student.student_name || ''}</td>
+                  <td style="${tdStyle}font-weight:600;">${e.student.student_name || ''}${e.student.status === 'left' ? ' <span style="font-size:7pt;color:#991b1b;font-weight:700;">(LEFT)</span>' : ''}</td>
                   <td style="${tdStyle}">${e.student.father_name || '—'}</td>
                   <td style="${tdStyle}">${e.contact}</td>
                   <td style="${tdStyleR}">₹${e.remaining.toLocaleString('en-IN')}</td>
                   <td style="${tdStyleR}${e.arrears > 0 ? 'color:#dc2626;font-weight:600;' : ''}">${e.arrears > 0 ? '₹' + e.arrears.toLocaleString('en-IN') : '—'}</td>
                   <td style="${tdStyleR}font-weight:700;">₹${e.totalDue.toLocaleString('en-IN')}</td>
-                  <td style="${tdStyleC}"><span style="background:${statusBg};color:${statusColor};padding:2px 6px;border-radius:4px;font-size:7pt;font-weight:600;">${e.status}</span></td>
+                  <td style="${tdStyleC}"><span style="background:${statusBg};color:${statusColor};padding:2px 6px;border-radius:4px;font-size:7pt;font-weight:600;">${displayStatus}</span></td>
                   <td style="${tdStyleC}font-size:12pt;">☐</td>
                 </tr>`;
           });
