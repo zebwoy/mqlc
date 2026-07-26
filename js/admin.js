@@ -3949,7 +3949,7 @@ document.addEventListener('DOMContentLoaded', () => {
       orderedBatches.forEach((batchName, bIdx) => {
         const batchStudents = groups[batchName];
 
-        // Main collection checklist table: includes Unpaid, Partial, Exited (with dues), AND Trustee students for attendance tallying!
+        // Main collection checklist table: includes all students (regular, exited with dues, and trustee) in the matrix
         const pending = batchStudents.filter(e => 
           (e.totalDue > 0 || e.status === 'Unpaid' || e.status === 'Partial' || e.student.is_trustee) && 
           e.status !== 'Exempt' && 
@@ -3967,14 +3967,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalArrears = collectiblePending.reduce((s, e) => s + e.arrears, 0);
         const pageBreak = bIdx > 0 ? 'page-break-before:always;' : '';
 
-        // Sort pending table rows: Regular active first, then Trustee, then Exited, then alphabetical
+        // Sort pending table rows: Unpaid first, then Partial, then alphabetical (no special Trustee isolation)
         pending.sort((a, b) => {
-          if (a.student.is_trustee !== b.student.is_trustee) {
-            return a.student.is_trustee ? 1 : -1; // Trustee accounts listed neatly after regular
-          }
           if (a.student.status !== b.student.status) {
             if (a.student.status === 'approved' && b.student.status === 'left') return -1;
             if (a.student.status === 'left' && b.student.status === 'approved') return 1;
+          }
+          if (a.status !== b.status) {
+            if (a.status === 'Unpaid') return -1;
+            if (b.status === 'Unpaid') return 1;
           }
           return (a.student.student_name || '').localeCompare(b.student.student_name || '');
         });
@@ -3993,7 +3994,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <span><strong>To Collect:</strong> <span style="color:#dc2626;font-weight:700;">₹${totalToCollect.toLocaleString('en-IN')}</span></span>
             </div>`;
 
-        // Main table — Pending + Trustee + Exited students
+        // Main table — All students in batch (Regular + Exited + Trustee)
         if (pending.length > 0) {
           tableHTML += `
             <table style="width:100%;border-collapse:collapse;font-family:'Inter',sans-serif;margin-bottom:8px;">
@@ -4021,33 +4022,32 @@ document.addEventListener('DOMContentLoaded', () => {
             let statusBg = '#fef2f2';
             let displayStatus = e.status;
 
-            if (isTrustee) {
-              displayStatus = 'Trustee';
-              statusColor = '#1d4ed8';
-              statusBg = '#dbeafe';
-            } else if (e.student.status === 'left') {
+            if (e.student.status === 'left') {
               displayStatus = 'Exited';
               statusColor = '#991b1b';
               statusBg = '#fee2e2';
             } else if (e.status === 'Partial') {
               statusColor = '#d97706';
               statusBg = '#fffbeb';
+            } else if (e.status === 'Paid') {
+              statusColor = '#16a34a';
+              statusBg = '#f0fdf4';
             }
 
-            const monthDisp = isTrustee ? '—' : `₹${e.remaining.toLocaleString('en-IN')}`;
-            const arrearsDisp = isTrustee ? '—' : (e.arrears > 0 ? `₹${e.arrears.toLocaleString('en-IN')}` : '—');
-            const totalDisp = isTrustee ? '—' : `₹${e.totalDue.toLocaleString('en-IN')}`;
+            const monthDisp = `₹${e.remaining.toLocaleString('en-IN')}`;
+            const arrearsDisp = e.arrears > 0 ? `₹${e.arrears.toLocaleString('en-IN')}` : '—';
+            const totalDisp = `₹${e.totalDue.toLocaleString('en-IN')}`;
             const checkboxDisp = isTrustee ? '—' : '☐';
 
             tableHTML += `
                 <tr style="background:${bg};">
                   <td style="${tdStyleC}">${i + 1}</td>
-                  <td style="${tdStyle}font-weight:600;">${e.student.student_name || ''}${isTrustee ? ' <span style="font-size:7pt;color:#1d4ed8;font-weight:700;">(TRUSTEE)</span>' : e.student.status === 'left' ? ' <span style="font-size:7pt;color:#991b1b;font-weight:700;">(LEFT)</span>' : ''}</td>
+                  <td style="${tdStyle}font-weight:600;">${e.student.student_name || ''}${e.student.status === 'left' ? ' <span style="font-size:7pt;color:#991b1b;font-weight:700;">(LEFT)</span>' : ''}</td>
                   <td style="${tdStyle}">${e.student.father_name || '—'}</td>
                   <td style="${tdStyle}">${e.contact}</td>
                   <td style="${tdStyleR}">${monthDisp}</td>
-                  <td style="${tdStyleR}${!isTrustee && e.arrears > 0 ? 'color:#dc2626;font-weight:600;' : ''}">${arrearsDisp}</td>
-                  <td style="${tdStyleR}${!isTrustee ? 'font-weight:700;' : 'color:var(--admin-muted);'}">${totalDisp}</td>
+                  <td style="${tdStyleR}${e.arrears > 0 ? 'color:#dc2626;font-weight:600;' : ''}">${arrearsDisp}</td>
+                  <td style="${tdStyleR}font-weight:700;">${totalDisp}</td>
                   <td style="${tdStyleC}"><span style="background:${statusBg};color:${statusColor};padding:2px 6px;border-radius:4px;font-size:7pt;font-weight:600;">${displayStatus}</span></td>
                   <td style="${tdStyleC}font-size:12pt;">${checkboxDisp}</td>
                 </tr>`;
