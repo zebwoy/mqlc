@@ -3908,7 +3908,46 @@ document.addEventListener('DOMContentLoaded', () => {
       // Enrich each student with fee calculations
       const enriched = students.map(s => {
         const expFee = getExpectedFee(s, feeCurrentMonth);
-        const exempt         const batchStudents = groups[batchName];
+        const exempt = isExemptForMonth(s.id, feeCurrentMonth);
+        const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
+        const remaining = Math.max(0, expFee - paid);
+        const arrears = calcArrears(s, feeCurrentMonth);
+        const totalDue = remaining + arrears;
+        let status = s.status === 'left' ? 'Exited' : exempt ? 'Exempt' : expFee === 0 ? 'No Fee' : paid >= expFee ? 'Paid' : paid > 0 ? 'Partial' : 'Unpaid';
+        return {
+          student: s,
+          expFee, paid, remaining, arrears, totalDue, status,
+          contact: [s.contact_father, s.contact_mother].filter(Boolean).join(' / ') || '—'
+        };
+      });
+
+      // Group by batch
+      const groups = {};
+      enriched.forEach(e => {
+        const batch = e.student.batch || 'Unassigned';
+        if (!groups[batch]) groups[batch] = [];
+        groups[batch].push(e);
+      });
+
+      const batchOrder = ['Fajr', 'Zuhr', 'Asr', 'Maghrib', 'Isha'];
+      const orderedBatches = Object.keys(groups).sort((a, b) => {
+        const iA = batchOrder.indexOf(a), iB = batchOrder.indexOf(b);
+        return (iA === -1 ? 999 : iA) - (iB === -1 ? 999 : iB);
+      });
+
+      // ─── Styles ───
+      const thStyle = 'padding:6px 8px;text-align:left;border:1px solid #ccc;font-size:8pt;font-weight:700;background:#2D6A4F;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;';
+      const thStyleR = thStyle + 'text-align:right;';
+      const thStyleC = thStyle + 'text-align:center;';
+      const tdStyle = 'padding:5px 8px;border:1px solid #ddd;font-size:8pt;';
+      const tdStyleR = tdStyle + 'text-align:right;';
+      const tdStyleC = tdStyle + 'text-align:center;';
+
+      // ─── Build HTML ───
+      let tableHTML = '';
+
+      orderedBatches.forEach((batchName, bIdx) => {
+        const batchStudents = groups[batchName];
 
         // Main collection checklist table: includes Unpaid, Partial, Exited (with dues), AND Trustee students for attendance tallying!
         const pending = batchStudents.filter(e => 
