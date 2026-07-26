@@ -3908,62 +3908,31 @@ document.addEventListener('DOMContentLoaded', () => {
       // Enrich each student with fee calculations
       const enriched = students.map(s => {
         const expFee = getExpectedFee(s, feeCurrentMonth);
-        const exempt = isExemptForMonth(s.id, feeCurrentMonth);
-        const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeCurrentMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
-        const remaining = Math.max(0, expFee - paid);
-        const arrears = calcArrears(s, feeCurrentMonth);
-        const totalDue = remaining + arrears;
-        let status = s.status === 'left' ? 'Exited' : exempt ? 'Exempt' : expFee === 0 ? 'No Fee' : paid >= expFee ? 'Paid' : paid > 0 ? 'Partial' : 'Unpaid';
-        return {
-          student: s,
-          expFee, paid, remaining, arrears, totalDue, status,
-          contact: [s.contact_father, s.contact_mother].filter(Boolean).join(' / ') || '—'
-        };
-      });
+        const exempt         const batchStudents = groups[batchName];
 
-      // Group by batch
-      const groups = {};
-      enriched.forEach(e => {
-        const batch = e.student.batch || 'Unassigned';
-        if (!groups[batch]) groups[batch] = [];
-        groups[batch].push(e);
-      });
+        // Main collection checklist table: includes Unpaid, Partial, Exited (with dues), AND Trustee students for attendance tallying!
+        const pending = batchStudents.filter(e => 
+          (e.totalDue > 0 || e.status === 'Unpaid' || e.status === 'Partial' || e.student.is_trustee) && 
+          e.status !== 'Exempt' && 
+          e.status !== 'No Fee'
+        );
 
-      const batchOrder = ['Fajr', 'Zuhr', 'Asr', 'Maghrib', 'Isha'];
-      const orderedBatches = Object.keys(groups).sort((a, b) => {
-        const iA = batchOrder.indexOf(a), iB = batchOrder.indexOf(b);
-        return (iA === -1 ? 999 : iA) - (iB === -1 ? 999 : iB);
-      });
+        const paidList = batchStudents.filter(e => e.status === 'Paid' && e.student.status !== 'left' && !e.student.is_trustee);
+        const exemptList = batchStudents.filter(e => (e.status === 'Exempt' || e.status === 'No Fee') && !e.student.is_trustee);
+        const exitedSettledList = batchStudents.filter(e => e.student.status === 'left' && e.totalDue === 0 && e.status !== 'Exempt' && e.status !== 'No Fee' && !e.student.is_trustee);
 
-      // ─── Styles ───
-      const thStyle = 'padding:6px 8px;text-align:left;border:1px solid #ccc;font-size:8pt;font-weight:700;background:#2D6A4F;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;';
-      const thStyleR = thStyle + 'text-align:right;';
-      const thStyleC = thStyle + 'text-align:center;';
-      const tdStyle = 'padding:5px 8px;border:1px solid #ddd;font-size:8pt;';
-      const tdStyleR = tdStyle + 'text-align:right;';
-      const tdStyleC = tdStyle + 'text-align:center;';
-
-      // ─── Build HTML ───
-      let tableHTML = '';
-
-      orderedBatches.forEach((batchName, bIdx) => {
-        const batchStudents = groups[batchName];
-
-        // Filter out Trustee accounts (is_trustee === true) from the Teacher's collection checklist
-        const collectionList = batchStudents.filter(e => !e.student.is_trustee);
-        const trusteeList = batchStudents.filter(e => e.student.is_trustee);
-
-        // Main collection checklist table: includes Unpaid, Partial, and Exited students with outstanding dues!
-        const pending = collectionList.filter(e => (e.totalDue > 0 || e.status === 'Unpaid' || e.status === 'Partial') && e.status !== 'Exempt' && e.status !== 'No Fee');
-        const paidList = collectionList.filter(e => e.status === 'Paid' && e.student.status !== 'left');
-        const exemptList = collectionList.filter(e => e.status === 'Exempt' || e.status === 'No Fee');
-        const exitedSettledList = collectionList.filter(e => e.student.status === 'left' && e.totalDue === 0 && e.status !== 'Exempt' && e.status !== 'No Fee');
-
-        const totalToCollect = pending.reduce((s, e) => s + e.totalDue, 0);
+        // Cash collection calculations ONLY from non-trustee collectible students
+        const collectiblePending = pending.filter(e => !e.student.is_trustee);
+        const totalToCollect = collectiblePending.reduce((s, e) => s + e.totalDue, 0);
+        const totalRemaining = collectiblePending.reduce((s, e) => s + e.remaining, 0);
+        const totalArrears = collectiblePending.reduce((s, e) => s + e.arrears, 0);
         const pageBreak = bIdx > 0 ? 'page-break-before:always;' : '';
 
-        // Sort pending: Unpaid first, then Partial, then Exited, then alphabetical
+        // Sort pending table rows: Regular active first, then Trustee, then Exited, then alphabetical
         pending.sort((a, b) => {
+          if (a.student.is_trustee !== b.student.is_trustee) {
+            return a.student.is_trustee ? 1 : -1; // Trustee accounts listed neatly after regular
+          }
           if (a.student.status !== b.student.status) {
             if (a.student.status === 'approved' && b.student.status === 'left') return -1;
             if (a.student.status === 'left' && b.student.status === 'approved') return 1;
@@ -3980,12 +3949,12 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
             <div style="display:flex;gap:1.5rem;background:#f0fdf4;padding:6px 14px;border-radius:0 0 6px 6px;border:1px solid #d1fae5;font-size:8pt;font-family:'Inter',sans-serif;margin-bottom:10px;-webkit-print-color-adjust:exact;print-color-adjust:exact;flex-wrap:wrap;">
               <span><strong>Total Students:</strong> ${batchStudents.length}</span>
-              <span><strong>Pending Dues:</strong> <span style="color:#dc2626;font-weight:700;">${pending.length}</span></span>
+              <span><strong>Pending Dues:</strong> <span style="color:#dc2626;font-weight:700;">${collectiblePending.length}</span></span>
               <span><strong>Paid:</strong> <span style="color:#16a34a;font-weight:700;">${paidList.length}</span></span>
               <span><strong>To Collect:</strong> <span style="color:#dc2626;font-weight:700;">₹${totalToCollect.toLocaleString('en-IN')}</span></span>
             </div>`;
 
-        // Main table — Pending students (Regular accounts + Exited with dues)
+        // Main table — Pending + Trustee + Exited students
         if (pending.length > 0) {
           tableHTML += `
             <table style="width:100%;border-collapse:collapse;font-family:'Inter',sans-serif;margin-bottom:8px;">
@@ -4007,11 +3976,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
           pending.forEach((e, i) => {
             const bg = i % 2 === 0 ? '#fff' : '#fafafa';
+            const isTrustee = e.student.is_trustee === true;
+
             let statusColor = '#dc2626';
             let statusBg = '#fef2f2';
             let displayStatus = e.status;
 
-            if (e.student.status === 'left') {
+            if (isTrustee) {
+              displayStatus = 'Trustee';
+              statusColor = '#1d4ed8';
+              statusBg = '#dbeafe';
+            } else if (e.student.status === 'left') {
               displayStatus = 'Exited';
               statusColor = '#991b1b';
               statusBg = '#fee2e2';
@@ -4020,26 +3995,29 @@ document.addEventListener('DOMContentLoaded', () => {
               statusBg = '#fffbeb';
             }
 
+            const monthDisp = isTrustee ? '—' : `₹${e.remaining.toLocaleString('en-IN')}`;
+            const arrearsDisp = isTrustee ? '—' : (e.arrears > 0 ? `₹${e.arrears.toLocaleString('en-IN')}` : '—');
+            const totalDisp = isTrustee ? '—' : `₹${e.totalDue.toLocaleString('en-IN')}`;
+            const checkboxDisp = isTrustee ? '—' : '☐';
+
             tableHTML += `
                 <tr style="background:${bg};">
                   <td style="${tdStyleC}">${i + 1}</td>
-                  <td style="${tdStyle}font-weight:600;">${e.student.student_name || ''}${e.student.status === 'left' ? ' <span style="font-size:7pt;color:#991b1b;font-weight:700;">(LEFT)</span>' : ''}</td>
+                  <td style="${tdStyle}font-weight:600;">${e.student.student_name || ''}${isTrustee ? ' <span style="font-size:7pt;color:#1d4ed8;font-weight:700;">(TRUSTEE)</span>' : e.student.status === 'left' ? ' <span style="font-size:7pt;color:#991b1b;font-weight:700;">(LEFT)</span>' : ''}</td>
                   <td style="${tdStyle}">${e.student.father_name || '—'}</td>
                   <td style="${tdStyle}">${e.contact}</td>
-                  <td style="${tdStyleR}">₹${e.remaining.toLocaleString('en-IN')}</td>
-                  <td style="${tdStyleR}${e.arrears > 0 ? 'color:#dc2626;font-weight:600;' : ''}">${e.arrears > 0 ? '₹' + e.arrears.toLocaleString('en-IN') : '—'}</td>
-                  <td style="${tdStyleR}font-weight:700;">₹${e.totalDue.toLocaleString('en-IN')}</td>
+                  <td style="${tdStyleR}">${monthDisp}</td>
+                  <td style="${tdStyleR}${!isTrustee && e.arrears > 0 ? 'color:#dc2626;font-weight:600;' : ''}">${arrearsDisp}</td>
+                  <td style="${tdStyleR}${!isTrustee ? 'font-weight:700;' : 'color:var(--admin-muted);'}">${totalDisp}</td>
                   <td style="${tdStyleC}"><span style="background:${statusBg};color:${statusColor};padding:2px 6px;border-radius:4px;font-size:7pt;font-weight:600;">${displayStatus}</span></td>
-                  <td style="${tdStyleC}font-size:12pt;">☐</td>
+                  <td style="${tdStyleC}font-size:12pt;">${checkboxDisp}</td>
                 </tr>`;
           });
 
-          // Total row
-          const totalRemaining = pending.reduce((s, e) => s + e.remaining, 0);
-          const totalArrears = pending.reduce((s, e) => s + e.arrears, 0);
+          // Total row (Sums ONLY collectible non-Trustee students)
           tableHTML += `
                 <tr style="background:#f0f0f0;font-weight:700;">
-                  <td colspan="4" style="${tdStyle}text-align:right;font-size:8pt;">TOTAL</td>
+                  <td colspan="4" style="${tdStyle}text-align:right;font-size:8pt;">TOTAL TO COLLECT</td>
                   <td style="${tdStyleR}">₹${totalRemaining.toLocaleString('en-IN')}</td>
                   <td style="${tdStyleR}color:#dc2626;">₹${totalArrears.toLocaleString('en-IN')}</td>
                   <td style="${tdStyleR}">₹${totalToCollect.toLocaleString('en-IN')}</td>
@@ -4067,12 +4045,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (exitedSettledList.length > 0) {
           const exitedNames = exitedSettledList.map(e => e.student.student_name).sort().join(', ');
           tableHTML += `<p style="font-size:7.5pt;color:#6b7280;margin:2px 0;font-family:'Inter',sans-serif;"><strong style="color:#dc2626;">🚫 Exited/Left (${exitedSettledList.length}):</strong> ${exitedNames}</p>`;
-        }
-
-        // Trustee Accounts reference — Excluded from collection checklist
-        if (trusteeList.length > 0) {
-          const trusteeNames = trusteeList.map(e => `${e.student.student_name} (${e.status}${e.totalDue > 0 ? ' - ₹' + e.totalDue.toLocaleString('en-IN') : ''})`).sort().join(', ');
-          tableHTML += `<p style="font-size:7.5pt;color:#1e40af;margin:2px 0;font-family:'Inter',sans-serif;"><strong style="color:#1d4ed8;">🏛️ Trustee Accounts (Excluded from Collection):</strong> ${trusteeNames}</p>`;
         }
 
         tableHTML += `</div>`;
