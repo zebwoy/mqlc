@@ -1491,6 +1491,94 @@
     </div>
   </dialog>
 
+  <!-- Rejoin / Re-admit Student Modal -->
+  <dialog id="modal-rejoin-student" class="admin-modal" style="max-width: 540px;">
+    <div class="modal-header">
+      <h3>Rejoin / Re-admit Student</h3>
+      <button onclick="document.getElementById('modal-rejoin-student').close()" class="modal-close-btn">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Context Card -->
+      <div class="modal-context-card" style="margin-bottom: 1.25rem;">
+        <div class="modal-context-row">
+          <span class="modal-context-name" id="rejoin-student-name">Student Name</span>
+          <span class="badge rejected" id="rejoin-current-status-badge">Left</span>
+        </div>
+        <div class="modal-context-row" style="margin-top: 0.25rem;">
+          <span class="modal-context-sub" id="rejoin-student-sub">Father: ... | Previous Batch: ...</span>
+        </div>
+      </div>
+
+      <form id="form-rejoin-student">
+        <input type="hidden" id="rejoin-student-id">
+
+        <!-- Rejoin Date Field -->
+        <div class="modal-field">
+          <label class="modal-label">Rejoining Date <span style="color: var(--admin-danger);">*</span></label>
+          <input type="hidden" id="rejoin-date">
+          <div class="inline-datepicker" id="rejoin-datepicker"></div>
+        </div>
+
+        <!-- Dynamic Smart Fee Calculation Banner -->
+        <div id="rejoin-smart-notice" class="rejoin-smart-notice" style="margin: 1rem 0; padding: 0.85rem 1rem; border-radius: 10px; font-size: 0.85rem; line-height: 1.45;">
+          <!-- Dynamically populated by updateRejoinNotice() -->
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="modal-field">
+            <label class="modal-label">Assigned Batch <span style="color: var(--admin-danger);">*</span></label>
+            <select id="rejoin-batch" required class="modal-select">
+              <option value="Zuhr">Zuhr</option>
+              <option value="Asr">Asr</option>
+              <option value="Maghrib">Maghrib</option>
+            </select>
+          </div>
+
+          <div class="modal-field">
+            <label class="modal-label">Studying Course <span style="color: var(--admin-danger);">*</span></label>
+            <select id="rejoin-course" required class="modal-select">
+              <option value="Noorani Qaida">Noorani Qaida</option>
+              <option value="Qur'an Reading (Nazra)">Qur'an Reading (Nazra)</option>
+              <option value="Qur'an Memorization (Hifz)">Qur'an Memorization (Hifz)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div class="modal-field">
+            <label class="modal-label">Monthly Fee (₹) <span style="color: var(--admin-danger);">*</span></label>
+            <input type="number" id="rejoin-fee" required min="0" step="50" class="modal-input" placeholder="e.g. 600">
+          </div>
+
+          <div class="modal-field">
+            <label class="modal-label">Fee Collection Mode</label>
+            <select id="rejoin-is-prepaid" class="modal-select">
+              <option value="true">Prepaid — Pay in advance</option>
+              <option value="false">Postpaid — Pay in month</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-field">
+          <label class="modal-label">Rejoining Comments / Remarks <span style="color: var(--admin-danger);">*</span></label>
+          <textarea id="rejoin-notes" rows="2" required placeholder="e.g. Returned from native place; resuming Nazra course." class="modal-textarea"></textarea>
+        </div>
+
+        <div id="rejoin-status-msg" class="status-msg" style="display: none; margin-bottom: 1rem;"></div>
+
+        <div class="modal-actions" style="margin-top: 1.25rem;">
+          <button type="submit" id="btn-submit-rejoin" class="btn-primary" style="background: #16a34a; border-color: #16a34a;">
+            Confirm & Re-admit
+          </button>
+          <button type="button" onclick="document.getElementById('modal-rejoin-student').close()" class="btn-secondary">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
   <!-- Student Profile Modal -->
   <dialog id="modal-student-profile" class="admin-modal" style="max-width: 680px;">
     <div class="modal-header">
@@ -1503,6 +1591,8 @@
       </div>
       <div class="modal-actions"
         style="margin-top: 1.5rem; justify-content: flex-end; border-top: 1px solid var(--admin-border); padding-top: 1.25rem; gap: 0.75rem;">
+        <button id="btn-profile-rejoin" class="btn-primary"
+          style="display: none; background: #16a34a; border-color: #16a34a; padding: 0.5rem 1.25rem; font-size: 0.85rem; border-radius: 50px;">🔄 Rejoin Student</button>
         <button id="btn-profile-edit" class="btn-secondary"
           style="padding: 0.5rem 1.25rem; font-size: 0.85rem; border-radius: 50px;">✎ Edit Info</button>
         <button onclick="document.getElementById('modal-student-profile').close()" class="btn-secondary"

@@ -8,7 +8,7 @@ const CLOUDINARY_UPLOAD_PRESET = 'wrye55gv'; // REPLACE THIS
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  let exitDatePicker, paymentDatePicker, bulkPaymentDatePicker;
+  let exitDatePicker, paymentDatePicker, bulkPaymentDatePicker, rejoinDatePicker;
 
   // Initialize reusable custom date pickers
   exitDatePicker = new CustomDatePicker({
@@ -24,6 +24,14 @@ document.addEventListener('DOMContentLoaded', () => {
   bulkPaymentDatePicker = new CustomDatePicker({
     container: '#bulk-pay-datepicker',
     input: '#bulk-pay-date'
+  });
+
+  rejoinDatePicker = new CustomDatePicker({
+    container: '#rejoin-datepicker',
+    input: '#rejoin-date',
+    onSelect: () => {
+      if (typeof updateRejoinNotice === 'function') updateRejoinNotice();
+    }
   });
 
   // Initialize reusable custom select dropdowns
@@ -109,6 +117,8 @@ document.addEventListener('DOMContentLoaded', () => {
     is_trustee:      'Account Category',
     student_name:    'Name',
     father_name:     'Father\'s Name',
+    rejoin_date:     'Rejoin Date',
+    rejoin_reason:   'Rejoin Reason',
   };
 
   // Writes one row per changed field into student_history.
@@ -1055,6 +1065,14 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
           <div style="display: flex; align-items: center; gap: 0.75rem;">
             <span class="badge ${stClass}">${app.status}</span>
+            ${app.status !== 'approved' ? `
+            <button class="btn-rejoin-student" data-id="${app.id}" title="Rejoin / Re-admit Student">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm.5-5v1h1a.5.5 0 0 1 0 1h-1v1a.5.5 0 0 1-1 0v-1h-1a.5.5 0 0 1 0-1h1v-1a.5.5 0 0 1 1 0Zm-2-6a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/>
+                <path d="M8.256 14a4.474 4.474 0 0 1-.229-1.004H3c.001-.246.154-.986.832-1.664C4.484 10.68 5.711 10 8 10c.26 0 .507.009.74.025.226-.341.496-.65.804-.918C9.077 9.038 8.564 9 8 9c-5 0-6 3-6 4s1 1 1 1h5.256Z"/>
+              </svg>
+            </button>
+            ` : ''}
             <button class="btn-view-profile" data-id="${app.id}" style="background: none; border: none; cursor: pointer; color: var(--admin-muted); display: flex; align-items: center; justify-content: center; padding: 4px; border-radius: 4px; transition: background 0.2s;" title="View Student Profile">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                 <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
@@ -1074,6 +1092,14 @@ document.addEventListener('DOMContentLoaded', () => {
             </button>
           </div>
         </div>`;
+      });
+    });
+
+    // Hook up Rejoin buttons
+    document.querySelectorAll('.btn-rejoin-student').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        openRejoinModal(id);
       });
     });
 
@@ -1511,6 +1537,254 @@ document.addEventListener('DOMContentLoaded', () => {
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.textContent = submitBtn.dataset.originalText || 'Save Changes';
+        }
+      }
+    });
+  }
+
+  // ─── 3e. Rejoin / Re-admit Student Flow ──────────────────────────────────
+  async function openRejoinModal(id) {
+    const student = cachedStudents.find(s => s.id.toString() === id.toString());
+    if (!student) return;
+
+    document.getElementById('rejoin-student-id').value = student.id;
+    document.getElementById('rejoin-student-name').textContent = student.student_name || 'Student';
+
+    // Status badge
+    const badgeEl = document.getElementById('rejoin-current-status-badge');
+    if (badgeEl) {
+      const st = (student.status || 'left').toUpperCase();
+      badgeEl.textContent = st;
+      badgeEl.className = `badge ${student.status === 'left' ? 'rejected' : (student.status === 'rejected' ? 'rejected' : 'pending')}`;
+    }
+
+    // Subtext context
+    const subEl = document.getElementById('rejoin-student-sub');
+    if (subEl) {
+      const parts = [];
+      if (student.father_name) parts.push(`Father: ${student.father_name}`);
+      if (student.exit_date) parts.push(`Exited on: ${student.exit_date}`);
+      if (student.exit_reason) parts.push(`Reason: ${student.exit_reason}`);
+      if (student.batch) parts.push(`Last Batch: ${student.batch}`);
+      subEl.textContent = parts.join(' | ') || 'N/A';
+    }
+
+    // Pre-fill form fields
+    const batchSelect = document.getElementById('rejoin-batch');
+    if (batchSelect) batchSelect.value = student.batch || 'Zuhr';
+
+    const courseSelect = document.getElementById('rejoin-course');
+    if (courseSelect) courseSelect.value = student.course_applying || 'Noorani Qaida';
+
+    const feeInput = document.getElementById('rejoin-fee');
+    if (feeInput) feeInput.value = student.monthly_fee || 600;
+
+    const feeModeSelect = document.getElementById('rejoin-is-prepaid');
+    if (feeModeSelect) feeModeSelect.value = student.is_prepaid ? 'true' : 'false';
+
+    const notesInput = document.getElementById('rejoin-notes');
+    if (notesInput) notesInput.value = '';
+
+    // Initialize custom select instances if present
+    document.querySelectorAll('#modal-rejoin-student select').forEach(sel => {
+      if (sel.parentElement && sel.parentElement._csInstance) {
+        sel.parentElement._csInstance.syncOptions();
+      }
+    });
+
+    // Set today's date in custom datepicker
+    const today = new Date();
+    if (rejoinDatePicker) {
+      rejoinDatePicker.selectDate(today);
+    } else {
+      document.getElementById('rejoin-date').value = today.toISOString().split('T')[0];
+    }
+
+    updateRejoinNotice();
+
+    const statusMsg = document.getElementById('rejoin-status-msg');
+    if (statusMsg) statusMsg.style.display = 'none';
+
+    document.getElementById('modal-rejoin-student').showModal();
+  }
+
+  function getOrdinalSuffix(i) {
+    const j = i % 10, k = i % 100;
+    if (j === 1 && k !== 11) return 'st';
+    if (j === 2 && k !== 12) return 'nd';
+    if (j === 3 && k !== 13) return 'rd';
+    return 'th';
+  }
+
+  function updateRejoinNotice() {
+    const noticeEl = document.getElementById('rejoin-smart-notice');
+    if (!noticeEl) return;
+
+    const dateVal = document.getElementById('rejoin-date')?.value || new Date().toISOString().split('T')[0];
+    const feeVal = parseInt(document.getElementById('rejoin-fee')?.value, 10) || 0;
+
+    const [y, m, d] = dateVal.split('-').map(Number);
+    const day = d || 1;
+    const currentMonthStr = `${y}-${String(m).padStart(2, '0')}`;
+    const nextMonthStr = getNextMonth(currentMonthStr);
+
+    const currentMonthName = new Date(y, m - 1, 15).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+    const nextMonthName = new Date(y, m, 15).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+
+    if (day <= 15) {
+      noticeEl.className = 'rejoin-smart-notice current-month';
+      noticeEl.innerHTML = `
+        <div style="font-weight: 700; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem;">
+          <svg width="15" height="15" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05z"/></svg>
+          Rejoining on or before 15th (${day}${getOrdinalSuffix(day)} ${currentMonthName.split(' ')[0]})
+        </div>
+        <div>
+          • Fee liability begins in <strong>${currentMonthName}</strong>.<br>
+          • Rejoin fee payment of <strong>₹${feeVal.toLocaleString('en-IN')}</strong> will be credited directly for <strong>${currentMonthName}</strong>.
+        </div>
+      `;
+    } else {
+      noticeEl.className = 'rejoin-smart-notice next-month';
+      noticeEl.innerHTML = `
+        <div style="font-weight: 700; display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.25rem;">
+          <svg width="15" height="15" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/></svg>
+          Rejoining after 15th (${day}${getOrdinalSuffix(day)} ${currentMonthName.split(' ')[0]})
+        </div>
+        <div>
+          • <strong>${currentMonthName}</strong> fee is waived (₹0 liability).<br>
+          • Fee liability begins next month in <strong>${nextMonthName}</strong>.<br>
+          • Rejoin fee payment of <strong>₹${feeVal.toLocaleString('en-IN')}</strong> will be credited in advance for <strong>${nextMonthName}</strong>.
+        </div>
+      `;
+    }
+  }
+
+  const rejoinForm = document.getElementById('form-rejoin-student');
+  if (rejoinForm) {
+    const feeInput = document.getElementById('rejoin-fee');
+    if (feeInput) {
+      feeInput.addEventListener('input', updateRejoinNotice);
+    }
+
+    rejoinForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('rejoin-student-id').value;
+      const statusMsg = document.getElementById('rejoin-status-msg');
+      const submitBtn = document.getElementById('btn-submit-rejoin');
+
+      const rejoinDate = document.getElementById('rejoin-date').value || new Date().toISOString().split('T')[0];
+      const batchVal = document.getElementById('rejoin-batch').value;
+      const courseVal = document.getElementById('rejoin-course').value;
+      const feeVal = parseInt(document.getElementById('rejoin-fee').value, 10) || 0;
+      const isPrepaidVal = document.getElementById('rejoin-is-prepaid').value === 'true';
+      const notesVal = (document.getElementById('rejoin-notes').value || '').trim();
+
+      const original = cachedStudents.find(s => s.id.toString() === id.toString());
+      if (!original) return;
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.dataset.originalText = submitBtn.textContent;
+        submitBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:0.4rem;"><svg style="animation:loaderSpin 0.7s linear infinite" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Re-admitting…</span>';
+      }
+
+      if (statusMsg) {
+        statusMsg.style.display = 'none';
+        statusMsg.textContent = '';
+      }
+
+      // Calculate smart payment month
+      const smartPaymentMonth = computeRejoinFeeMonth(rejoinDate);
+
+      const payload = {
+        status: 'approved',
+        batch: batchVal,
+        course_applying: courseVal,
+        monthly_fee: feeVal,
+        is_prepaid: isPrepaidVal,
+        rejoin_date: rejoinDate,
+        rejoin_reason: notesVal || 'Rejoined institution'
+      };
+
+      let adminEmailForAudit = 'admin';
+      try {
+        const { data: { session } } = await window._supabase.auth.getSession();
+        if (session?.user?.email) adminEmailForAudit = session.user.email;
+      } catch (_) { }
+
+      const rejoinPromise = (async () => {
+        if (window.DEMO_MODE) {
+          // Update in-memory demo data
+          Object.assign(original, payload);
+          // Insert payment in demo fee payments
+          if (feeVal > 0) {
+            cachedFeePayments.push({
+              id: Date.now() + Math.random(),
+              student_id: Number(id),
+              month: smartPaymentMonth,
+              amount: feeVal,
+              paid_on: rejoinDate,
+              notes: `Rejoin fee payment (${smartPaymentMonth})`
+            });
+          }
+          await hydrateDashboardAndAnalytics();
+          await hydrateFeeTracker();
+          return;
+        }
+
+        // Write audit log
+        await writeAuditLog(id, original, payload, adminEmailForAudit, notesVal);
+
+        // Update student record in Supabase
+        const { error: updateError } = await window._supabase
+          .from('student_registrations')
+          .update(payload)
+          .eq('id', id);
+
+        if (updateError) throw updateError;
+
+        // Auto-record rejoin fee payment in fee_payments
+        if (feeVal > 0) {
+          const { error: payError } = await window._supabase
+            .from('fee_payments')
+            .insert([{
+              student_id: id,
+              month: smartPaymentMonth,
+              amount: feeVal,
+              paid_on: rejoinDate,
+              notes: `Rejoin fee payment (${smartPaymentMonth})`
+            }]);
+          if (payError) {
+            console.warn('Auto-record rejoin payment failed (non-critical):', payError.message);
+          }
+        }
+
+        await hydrateDashboardAndAnalytics();
+        await hydrateFeeTracker();
+      })();
+
+      if (typeof toast !== 'undefined') {
+        toast.promise(rejoinPromise, {
+          loading: `Re-admitting ${original.student_name}…`,
+          success: `${original.student_name} successfully re-admitted!`,
+          error: (err) => `Re-admission failed: ${err.message}`
+        });
+      }
+
+      try {
+        await rejoinPromise;
+        document.getElementById('modal-rejoin-student').close();
+      } catch (err) {
+        console.error('Rejoin error:', err);
+        if (statusMsg) {
+          statusMsg.textContent = err.message;
+          statusMsg.className = 'status-msg error';
+          statusMsg.style.display = 'block';
+        }
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = submitBtn.dataset.originalText || 'Confirm & Re-admit';
         }
       }
     });
@@ -2375,7 +2649,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isEnrolledForMonth(s.doj, feeMonth)) return false;
 
     // Case 1: Approved / Active students
-    if (s.status === 'approved') return true;
+    if (s.status === 'approved') {
+      // If student had an exit and rejoined:
+      if (s.exit_date && s.rejoin_date) {
+        const exitMonth = s.exit_date.substring(0, 7);
+        const rejoinLiabilityMonth = computeRejoinFeeMonth(s.rejoin_date);
+        // If feeMonth is in the inactive gap:
+        if (feeMonth > exitMonth && feeMonth < rejoinLiabilityMonth) {
+          const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
+          return paid > 0;
+        }
+      }
+      return true;
+    }
 
     // Case 2: Exited / Left students
     if (s.status === 'left') {
@@ -2431,6 +2717,16 @@ document.addEventListener('DOMContentLoaded', () => {
     return day > 15 ? getNextMonth(dojMonth) : dojMonth;
   }
 
+  // Determines which month the rejoin fee payment should be credited to.
+  // Rejoin day 1–15 → liability starts in current month; fee credited to current month.
+  // Rejoin day 16+  → current month waived (₹0); liability starts next month; fee credited in advance for next month.
+  function computeRejoinFeeMonth(rejoinDate) {
+    if (!rejoinDate) return new Date().toISOString().substring(0, 7);
+    const rMonth = rejoinDate.substring(0, 7);
+    const day = parseInt(rejoinDate.substring(8, 10)) || 1;
+    return day > 15 ? getNextMonth(rMonth) : rMonth;
+  }
+
   // Auto-records the first (admission) fee payment immediately after registration.
   // Silently fails so it never blocks the registration success flow.
   async function recordAdmissionPayment(studentId, doj, feeAmount) {
@@ -2463,10 +2759,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isEnrolledForMonth(student.doj, month)) return 0;
     if (isExemptForMonth(student.id, month)) return 0;
 
-    // Exited/left student check: no NEW monthly fee generated for months AFTER exit date
-    if (student.status === 'left' && student.exit_date) {
+    // Check exited vs rejoined lifecycle periods
+    if (student.exit_date) {
       const exitMonth = student.exit_date.substring(0, 7);
-      if (month > exitMonth) return 0;
+
+      // If student is currently marked as 'left': no fee after exitMonth
+      if (student.status === 'left') {
+        if (month > exitMonth) return 0;
+      } else if (student.rejoin_date) {
+        // Student has rejoined: gap between exitMonth and rejoinLiabilityMonth is INACTIVE (₹0 expected)
+        const rejoinLiabilityMonth = computeRejoinFeeMonth(student.rejoin_date);
+        if (month > exitMonth && month < rejoinLiabilityMonth) {
+          return 0; // Inactive gap
+        }
+      }
+    } else if (student.status !== 'approved') {
+      // If student is not approved and has no exit_date (e.g. rejected)
+      if (student.rejoin_date) {
+        const rejoinLiabilityMonth = computeRejoinFeeMonth(student.rejoin_date);
+        if (month < rejoinLiabilityMonth) return 0;
+      }
     }
 
     if (student.doj) {
@@ -2476,16 +2788,16 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isStudentPrepaid(student)) {
         // ── Prepaid slabs ──
         // Joining month: waived if joined after 15th (first full service starts next month)
-        if (dojMonth === month && day > 15) return 0;
+        if (dojMonth === month && day > 15 && !student.rejoin_date) return 0;
         // All other months (incl. join on or before 15th): full fee
       } else {
         // ── Postpaid slabs (legacy) ──
         // Joining month: only charge if joined on or before 10th
-        if (dojMonth === month) {
+        if (dojMonth === month && !student.rejoin_date) {
           if (day > 10) return 0;
         }
         // Month after joining: carry forward half fee if joined 11th–20th
-        if (day > 10 && day <= 20) {
+        if (day > 10 && day <= 20 && !student.rejoin_date) {
           const [dy, dm] = dojMonth.split('-').map(Number);
           const nd = new Date(dy, dm, 15); // dm is 1-based → next month
           const nextMonth = nd.getFullYear() + '-' + String(nd.getMonth() + 1).padStart(2, '0');
@@ -4825,6 +5137,20 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.close();
         openEditModal(studentId);
       });
+    }
+
+    const rejoinBtn = document.getElementById('btn-profile-rejoin');
+    if (rejoinBtn) {
+      if (student.status !== 'approved') {
+        rejoinBtn.style.display = 'inline-block';
+        rejoinBtn.replaceWith(rejoinBtn.cloneNode(true));
+        document.getElementById('btn-profile-rejoin').addEventListener('click', () => {
+          modal.close();
+          openRejoinModal(studentId);
+        });
+      } else {
+        rejoinBtn.style.display = 'none';
+      }
     }
   }
 
