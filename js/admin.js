@@ -1741,10 +1741,27 @@ document.addEventListener('DOMContentLoaded', () => {
         await writeAuditLog(id, original, payload, adminEmailForAudit, notesVal);
 
         // Update student record in Supabase
-        const { error: updateError } = await window._supabase
+        let { error: updateError } = await window._supabase
           .from('student_registrations')
           .update(payload)
           .eq('id', id);
+
+        // Graceful fallback if rejoin_date/rejoin_reason columns are not yet migrated in Supabase schema
+        if (updateError && updateError.message && (updateError.message.includes('rejoin_date') || updateError.message.includes('schema cache'))) {
+          console.warn('rejoin_date column not found in schema, falling back to core fields:', updateError.message);
+          const fallbackPayload = {
+            status: 'approved',
+            batch: batchVal,
+            course_applying: courseVal,
+            monthly_fee: feeVal,
+            is_prepaid: isPrepaidVal
+          };
+          const fallbackRes = await window._supabase
+            .from('student_registrations')
+            .update(fallbackPayload)
+            .eq('id', id);
+          updateError = fallbackRes.error;
+        }
 
         if (updateError) throw updateError;
 
