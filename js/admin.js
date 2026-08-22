@@ -109,14 +109,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // ─── AUDIT LOG CONSTANTS ─────────────────────────────────────────────────
   // Fields tracked in student_history and their human-readable labels.
   const AUDITED_FIELDS = {
+    student_name:    'Name',
+    father_name:     'Father\'s Name',
     batch:           'Batch',
     course_applying: 'Course',
     status:          'Status',
     monthly_fee:     'Monthly Fee',
     is_prepaid:      'Fee Mode',
     is_trustee:      'Account Category',
-    student_name:    'Name',
-    father_name:     'Father\'s Name',
+    exit_date:       'Exit Date',
+    exit_reason:     'Exit Reason',
+    exit_notes:      'Exit Notes',
     rejoin_date:     'Rejoin Date',
     rejoin_reason:   'Rejoin Reason',
   };
@@ -1192,7 +1195,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const feeFields    = new Set(['Monthly Fee', 'Fee Mode']);
-    const statusFields = new Set(['Status']);
+    const statusFields = new Set(['Status', 'Exit Date', 'Exit Reason', 'Exit Notes']);
     const rejoinFields = new Set(['Rejoin Date', 'Rejoin Reason']);
 
     const rows = entries.map(e => {
