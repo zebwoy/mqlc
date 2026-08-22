@@ -1868,20 +1868,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let chartsRendered = false;
   let chartInstances = {};
+  let renderChartsRequestId = 0;
 
-  async function renderCharts(approvedData) {
-    if (typeof Chart === 'undefined') return;
-
-    // Destroy tracked instances
-    Object.keys(chartInstances).forEach(key => {
+  function safeCreateChart(key, canvasOrId, config) {
+    const el = typeof canvasOrId === 'string' ? document.getElementById(canvasOrId) : canvasOrId;
+    if (!el || typeof Chart === 'undefined') return null;
+    try {
+      const existing = Chart.getChart(el);
+      if (existing) existing.destroy();
+    } catch (_) { }
+    try {
       if (chartInstances[key]) {
         chartInstances[key].destroy();
         chartInstances[key] = null;
       }
-    });
+    } catch (_) { }
+    chartInstances[key] = new Chart(el, config);
+    return chartInstances[key];
+  }
 
-    // Safety net: destroy any orphaned Chart.js instances on canvases
-    // (handles race conditions where chartInstances wasn't updated but canvas is still in use)
+  async function renderCharts(approvedData) {
+    if (typeof Chart === 'undefined') return;
+
+    const currentReqId = ++renderChartsRequestId;
+
+    // Safety net: destroy any orphaned Chart.js instances on all canvases
     ['chart-school', 'chart-batch', 'chart-course', 'chart-gender', 'chart-age', 'chart-churn', 'chart-departures', 'chart-growth', 'chart-fee-status'].forEach(id => {
       const el = document.getElementById(id);
       if (el) {
@@ -1959,7 +1970,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ctxGrowth = document.getElementById('chart-growth');
     if (ctxGrowth) {
       document.getElementById('total-growth').textContent = `Total: ${approvedData.length}`;
-      chartInstances.growth = new Chart(ctxGrowth, {
+      safeCreateChart('growth', ctxGrowth, {
         type: 'line',
         data: { labels: months.length ? months : ['No Data'], datasets: [{ label: 'New Enrollments', data: tData.length ? tData : [0], borderColor: '#2D6A4F', backgroundColor: 'rgba(45, 106, 79, 0.1)', fill: true, tension: 0.3 }] },
         options: commonOptions
@@ -1971,7 +1982,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ctxCourse) {
       const total = Object.values(courseCount).reduce((a, b) => a + b, 0);
       document.getElementById('total-course').textContent = `Total: ${total}`;
-      chartInstances.course = new Chart(ctxCourse, {
+      safeCreateChart('course', ctxCourse, {
         type: 'doughnut',
         data: { labels: Object.keys(courseCount).length ? Object.keys(courseCount) : ['None'], datasets: [{ data: Object.keys(courseCount).length ? Object.values(courseCount) : [1], backgroundColor: ['#D4A017', '#2D6A4F', '#1E293B', '#64748B'] }] },
         options: pieOptions
@@ -1983,7 +1994,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ctxBatch) {
       const total = Object.values(batchCount).reduce((a, b) => a + b, 0);
       document.getElementById('total-batch').textContent = `Total: ${total}`;
-      chartInstances.batch = new Chart(ctxBatch, {
+      safeCreateChart('batch', ctxBatch, {
         type: 'doughnut',
         data: { labels: ['Zuhr', 'Asr', 'Maghrib'], datasets: [{ data: [batchCount['Zuhr'], batchCount['Asr'], batchCount['Maghrib']], backgroundColor: ['#FFC107', '#2D6A4F', '#1E293B'] }] },
         options: pieOptions
@@ -1995,14 +2006,150 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ctxGender) {
       const total = (genderCount['Male'] || 0) + (genderCount['Female'] || 0);
       document.getElementById('total-gender').textContent = `Total: ${total}`;
-      chartInstances.gender = new Chart(ctxGender, {
+      safeCreateChart('gender', ctxGender, {
         type: 'pie',
         data: { labels: ['Male', 'Female'], datasets: [{ data: [genderCount['Male'] || 0, genderCount['Female'] || 0], backgroundColor: ['#3b82f6', '#ec4899'] }] },
         options: pieOptions
       });
     }
 
-    // 3b. Fee Payment Status (Pie with labels on slices)
+    // 4. Chart School Class
+    const ctxSchool = document.getElementById('chart-school');
+    if (ctxSchool) {
+      const total = Object.values(classCount).reduce((a, b) => a + b, 0);
+      document.getElementById('total-school').textContent = `Total: ${total}`;
+
+      let classKeys = Object.keys(classCount);
+      // Smart Sort for classes (Nursery/KG -> 1 -> 2 -> ... -> 12)
+      classKeys.sort((a, b) => {
+        const getVal = (str) => {
+          str = str.toLowerCase().trim();
+          if (str.includes('nursery') || str.includes('kg') || str.includes('pre')) return 0;
+          const match = str.match(/\d+/);
+          if (match) return parseInt(match[0]);
+          return 99; // Unknowns at the end
+        };
+        const valA = getVal(a);
+        const valB = getVal(b);
+        if (valA !== valB) return valA - valB;
+        return a.localeCompare(b);
+      });
+
+      const classVals = classKeys.map(k => classCount[k]);
+
+      safeCreateChart('school', ctxSchool, {
+        type: 'bar',
+        data: { labels: classKeys.length ? classKeys : ['None'], datasets: [{ label: 'Students', data: classKeys.length ? classVals : [0], backgroundColor: '#2D6A4F' }] },
+        options: commonOptions
+      });
+    }
+
+    // 5. Age & Course Demographics
+    const ctxAge = document.getElementById('chart-age');
+    if (ctxAge) {
+      const labels = ['Under 6 yrs', '6-8 yrs', '9-11 yrs', '12-14 yrs', '15+ yrs', 'Unknown'];
+      const allCourses = new Set();
+      labels.forEach(l => Object.keys(ageCourseCount[l]).forEach(c => allCourses.add(c)));
+
+      const colors = ['#D4A017', '#2D6A4F', '#1E293B', '#64748B'];
+      const datasets = Array.from(allCourses).map((course, idx) => ({
+        label: course,
+        data: labels.map(l => ageCourseCount[l][course] || 0),
+        backgroundColor: colors[idx % colors.length]
+      }));
+
+      // Hide Unknown if perfectly tracked
+      const totalUnknown = datasets.reduce((sum, ds) => sum + ds.data[5], 0);
+      if (totalUnknown === 0) {
+        labels.pop();
+        datasets.forEach(ds => ds.data.pop());
+      }
+
+      const totalAge = datasets.reduce((sum, ds) => sum + ds.data.reduce((a, b) => a + b, 0), 0);
+      const elTotalAge = document.getElementById('total-age');
+      if (elTotalAge) elTotalAge.textContent = `Total: ${totalAge}`;
+
+      safeCreateChart('age', ctxAge, {
+        type: 'bar',
+        data: { labels, datasets },
+        options: {
+          ...commonOptions,
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true }
+          }
+        }
+      });
+    }
+
+    // 6. Dropout & Churn Analytics
+    const leftStudents = cachedStudents.filter(s => s.status === 'left');
+    const churnCount = {};
+    leftStudents.forEach(s => {
+      let reason = s.exit_reason || 'Unspecified';
+      // Normalize 'Other: <text>' entries into 'Other' for chart grouping
+      if (reason.startsWith('Other: ')) reason = 'Other';
+      churnCount[reason] = (churnCount[reason] || 0) + 1;
+    });
+
+    const departureTimeline = {};
+    leftStudents.forEach(s => {
+      if (s.exit_date) {
+        const month = s.exit_date.substring(0, 7);
+        departureTimeline[month] = (departureTimeline[month] || 0) + 1;
+      }
+    });
+
+    const ctxChurn = document.getElementById('chart-churn');
+    if (ctxChurn) {
+      const totalChurn = Object.values(churnCount).reduce((a, b) => a + b, 0);
+      document.getElementById('total-churn').textContent = `Total: ${totalChurn}`;
+      safeCreateChart('churn', ctxChurn, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(churnCount).length ? Object.keys(churnCount) : ['None'],
+          datasets: [{
+            data: Object.keys(churnCount).length ? Object.values(churnCount) : [1],
+            backgroundColor: ['#dc2626', '#d97706', '#2563eb', '#16a34a', '#4f46e5', '#64748b']
+          }]
+        },
+        options: pieOptions
+      });
+    }
+
+    const ctxDepartures = document.getElementById('chart-departures');
+    if (ctxDepartures) {
+      const monthsExited = Object.keys(departureTimeline).sort();
+      const depData = monthsExited.map(m => departureTimeline[m]);
+      const totalDep = depData.reduce((a, b) => a + b, 0);
+      document.getElementById('total-departures').textContent = `Total: ${totalDep}`;
+      safeCreateChart('departures', ctxDepartures, {
+        type: 'bar',
+        data: {
+          labels: monthsExited.length ? monthsExited : ['No Data'],
+          datasets: [{
+            label: 'Students Exited',
+            data: depData.length ? depData : [0],
+            backgroundColor: '#dc2626',
+            borderColor: '#b91c1c',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          ...commonOptions,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { stepSize: 1 }
+            }
+          }
+        }
+      });
+    }
+
+    chartsRendered = true;
+
+    // 7. Fee Payment Status (Async)
     const feeStatusMonthSelect = document.getElementById('fee-status-month');
     if (feeStatusMonthSelect && window._supabase) {
       // Populate dropdown: April 2026 → latest month with data
@@ -2039,254 +2186,123 @@ document.addEventListener('DOMContentLoaded', () => {
         allMonths.forEach(m => {
           feeStatusMonthSelect.add(new Option(feeMonthLabel(m), m));
         });
-        feeStatusMonthSelect.addEventListener('change', () => renderFeeStatusPie(approvedData));
+        feeStatusMonthSelect.addEventListener('change', () => renderFeeStatusPie(approvedData, renderChartsRequestId));
       }
-      await renderFeeStatusPie(approvedData);
+      await renderFeeStatusPie(approvedData, currentReqId);
     }
 
-    async function renderFeeStatusPie(students) {
-      const canvas = document.getElementById('chart-fee-status');
-      const monthSelect = document.getElementById('fee-status-month');
-      if (!canvas || !monthSelect) return;
-      const month = monthSelect.value;
+    // Fee Revenue Analytics (needs async DB fetch, runs alongside other charts)
+    renderFeeTrendChart();
+  }
 
-      // Ensure exemptions are loaded (may not be if analytics loaded before fee tracker)
-      if (!cachedFeeExemptions.length && window._supabase) {
-        try {
-          const { data: ex } = await window._supabase.from('fee_exemptions').select('*');
-          cachedFeeExemptions = ex || [];
-        } catch (_) { /* table may not exist yet */ }
-      }
+  async function renderFeeStatusPie(students, reqId) {
+    const canvas = document.getElementById('chart-fee-status');
+    const monthSelect = document.getElementById('fee-status-month');
+    if (!canvas || !monthSelect) return;
+    const month = monthSelect.value;
 
+    // Ensure exemptions are loaded (may not be if analytics loaded before fee tracker)
+    if (!cachedFeeExemptions.length && window._supabase) {
       try {
-        const { data: pmts } = await window._supabase
-          .from('fee_payments').select('student_id, amount').eq('month', month);
-        const payments = pmts || [];
+        const { data: ex } = await window._supabase.from('fee_exemptions').select('*');
+        cachedFeeExemptions = ex || [];
+      } catch (_) { /* table may not exist yet */ }
+    }
 
-        const paidMap = {};
-        payments.forEach(p => { paidMap[p.student_id] = (paidMap[p.student_id] || 0) + (p.amount || 0); });
+    if (reqId && reqId !== renderChartsRequestId) return;
 
-        let totalExpected = 0, totalCollected = 0;
-        let paidCount = 0, partialCount = 0, unpaidCount = 0;
-        students.forEach(s => {
-          const expFee = getExpectedFee(s, month);
-          if (expFee === 0) return; // skip exempt, unenrolled, or no-fee students
-          totalExpected += expFee;
-          const paid = paidMap[s.id] || 0;
-          totalCollected += Math.min(paid, expFee);
-          if (paid >= expFee) paidCount++;
-          else if (paid > 0) partialCount++;
-          else unpaidCount++;
-        });
-        const totalPending = Math.max(0, totalExpected - totalCollected);
-        const totalStudents = paidCount + partialCount + unpaidCount;
+    try {
+      const { data: pmts } = await window._supabase
+        .from('fee_payments').select('student_id, amount').eq('month', month);
+      const payments = pmts || [];
 
-        // Destroy old instance
-        if (chartInstances.feeStatus) { chartInstances.feeStatus.destroy(); chartInstances.feeStatus = null; }
+      if (reqId && reqId !== renderChartsRequestId) return;
 
-        // Custom plugin: draw ₹ amount labels on slices
-        const sliceLabelPlugin = {
-          id: 'sliceLabels',
-          afterDraw(chart) {
-            const { ctx } = chart;
-            chart.data.datasets.forEach((dataset, i) => {
-              const meta = chart.getDatasetMeta(i);
-              meta.data.forEach((arc, idx) => {
-                const val = dataset.data[idx];
-                if (!val || val === 0) return;
-                const { x, y } = arc.tooltipPosition();
-                ctx.save();
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.font = 'bold 11px sans-serif';
-                ctx.fillStyle = '#fff';
-                ctx.fillText('₹' + val.toLocaleString('en-IN'), x, y);
-                ctx.restore();
-              });
+      const paidMap = {};
+      payments.forEach(p => { paidMap[p.student_id] = (paidMap[p.student_id] || 0) + (p.amount || 0); });
+
+      let totalExpected = 0, totalCollected = 0;
+      let paidCount = 0, partialCount = 0, unpaidCount = 0;
+      students.forEach(s => {
+        const expFee = getExpectedFee(s, month);
+        if (expFee === 0) return; // skip exempt, unenrolled, or no-fee students
+        totalExpected += expFee;
+        const paid = paidMap[s.id] || 0;
+        totalCollected += Math.min(paid, expFee);
+        if (paid >= expFee) paidCount++;
+        else if (paid > 0) partialCount++;
+        else unpaidCount++;
+      });
+      const totalPending = Math.max(0, totalExpected - totalCollected);
+      const totalStudents = paidCount + partialCount + unpaidCount;
+
+      // Custom plugin: draw ₹ amount labels on slices
+      const sliceLabelPlugin = {
+        id: 'sliceLabels',
+        afterDraw(chart) {
+          const { ctx } = chart;
+          chart.data.datasets.forEach((dataset, i) => {
+            const meta = chart.getDatasetMeta(i);
+            meta.data.forEach((arc, idx) => {
+              const val = dataset.data[idx];
+              if (!val || val === 0) return;
+              const { x, y } = arc.tooltipPosition();
+              ctx.save();
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.font = 'bold 11px sans-serif';
+              ctx.fillStyle = '#fff';
+              ctx.fillText('₹' + val.toLocaleString('en-IN'), x, y);
+              ctx.restore();
             });
-          }
-        };
+          });
+        }
+      };
 
-        const sliceLabels = [];
-        const sliceData = [];
-        const sliceColors = [];
-        if (totalCollected > 0) { sliceLabels.push('Collected'); sliceData.push(totalCollected); sliceColors.push('#2D6A4F'); }
-        if (totalPending > 0) { sliceLabels.push('Pending'); sliceData.push(totalPending); sliceColors.push('#dc2626'); }
+      const sliceLabels = [];
+      const sliceData = [];
+      const sliceColors = [];
+      if (totalCollected > 0) { sliceLabels.push('Collected'); sliceData.push(totalCollected); sliceColors.push('#2D6A4F'); }
+      if (totalPending > 0) { sliceLabels.push('Pending'); sliceData.push(totalPending); sliceColors.push('#dc2626'); }
 
-        // Tooltip student info per slice
-        const sliceTooltips = {};
-        if (totalCollected > 0) sliceTooltips['Collected'] = `${paidCount} fully paid` + (partialCount > 0 ? `, ${partialCount} partial` : '');
-        if (totalPending > 0) sliceTooltips['Pending'] = `${unpaidCount} unpaid` + (partialCount > 0 ? `, ${partialCount} partial` : '');
+      // Tooltip student info per slice
+      const sliceTooltips = {};
+      if (totalCollected > 0) sliceTooltips['Collected'] = `${paidCount} fully paid` + (partialCount > 0 ? `, ${partialCount} partial` : '');
+      if (totalPending > 0) sliceTooltips['Pending'] = `${unpaidCount} unpaid` + (partialCount > 0 ? `, ${partialCount} partial` : '');
 
-        chartInstances.feeStatus = new Chart(canvas, {
-          type: 'pie',
-          data: {
-            labels: sliceLabels.length ? sliceLabels : ['No Data'],
-            datasets: [{
-              data: sliceData.length ? sliceData : [1],
-              backgroundColor: sliceColors.length ? sliceColors : ['#e2e8f0']
-            }]
-          },
-          plugins: [sliceLabelPlugin],
-          options: {
-            ...pieOptions,
-            plugins: {
-              ...pieOptions.plugins,
-              tooltip: {
-                callbacks: {
-                  label: function (ctx) {
-                    const count = ctx.label === 'Collected' ? paidCount : unpaidCount;
-                    const pct = totalStudents > 0 ? Math.round((count / totalStudents) * 100) : 0;
-                    return ` ${count}/${totalStudents} | ${pct}%`;
-                  }
+      safeCreateChart('feeStatus', canvas, {
+        type: 'pie',
+        data: {
+          labels: sliceLabels.length ? sliceLabels : ['No Data'],
+          datasets: [{
+            data: sliceData.length ? sliceData : [1],
+            backgroundColor: sliceColors.length ? sliceColors : ['#e2e8f0']
+          }]
+        },
+        plugins: [sliceLabelPlugin],
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { padding: 20, boxWidth: 12, usePointStyle: true }
+            },
+            tooltip: {
+              callbacks: {
+                label: function (ctx) {
+                  const count = ctx.label === 'Collected' ? paidCount : unpaidCount;
+                  const pct = totalStudents > 0 ? Math.round((count / totalStudents) * 100) : 0;
+                  return ` ${count}/${totalStudents} | ${pct}%`;
                 }
               }
             }
           }
-        });
-      } catch (err) {
-        console.error('Fee status chart error:', err);
-      }
-    }
-
-    // 4. Chart School Class
-    const ctxSchool = document.getElementById('chart-school');
-    if (ctxSchool) {
-      const total = Object.values(classCount).reduce((a, b) => a + b, 0);
-      document.getElementById('total-school').textContent = `Total: ${total}`;
-
-      let classKeys = Object.keys(classCount);
-      // Smart Sort for classes (Nursery/KG -> 1 -> 2 -> ... -> 12)
-      classKeys.sort((a, b) => {
-        const getVal = (str) => {
-          str = str.toLowerCase().trim();
-          if (str.includes('nursery') || str.includes('kg') || str.includes('pre')) return 0;
-          const match = str.match(/\d+/);
-          if (match) return parseInt(match[0]);
-          return 99; // Unknowns at the end
-        };
-        const valA = getVal(a);
-        const valB = getVal(b);
-        if (valA !== valB) return valA - valB;
-        return a.localeCompare(b);
-      });
-
-      const classVals = classKeys.map(k => classCount[k]);
-
-      chartInstances.school = new Chart(ctxSchool, {
-        type: 'bar',
-        data: { labels: classKeys.length ? classKeys : ['None'], datasets: [{ label: 'Students', data: classKeys.length ? classVals : [0], backgroundColor: '#2D6A4F' }] },
-        options: commonOptions
-      });
-    }
-
-    // 5. Age & Course Demographics
-    const ctxAge = document.getElementById('chart-age');
-    if (ctxAge) {
-      const labels = ['Under 6 yrs', '6-8 yrs', '9-11 yrs', '12-14 yrs', '15+ yrs', 'Unknown'];
-      const allCourses = new Set();
-      labels.forEach(l => Object.keys(ageCourseCount[l]).forEach(c => allCourses.add(c)));
-
-      const colors = ['#D4A017', '#2D6A4F', '#1E293B', '#64748B'];
-      const datasets = Array.from(allCourses).map((course, idx) => ({
-        label: course,
-        data: labels.map(l => ageCourseCount[l][course] || 0),
-        backgroundColor: colors[idx % colors.length]
-      }));
-
-      // Hide Unknown if perfectly tracked
-      const totalUnknown = datasets.reduce((sum, ds) => sum + ds.data[5], 0);
-      if (totalUnknown === 0) {
-        labels.pop();
-        datasets.forEach(ds => ds.data.pop());
-      }
-
-      const totalAge = datasets.reduce((sum, ds) => sum + ds.data.reduce((a, b) => a + b, 0), 0);
-      const elTotalAge = document.getElementById('total-age');
-      if (elTotalAge) elTotalAge.textContent = `Total: ${totalAge}`;
-
-      chartInstances.age = new Chart(ctxAge, {
-        type: 'bar',
-        data: { labels, datasets },
-        options: {
-          ...commonOptions,
-          scales: {
-            x: { stacked: true },
-            y: { stacked: true }
-          }
         }
       });
+    } catch (err) {
+      console.error('Fee status chart error:', err);
     }
-
-    // Dropout & Churn Analytics
-    const leftStudents = cachedStudents.filter(s => s.status === 'left');
-    const churnCount = {};
-    leftStudents.forEach(s => {
-      let reason = s.exit_reason || 'Unspecified';
-      // Normalize 'Other: <text>' entries into 'Other' for chart grouping
-      if (reason.startsWith('Other: ')) reason = 'Other';
-      churnCount[reason] = (churnCount[reason] || 0) + 1;
-    });
-
-    const departureTimeline = {};
-    leftStudents.forEach(s => {
-      if (s.exit_date) {
-        const month = s.exit_date.substring(0, 7);
-        departureTimeline[month] = (departureTimeline[month] || 0) + 1;
-      }
-    });
-
-    const ctxChurn = document.getElementById('chart-churn');
-    if (ctxChurn) {
-      const totalChurn = Object.values(churnCount).reduce((a, b) => a + b, 0);
-      document.getElementById('total-churn').textContent = `Total: ${totalChurn}`;
-      chartInstances.churn = new Chart(ctxChurn, {
-        type: 'doughnut',
-        data: {
-          labels: Object.keys(churnCount).length ? Object.keys(churnCount) : ['None'],
-          datasets: [{
-            data: Object.keys(churnCount).length ? Object.values(churnCount) : [1],
-            backgroundColor: ['#dc2626', '#d97706', '#2563eb', '#16a34a', '#4f46e5', '#64748b']
-          }]
-        },
-        options: pieOptions
-      });
-    }
-
-    const ctxDepartures = document.getElementById('chart-departures');
-    if (ctxDepartures) {
-      const monthsExited = Object.keys(departureTimeline).sort();
-      const depData = monthsExited.map(m => departureTimeline[m]);
-      const totalDep = depData.reduce((a, b) => a + b, 0);
-      document.getElementById('total-departures').textContent = `Total: ${totalDep}`;
-      chartInstances.departures = new Chart(ctxDepartures, {
-        type: 'bar',
-        data: {
-          labels: monthsExited.length ? monthsExited : ['No Data'],
-          datasets: [{
-            label: 'Students Exited',
-            data: depData.length ? depData : [0],
-            backgroundColor: '#dc2626',
-            borderColor: '#b91c1c',
-            borderWidth: 1
-          }]
-        },
-        options: {
-          ...commonOptions,
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: { stepSize: 1 }
-            }
-          }
-        }
-      });
-    }
-
-    chartsRendered = true;
-
-    // Fee Revenue Analytics (needs async DB fetch, runs alongside other charts)
-    renderFeeTrendChart();
   }
 
   // Hook Dashboard rendering to pill clicks
@@ -3069,7 +3085,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Destroy previous chart instance
-    if (feeTrendChart) { feeTrendChart.destroy(); feeTrendChart = null; }
+    try {
+      const existing = Chart.getChart(canvas);
+      if (existing) existing.destroy();
+    } catch (_) { }
+    if (feeTrendChart) {
+      try { feeTrendChart.destroy(); } catch (_) { }
+      feeTrendChart = null;
+    }
 
     const ctx = canvas.getContext('2d');
 
