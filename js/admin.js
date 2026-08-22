@@ -4612,6 +4612,50 @@ document.addEventListener('DOMContentLoaded', () => {
           tableHTML += `<p style="font-size:7.5pt;color:#6b7280;margin:2px 0;font-family:'Inter',sans-serif;"><strong style="color:#dc2626;">🚫 Exited/Left (${exitedSettledList.length}):</strong> ${exitedNames}</p>`;
         }
 
+        // Collection Handover & Reconciliation Slip with Blanks
+        tableHTML += `
+          <div style="margin-top:14px;border:1px dashed #475569;border-radius:6px;padding:10px 14px;background:#f8fafc;font-family:'Inter',sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact;page-break-inside:avoid;">
+            <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #cbd5e1;padding-bottom:5px;margin-bottom:8px;">
+              <span style="font-size:8.5pt;font-weight:700;color:#1e293b;text-transform:uppercase;letter-spacing:0.5px;">📋 Collection Handover & Reconciliation Slip</span>
+              <span style="font-size:7.5pt;color:#64748b;">Batch: <strong>${batchName}</strong> · Month: <strong>${feeMonthLabel(feeCurrentMonth)}</strong></span>
+            </div>
+            
+            <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr 1.1fr;gap:10px;font-size:8pt;margin-bottom:10px;">
+              <div>
+                <span style="color:#475569;font-size:7.5pt;font-weight:600;">Collected By (Teacher / Staff Name):</span>
+                <div style="border-bottom:1.5px solid #94a3b8;min-height:18px;margin-top:4px;"></div>
+              </div>
+              <div>
+                <span style="color:#475569;font-size:7.5pt;font-weight:600;">Cash Collected:</span>
+                <div style="border-bottom:1.5px solid #94a3b8;min-height:18px;margin-top:4px;font-weight:600;">₹ </div>
+              </div>
+              <div>
+                <span style="color:#475569;font-size:7.5pt;font-weight:600;">Online / UPI Collected:</span>
+                <div style="border-bottom:1.5px solid #94a3b8;min-height:18px;margin-top:4px;font-weight:600;">₹ </div>
+              </div>
+              <div>
+                <span style="color:#475569;font-size:7.5pt;font-weight:600;">Total Amount Handed Over:</span>
+                <div style="border-bottom:1.5px solid #94a3b8;min-height:18px;margin-top:4px;font-weight:700;color:#166534;">₹ </div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1.6fr 1.2fr 1.2fr;gap:10px;font-size:8pt;">
+              <div>
+                <span style="color:#475569;font-size:7.5pt;font-weight:600;">Handed Over To (Management / Admin):</span>
+                <div style="border-bottom:1.5px solid #94a3b8;min-height:18px;margin-top:4px;"></div>
+              </div>
+              <div>
+                <span style="color:#475569;font-size:7.5pt;font-weight:600;">Signature of Giver (Collector):</span>
+                <div style="border-bottom:1.5px solid #94a3b8;min-height:18px;margin-top:4px;"></div>
+              </div>
+              <div>
+                <span style="color:#475569;font-size:7.5pt;font-weight:600;">Signature of Receiver & Date:</span>
+                <div style="border-bottom:1.5px solid #94a3b8;min-height:18px;margin-top:4px;"></div>
+              </div>
+            </div>
+          </div>
+        `;
+
         tableHTML += `</div>`;
       });
 
