@@ -1785,6 +1785,62 @@
     </div>
   </dialog>
 
+  <!-- Waive Arrears Modal -->
+  <dialog id="modal-waive-arrears" class="admin-modal" style="max-width: 480px;">
+    <div class="modal-header">
+      <h3>Waive Past Arrears</h3>
+      <button onclick="document.getElementById('modal-waive-arrears').close()" class="modal-close-btn">✕</button>
+    </div>
+    <div class="modal-body" style="padding: 1.5rem;">
+      <div class="modal-context-card" style="margin-bottom: 1.25rem;">
+        <div class="modal-context-row">
+          <span class="modal-context-name" id="waive-student-name">Student Name</span>
+          <span class="modal-context-sub" id="waive-arrears-badge" style="color: #b45309; font-weight: 700;">₹0 Overdue</span>
+        </div>
+        <div id="waive-student-subinfo" style="font-size: 0.78rem; color: var(--admin-muted); margin-top: 0.35rem;"></div>
+      </div>
+      <form id="form-waive-arrears">
+        <input type="hidden" id="waive-student-id">
+        
+        <div class="modal-field">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <label class="modal-label" style="margin: 0;">Select Overdue Months to Waive</label>
+            <button type="button" id="btn-waive-toggle-all" style="background: none; border: none; font-size: 0.75rem; color: var(--admin-accent); font-weight: 600; cursor: pointer; text-decoration: underline;">Select All</button>
+          </div>
+          <div id="waive-months-list" class="waive-months-container">
+            <!-- Dynamically populated checkboxes -->
+          </div>
+        </div>
+
+        <div class="modal-field" style="margin-top: 1rem;">
+          <label class="modal-label">Waiver Reason</label>
+          <select id="waive-reason" class="modal-input" style="padding: 0.5rem 0.75rem;">
+            <option value="Left mid-month / Pro-rata waiver">Left mid-month / Pro-rata waiver</option>
+            <option value="Management discretion / Financial relief">Management discretion / Financial relief</option>
+            <option value="Attendance / Billing dispute">Attendance / Billing dispute</option>
+            <option value="Family relocation / Hardship">Family relocation / Hardship</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="modal-field">
+          <label class="modal-label">Remarks / Justification (Optional)</label>
+          <textarea id="waive-notes" class="modal-input" rows="2" placeholder="e.g. Attended only first week before moving..." style="resize: vertical; font-size: 0.85rem; padding: 0.5rem 0.75rem;"></textarea>
+        </div>
+
+        <div id="waive-summary-box" class="waive-summary-box" style="margin-top: 1rem; margin-bottom: 1.25rem;">
+          <span>Total to Waive:</span>
+          <strong id="waive-total-amount" style="font-size: 1.05rem; color: #16a34a;">₹0</strong>
+        </div>
+
+        <div class="modal-actions">
+          <button type="submit" id="btn-waive-submit" class="btn-primary" style="background: #16a34a; border-color: #16a34a;">Confirm & Waive Dues</button>
+          <button type="button" onclick="document.getElementById('modal-waive-arrears').close()" class="btn-secondary">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
   <!-- Bulk Fee Mark Modal -->
   <dialog id="modal-bulk-fee-mark" class="admin-modal" style="max-width: 500px; border-radius: 16px;">
     <div class="modal-header">

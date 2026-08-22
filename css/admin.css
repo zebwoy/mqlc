@@ -2679,6 +2679,83 @@ body:has(dialog.admin-modal[open])>*:not(dialog):not(#toast-container) {
   color: #1e40af;
 }
 
+/* Waive Past Arrears Components */
+.btn-fee-waive {
+  color: #b45309 !important;
+  border-color: #fde68a !important;
+  background: #fffbeb !important;
+  transition: all 0.2s ease;
+}
+.btn-fee-waive:hover {
+  background: #fef3c7 !important;
+  color: #92400e !important;
+  border-color: #f59e0b !important;
+  transform: translateY(-1px);
+}
+
+.waive-months-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 0.5rem;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: var(--admin-bg);
+}
+
+.waive-month-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.45rem 0.6rem;
+  background: var(--admin-white);
+  border: 1px solid var(--admin-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.waive-month-row:hover {
+  border-color: var(--admin-accent);
+  background: #f8fafc;
+}
+.waive-month-row.selected {
+  border-color: #16a34a;
+  background: #f0fdf4;
+}
+
+.waive-month-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+}
+.waive-month-name {
+  font-weight: 600;
+  color: var(--admin-text);
+}
+.waive-month-note {
+  font-size: 0.75rem;
+  color: var(--admin-muted);
+}
+.waive-month-amount {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #dc2626;
+}
+
+.waive-summary-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.85rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  font-size: 0.88rem;
+}
+
 @media (max-width: 600px) {
   .history-drawer { width: 100vw; }
 }

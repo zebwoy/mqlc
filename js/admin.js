@@ -2983,6 +2983,54 @@ document.addEventListener('DOMContentLoaded', () => {
     return Math.max(0, totalExpected - totalPaid);
   }
 
+  // Helper to get breakdown of unpaid past months causing arrears
+  function getUnpaidPastMonths(student, currentFeeMonth) {
+    const fee = parseInt(student.monthly_fee) || 0;
+    if (fee === 0) return [];
+    if (currentFeeMonth <= ARREARS_START) return [];
+
+    const dojMonth = student.doj ? student.doj.substring(0, 7) : ARREARS_START;
+    const effectiveStart = dojMonth > ARREARS_START ? dojMonth : ARREARS_START;
+    if (currentFeeMonth <= effectiveStart) return [];
+
+    const [sy, sm] = effectiveStart.split('-').map(Number);
+    const [cy, cm] = currentFeeMonth.split('-').map(Number);
+    const unpaid = [];
+    let cur = new Date(sy, sm - 1, 15);
+    const end = new Date(cy, cm - 1, 15);
+
+    while (cur < end) {
+      const ym = cur.getFullYear() + '-' + String(cur.getMonth() + 1).padStart(2, '0');
+      const exp = getExpectedFee(student, ym);
+      if (exp > 0) {
+        const paid = cachedFeePayments
+          .filter(p => p.student_id === student.id && p.month === ym)
+          .reduce((sum, p) => sum + (p.amount || 0), 0);
+        const due = Math.max(0, exp - paid);
+        if (due > 0) {
+          let note = '';
+          if (student.exit_date && student.exit_date.substring(0, 7) === ym) {
+            const exitDay = parseInt(student.exit_date.substring(8, 10)) || 1;
+            note = `Left on ${exitDay}${getOrdinalSuffix(exitDay)} ${new Date(student.exit_date).toLocaleDateString('en-IN', { month: 'short' })}`;
+          } else if (paid > 0) {
+            note = `₹${paid.toLocaleString('en-IN')} paid`;
+          }
+
+          unpaid.push({
+            month: ym,
+            monthLabel: feeMonthLabel(ym),
+            expected: exp,
+            paid: paid,
+            due: due,
+            note: note
+          });
+        }
+      }
+      cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 15);
+    }
+    return unpaid;
+  }
+
   // Month navigation
   const feePrev = document.getElementById('fee-prev-month');
   const feeNext = document.getElementById('fee-next-month');
@@ -3544,6 +3592,11 @@ document.addEventListener('DOMContentLoaded', () => {
             ? `<button class="btn-fee-exempt btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="Exempt this month">⏸ Exempt</button>`
             : '';
 
+        // Waive arrears button (appears when student has past overdue arrears)
+        const waiveBtn = (!exempt && arrears > 0)
+          ? `<button class="btn-fee-waive btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="Waive past overdue arrears">🕊️ Waive</button>`
+          : '';
+
         feed.innerHTML += `
         <div class="activity-item" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;${exempt ? ' opacity: 0.65;' : ''}">
           <div class="activity-detail" style="flex: 1; min-width: 180px;">
@@ -3557,6 +3610,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ${showRecordFinal ? `<button class="btn-fee-record btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" data-fee="${smartOverrideMonth ? nextMonthExpFee : expFee}" data-rawfee="${rawFee}" data-paid="${smartOverrideMonth ? 0 : paid}" data-override-month="${smartOverrideMonth || ''}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;">💰 Record</button>` : ''}
             ${showUndo ? `<button class="btn-fee-undo btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="Undo last payment">⟳</button>` : ''}
             ${exemptBtn}
+            ${waiveBtn}
             <button class="btn-fee-history btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="View history">📋</button>
             <button class="btn-fee-print btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="Print receipt">🖨️</button>
           </div>
@@ -3595,6 +3649,11 @@ document.addEventListener('DOMContentLoaded', () => {
     feed.querySelectorAll('.btn-fee-print').forEach(btn => {
       btn.addEventListener('click', () => {
         requestPrintReceipt(btn.dataset.sid);
+      });
+    });
+    feed.querySelectorAll('.btn-fee-waive').forEach(btn => {
+      btn.addEventListener('click', () => {
+        openWaiveArrearsModal(btn.dataset.sid);
       });
     });
 
@@ -5094,6 +5153,214 @@ document.addEventListener('DOMContentLoaded', () => {
       } finally {
         btn.textContent = 'Confirm Exemption';
         btn.disabled = false;
+      }
+    });
+  }
+
+  // ─── Waive Past Arrears Flow ─────────
+  function openWaiveArrearsModal(studentId) {
+    const student = cachedStudents.find(s => s.id.toString() === studentId.toString());
+    if (!student) return;
+
+    const modal = document.getElementById('modal-waive-arrears');
+    if (!modal) return;
+
+    document.getElementById('waive-student-id').value = student.id;
+    document.getElementById('waive-student-name').textContent = student.student_name;
+
+    const arrears = calcArrears(student, feeCurrentMonth);
+    document.getElementById('waive-arrears-badge').textContent = `₹${arrears.toLocaleString('en-IN')} Overdue`;
+
+    // Sub-info
+    let subinfo = `Batch: ${student.batch || 'Zuhr'} · Course: ${student.course_applying || 'N/A'}`;
+    if (student.status === 'left' && student.exit_date) {
+      subinfo += ` · <span style="color: #dc2626; font-weight: 600;">Left on ${student.exit_date} (${escapeHTML(student.exit_reason || 'Left')})</span>`;
+    }
+    document.getElementById('waive-student-subinfo').innerHTML = subinfo;
+
+    // Load unpaid months
+    const unpaidMonths = getUnpaidPastMonths(student, feeCurrentMonth);
+    const container = document.getElementById('waive-months-list');
+    container.innerHTML = '';
+
+    if (unpaidMonths.length === 0) {
+      container.innerHTML = `<p style="font-size:0.85rem;color:var(--admin-muted);text-align:center;padding:1rem;margin:0;">No specific past overdue months found.</p>`;
+      document.getElementById('waive-total-amount').textContent = '₹0';
+      modal.showModal();
+      return;
+    }
+
+    function updateTotal() {
+      const checkedBoxes = container.querySelectorAll('.waive-month-checkbox:checked');
+      let total = 0;
+      checkedBoxes.forEach(cb => {
+        total += parseInt(cb.dataset.due, 10) || 0;
+      });
+      document.getElementById('waive-total-amount').textContent = `₹${total.toLocaleString('en-IN')}`;
+    }
+
+    unpaidMonths.forEach((m) => {
+      const row = document.createElement('label');
+      row.className = 'waive-month-row selected';
+      row.innerHTML = `
+        <div class="waive-month-info">
+          <input type="checkbox" class="waive-month-checkbox" data-month="${m.month}" data-due="${m.due}" checked style="accent-color: #16a34a; cursor: pointer;">
+          <div>
+            <span class="waive-month-name">${escapeHTML(m.monthLabel)}</span>
+            ${m.note ? `<span class="waive-month-note">(${escapeHTML(m.note)})</span>` : ''}
+          </div>
+        </div>
+        <span class="waive-month-amount">₹${m.due.toLocaleString('en-IN')}</span>
+      `;
+
+      const cb = row.querySelector('.waive-month-checkbox');
+      cb.addEventListener('change', () => {
+        if (cb.checked) row.classList.add('selected');
+        else row.classList.remove('selected');
+        updateTotal();
+      });
+
+      container.appendChild(row);
+    });
+
+    updateTotal();
+
+    // Toggle All Button
+    const toggleBtn = document.getElementById('btn-waive-toggle-all');
+    if (toggleBtn) {
+      toggleBtn.textContent = 'Deselect All';
+      toggleBtn.onclick = () => {
+        const checkboxes = container.querySelectorAll('.waive-month-checkbox');
+        const anyUnchecked = Array.from(checkboxes).some(c => !c.checked);
+        checkboxes.forEach(c => {
+          c.checked = anyUnchecked;
+          const parentRow = c.closest('.waive-month-row');
+          if (parentRow) {
+            if (anyUnchecked) parentRow.classList.add('selected');
+            else parentRow.classList.remove('selected');
+          }
+        });
+        toggleBtn.textContent = anyUnchecked ? 'Deselect All' : 'Select All';
+        updateTotal();
+      };
+    }
+
+    // Default reason
+    if (student.status === 'left') {
+      document.getElementById('waive-reason').value = 'Left mid-month / Pro-rata waiver';
+    } else {
+      document.getElementById('waive-reason').value = 'Management discretion / Financial relief';
+    }
+    document.getElementById('waive-notes').value = '';
+
+    modal.showModal();
+  }
+
+  const waiveForm = document.getElementById('form-waive-arrears');
+  if (waiveForm) {
+    waiveForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const studentId = document.getElementById('waive-student-id').value;
+      const student = cachedStudents.find(s => s.id.toString() === studentId.toString());
+      if (!student) return;
+
+      const checkedBoxes = document.querySelectorAll('#waive-months-list .waive-month-checkbox:checked');
+      if (checkedBoxes.length === 0) {
+        toast.warning('Please select at least one overdue month to waive.');
+        return;
+      }
+
+      const selectedMonths = Array.from(checkedBoxes).map(cb => ({
+        month: cb.dataset.month,
+        due: parseInt(cb.dataset.due, 10) || 0
+      }));
+
+      const reasonVal = document.getElementById('waive-reason').value;
+      const notesVal = (document.getElementById('waive-notes').value || '').trim();
+      const combinedReason = notesVal ? `${reasonVal}: ${notesVal}` : reasonVal;
+      const totalWaived = selectedMonths.reduce((sum, m) => sum + m.due, 0);
+
+      const submitBtn = document.getElementById('btn-waive-submit');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Waiving...';
+      }
+
+      let adminEmail = 'admin';
+      try {
+        const { data: { session } } = await window._supabase.auth.getSession();
+        if (session?.user?.email) adminEmail = session.user.email;
+      } catch (_) { }
+
+      const waivePromise = (async () => {
+        if (window.DEMO_MODE) {
+          selectedMonths.forEach(m => {
+            cachedFeeExemptions = cachedFeeExemptions.filter(ex => !(ex.student_id === Number(studentId) && ex.month === m.month));
+            cachedFeeExemptions.push({
+              id: Date.now() + Math.random(),
+              student_id: Number(studentId),
+              month: m.month,
+              reason: combinedReason
+            });
+          });
+          renderFeeMatrix();
+          return;
+        }
+
+        // 1. Insert exemptions for all selected months
+        const exemptionRows = selectedMonths.map(m => ({
+          student_id: studentId,
+          month: m.month,
+          reason: combinedReason
+        }));
+
+        const { data, error } = await window._supabase
+          .from('fee_exemptions')
+          .upsert(exemptionRows, { onConflict: 'student_id,month' })
+          .select();
+
+        if (error) throw error;
+
+        // Update local cache
+        selectedMonths.forEach(m => {
+          cachedFeeExemptions = cachedFeeExemptions.filter(ex => !(ex.student_id === studentId && ex.month === m.month));
+        });
+        if (data && data.length) {
+          cachedFeeExemptions.push(...data);
+        }
+
+        // 2. Write audit log into student_history
+        const monthNames = selectedMonths.map(m => feeMonthLabel(m.month)).join(', ');
+        try {
+          await window._supabase.from('student_history').insert([{
+            student_id: studentId,
+            field_name: 'Monthly Fee',
+            old_value: `Overdue Arrears (₹${totalWaived})`,
+            new_value: `Waived (${monthNames})`,
+            changed_by: adminEmail,
+            reason: combinedReason
+          }]);
+        } catch (_) { }
+
+        renderFeeMatrix();
+      })();
+
+      toast.promise(waivePromise, {
+        loading: `Waiving past dues for ${student.student_name}…`,
+        success: `Waived ₹${totalWaived.toLocaleString('en-IN')} in arrears for ${student.student_name}!`,
+        error: (err) => `Waiver failed: ${err.message}`
+      });
+
+      try {
+        await waivePromise;
+        document.getElementById('modal-waive-arrears').close();
+      } catch (err) {
+        console.error('Waiver error:', err);
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Confirm & Waive Dues';
+        }
       }
     });
   }
