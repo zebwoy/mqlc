@@ -2478,7 +2478,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   // ─── Export Logic ────────
-  function exportToExcel() {
+  function exportStudentListToExcel() {
     const searchTerm = (document.getElementById('ds-filter-search')?.value || '').toLowerCase();
     const statusFilter = document.getElementById('ds-filter-status')?.value || 'all';
     const batchFilter = document.getElementById('ds-filter-batch')?.value || 'all';
@@ -2541,7 +2541,11 @@ document.addEventListener('DOMContentLoaded', () => {
       'Current Class': s.current_class || ''
     }));
 
-    exportToExcel(data, "Students", `MQLC_Students_${new Date().toISOString().split('T')[0]}.xlsx`);
+    if (typeof window.exportToExcel === 'function') {
+      window.exportToExcel(data, "Students", `MQLC_Students_${new Date().toISOString().split('T')[0]}.xlsx`);
+    } else {
+      console.error('window.exportToExcel utility not found');
+    }
   }
 
   function exportToPDF() {
@@ -2709,7 +2713,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (btnExportExcel) {
     btnExportExcel.addEventListener('click', () => {
-      exportToExcel();
+      exportStudentListToExcel();
       if (exportDropdown) exportDropdown.style.display = 'none';
     });
   }
@@ -4353,7 +4357,9 @@ document.addEventListener('DOMContentLoaded', () => {
       feeExportDropdown.style.display = 'none';
       const rows = getFeeExportData();
       if (!rows.length) return alert('No data to export.');
-      exportToExcel(rows, 'Fee Report', `MQLC_Fee_Report_${feeCurrentMonth}.xlsx`);
+      if (typeof window.exportToExcel === 'function') {
+        window.exportToExcel(rows, 'Fee Report', `MQLC_Fee_Report_${feeCurrentMonth}.xlsx`);
+      }
     });
   }
 
