@@ -119,9 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
     is_trustee:      'Account Category',
     exit_date:       'Exit Date',
     exit_reason:     'Exit Reason',
-    exit_notes:      'Exit Notes',
     rejoin_date:     'Rejoin Date',
-    rejoin_reason:   'Rejoin Reason',
   };
 
   // Writes one row per changed field into student_history.
@@ -1179,9 +1177,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderHistoryTimeline(entries, studentName) {
     if (!historyContent) return;
-    if (historySubtitle) historySubtitle.textContent = studentName + ' • ' + entries.length + ' change' + (entries.length === 1 ? '' : 's');
 
-    if (entries.length === 0) {
+    if (!entries || entries.length === 0) {
+      if (historySubtitle) historySubtitle.textContent = studentName + ' • 0 events';
       historyContent.innerHTML = `
         <div class="audit-empty">
           <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" fill="none" stroke-width="1.5" display="block" style="margin:0 auto 0.75rem">
@@ -1194,34 +1192,140 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // ─── Group entries that belong to the same admin submission ───
+    // Groups entries with timestamps within 15 seconds by the same admin
+    const groups = [];
+    entries.forEach(e => {
+      const eTime = e.changed_at ? new Date(e.changed_at).getTime() : 0;
+      const lastGroup = groups[groups.length - 1];
+
+      if (
+        lastGroup &&
+        lastGroup.changed_by === (e.changed_by || 'admin') &&
+        Math.abs(lastGroup.time - eTime) < 15000 &&
+        (!lastGroup.reason || !e.reason || lastGroup.reason === e.reason)
+      ) {
+        lastGroup.items.push(e);
+        if (!lastGroup.reason && e.reason) lastGroup.reason = e.reason;
+      } else {
+        groups.push({
+          time: eTime,
+          changed_at: e.changed_at,
+          changed_by: e.changed_by || 'admin',
+          reason: e.reason || null,
+          items: [e]
+        });
+      }
+    });
+
+    if (historySubtitle) {
+      historySubtitle.textContent = studentName + ' • ' + groups.length + ' event' + (groups.length === 1 ? '' : 's');
+    }
+
     const feeFields    = new Set(['Monthly Fee', 'Fee Mode']);
     const statusFields = new Set(['Status', 'Exit Date', 'Exit Reason', 'Exit Notes']);
     const rejoinFields = new Set(['Rejoin Date', 'Rejoin Reason']);
 
-    const rows = entries.map(e => {
-      const isStatus = statusFields.has(e.field_name);
-      const isFee    = feeFields.has(e.field_name);
-      const isRejoin = rejoinFields.has(e.field_name);
-      const cls      = isRejoin ? 'rejoin-change' : isStatus ? 'status-change' : isFee ? 'fee-change' : '';
-      const dt       = e.changed_at ? new Date(e.changed_at) : null;
-      const dtStr    = dt ? dt.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) + ' ' + dt.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' }) : '';
-      const oldDisp  = e.old_value !== null && e.old_value !== undefined ? e.old_value : '—';
-      const newDisp  = e.new_value !== null && e.new_value !== undefined ? e.new_value : '—';
-      return `
-        <div class="audit-entry ${cls}">
-          <div class="audit-entry-header">
-            <span class="audit-field-badge">${escapeHTML(e.field_name)}</span>
-          </div>
+    const cardsHtml = groups.map(group => {
+      const dt = group.changed_at ? new Date(group.changed_at) : null;
+      const dtStr = dt
+        ? dt.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) + ' ' + dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+        : '';
+
+      const items = group.items;
+
+      // Detect Rejoin Event:
+      const rejoinItem = items.find(i => i.field_name === 'Rejoin Date' || i.field_name === 'Rejoin Reason');
+      const statusItem = items.find(i => i.field_name === 'Status');
+      const isRejoinEvent = Boolean(
+        rejoinItem ||
+        (statusItem && statusItem.new_value === 'approved' && statusItem.old_value === 'left')
+      );
+
+      // Detect Exit/Departure Event:
+      const isExitEvent = !isRejoinEvent && Boolean(
+        items.find(i => i.field_name === 'Exit Date' || i.field_name === 'Exit Reason') ||
+        (statusItem && statusItem.new_value === 'left')
+      );
+
+      let badgeText = 'Update';
+      let cls = '';
+
+      if (isRejoinEvent) {
+        badgeText = 'Rejoined';
+        cls = 'rejoin-change';
+      } else if (isExitEvent) {
+        badgeText = 'Departure / Left';
+        cls = 'status-change';
+      } else if (items.length === 1) {
+        badgeText = items[0].field_name;
+        if (statusFields.has(items[0].field_name)) cls = 'status-change';
+        else if (feeFields.has(items[0].field_name)) cls = 'fee-change';
+      } else {
+        badgeText = 'Record Updated';
+      }
+
+      // Filter out redundant entries in Rejoin / Exit events
+      // (e.g. Rejoin Reason is already displayed in group.reason)
+      let displayItems = items;
+      if (isRejoinEvent) {
+        displayItems = items.filter(i => i.field_name !== 'Rejoin Reason');
+      } else if (isExitEvent) {
+        displayItems = items.filter(i => i.field_name !== 'Exit Notes');
+      }
+
+      let changesHtml = '';
+      if (displayItems.length === 1 && !isRejoinEvent && !isExitEvent) {
+        const item = displayItems[0];
+        const oldDisp = item.old_value !== null && item.old_value !== undefined ? item.old_value : '—';
+        const newDisp = item.new_value !== null && item.new_value !== undefined ? item.new_value : '—';
+        changesHtml = `
           <div class="audit-change-row">
             <span class="audit-old-val">${escapeHTML(oldDisp)}</span>
             <span class="audit-arrow">→</span>
             <span class="audit-new-val">${escapeHTML(newDisp)}</span>
+          </div>`;
+      } else {
+        // Multi-item or compound lifecycle event layout
+        const rows = displayItems.map(item => {
+          const oldDisp = item.old_value !== null && item.old_value !== undefined ? item.old_value : '—';
+          let newDisp = item.new_value !== null && item.new_value !== undefined ? item.new_value : '—';
+
+          // Format ISO date strings cleanly
+          if (typeof newDisp === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(newDisp)) {
+            const [y, m, d] = newDisp.split('-');
+            newDisp = `${d}-${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m,10)-1]}-${y}`;
+          }
+
+          return `
+            <div class="audit-sub-row">
+              <span class="audit-sub-label">${escapeHTML(item.field_name)}:</span>
+              <span class="audit-old-val">${escapeHTML(oldDisp)}</span>
+              <span class="audit-arrow">→</span>
+              <span class="audit-new-val">${escapeHTML(newDisp)}</span>
+            </div>`;
+        }).join('');
+        changesHtml = `<div class="audit-group-rows">${rows}</div>`;
+      }
+
+      const noteText = group.reason ? escapeHTML(group.reason) : '';
+      const metaHtml = `
+        <div class="audit-meta">
+          <span>${dtStr ? dtStr + ' · ' : ''}${escapeHTML(group.changed_by)}</span>
+          ${noteText ? `<div class="audit-reason-tag">"${noteText}"</div>` : ''}
+        </div>`;
+
+      return `
+        <div class="audit-entry ${cls}">
+          <div class="audit-entry-header">
+            <span class="audit-field-badge">${escapeHTML(badgeText)}</span>
           </div>
-          <div class="audit-meta">${dtStr ? dtStr + ' · ' : ''}${escapeHTML(e.changed_by || 'admin')}${e.reason ? ' · ' + escapeHTML(e.reason) : ''}</div>
+          ${changesHtml}
+          ${metaHtml}
         </div>`;
     }).join('');
 
-    historyContent.innerHTML = '<div class="audit-timeline">' + rows + '</div>';
+    historyContent.innerHTML = '<div class="audit-timeline">' + cardsHtml + '</div>';
   }
 
   // ─── Edit Student Logic ────────
