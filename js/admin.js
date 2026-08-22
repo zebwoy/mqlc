@@ -1193,11 +1193,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const feeFields    = new Set(['Monthly Fee', 'Fee Mode']);
     const statusFields = new Set(['Status']);
+    const rejoinFields = new Set(['Rejoin Date', 'Rejoin Reason']);
 
     const rows = entries.map(e => {
       const isStatus = statusFields.has(e.field_name);
       const isFee    = feeFields.has(e.field_name);
-      const cls      = isStatus ? 'status-change' : isFee ? 'fee-change' : '';
+      const isRejoin = rejoinFields.has(e.field_name);
+      const cls      = isRejoin ? 'rejoin-change' : isStatus ? 'status-change' : isFee ? 'fee-change' : '';
       const dt       = e.changed_at ? new Date(e.changed_at) : null;
       const dtStr    = dt ? dt.toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) + ' ' + dt.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' }) : '';
       const oldDisp  = e.old_value !== null && e.old_value !== undefined ? e.old_value : '—';
