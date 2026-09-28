@@ -1548,6 +1548,28 @@ document.addEventListener('DOMContentLoaded', () => {
           : rawReason;
         payload.exit_notes = document.getElementById('edit-exit-notes')?.value || '';
         payload.exit_recorded_by = adminEmail;
+
+        // Phase 4: Write exit lifecycle event row (non-blocking)
+        if (!window.DEMO_MODE && window._supabase) {
+          window._supabase.from('student_lifecycle_events').insert([{
+            student_id:  Number(id),
+            event_type:  'exit',
+            event_date:  payload.exit_date,
+            exit_reason: payload.exit_reason,
+            exit_notes:  payload.exit_notes,
+            recorded_by: adminEmail
+          }]).then(({ error }) => {
+            if (error) console.warn('Lifecycle exit row failed (non-critical):', error.message);
+            else {
+              // Keep local cache in sync
+              cachedLifecycleEvents.push({
+                student_id: String(id), event_type: 'exit', event_date: payload.exit_date,
+                exit_reason: payload.exit_reason, exit_notes: payload.exit_notes,
+                recorded_by: adminEmail
+              });
+            }
+          });
+        }
       } else {
         payload.exit_date = null;
         payload.exit_reason = null;
@@ -1811,7 +1833,7 @@ document.addEventListener('DOMContentLoaded', () => {
         course_applying: courseVal,
         monthly_fee: feeVal,
         is_prepaid: isPrepaidVal,
-        rejoin_date: rejoinDate,
+        rejoin_date: rejoinDate,        // kept for backward compat; source of truth is student_lifecycle_events
         rejoin_reason: notesVal || 'Rejoined institution'
       };
 
@@ -1868,6 +1890,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (updateError) throw updateError;
+
+        // Phase 5: Write rejoin lifecycle event row
+        try {
+          const { error: lifecycleErr } = await window._supabase
+            .from('student_lifecycle_events')
+            .insert([{
+              student_id:    id,
+              event_type:    'rejoin',
+              event_date:    rejoinDate,
+              batch:         batchVal,
+              course:        courseVal,
+              monthly_fee:   feeVal,
+              is_prepaid:    isPrepaidVal,
+              rejoin_reason: notesVal || 'Rejoined institution',
+              recorded_by:   adminEmailForAudit
+            }]);
+          if (lifecycleErr) console.warn('Lifecycle rejoin row failed (non-critical):', lifecycleErr.message);
+          else {
+            // Keep local cache in sync so fee engine sees the new event immediately
+            cachedLifecycleEvents.push({
+              student_id: String(id), event_type: 'rejoin', event_date: rejoinDate,
+              batch: batchVal, course: courseVal, monthly_fee: feeVal,
+              is_prepaid: isPrepaidVal, rejoin_reason: notesVal || 'Rejoined institution',
+              recorded_by: adminEmailForAudit
+            });
+          }
+        } catch (_) { }
 
         // Auto-record rejoin fee payment in fee_payments
         if (feeVal > 0) {
@@ -2772,6 +2821,7 @@ document.addEventListener('DOMContentLoaded', () => {
   })();
   let cachedFeePayments = [];
   let cachedFeeExemptions = [];
+  let cachedLifecycleEvents = []; // Phase 2: lifecycle history per student
   let feeTrendChart = null;
 
   function feeMonthLabel(ym) {
@@ -2788,6 +2838,53 @@ document.addEventListener('DOMContentLoaded', () => {
     return dojMonth <= feeMonth; // string comparison works for YYYY-MM
   }
 
+  // ─── Phase 3: buildInactivePeriods ──────────────────────────────
+  // Builds an array of inactive (gap) periods for a student from their full
+  // lifecycle history. Each period is { fromMonth, toMonth } both inclusive-exclusive,
+  // i.e. the student owes ₹0 for any month where fromMonth < month <= toMonth
+  // (using the rejoinLiabilityMonth convention from computeRejoinFeeMonth).
+  // An unmatched trailing exit means the student is currently still gone → toMonth = null (open-ended).
+  function buildInactivePeriods(studentId) {
+    const events = cachedLifecycleEvents
+      .filter(e => e.student_id === studentId)
+      .sort((a, b) => a.event_date < b.event_date ? -1 : a.event_date > b.event_date ? 1 : 0);
+
+    const periods = [];
+    let openExitMonth = null;
+
+    for (const ev of events) {
+      if (ev.event_type === 'exit') {
+        openExitMonth = ev.event_date.substring(0, 7);
+      } else if (ev.event_type === 'rejoin') {
+        if (openExitMonth !== null) {
+          periods.push({
+            fromMonth: openExitMonth,                         // the month the student left
+            toMonth:   computeRejoinFeeMonth(ev.event_date)  // first month fees resume
+          });
+          openExitMonth = null;
+        }
+      }
+    }
+
+    // Unmatched trailing exit → still gone (open-ended)
+    if (openExitMonth !== null) {
+      periods.push({ fromMonth: openExitMonth, toMonth: null });
+    }
+
+    return periods;
+  }
+
+  // Returns true if `month` falls inside any inactive gap for the student
+  function isMonthInactive(studentId, month) {
+    const periods = buildInactivePeriods(studentId);
+    for (const p of periods) {
+      // Inactive if: month is AFTER the exit month AND before (or equal to) the rejoin liability month
+      // i.e. feeMonth > fromMonth && (toMonth is null || feeMonth < toMonth)
+      if (month > p.fromMonth && (p.toMonth === null || month < p.toMonth)) return true;
+    }
+    return false;
+  }
+
   // Returns true if student is eligible for fee tracking & collection for a given feeMonth
   // Accounts for approved active students, month-of-exit students, and exited students with pending dues
   function isStudentEligibleForFeeMonth(s, feeMonth) {
@@ -2796,24 +2893,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Case 1: Approved / Active students
     if (s.status === 'approved') {
-      // If student had an exit and rejoined:
-      if (s.exit_date && s.rejoin_date) {
-        const exitMonth = s.exit_date.substring(0, 7);
-        const rejoinLiabilityMonth = computeRejoinFeeMonth(s.rejoin_date);
-        // If feeMonth is in the inactive gap:
-        if (feeMonth > exitMonth && feeMonth < rejoinLiabilityMonth) {
-          const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
-          return paid > 0;
-        }
+      // Check lifecycle gaps — month in an inactive gap only appears if actually paid
+      if (isMonthInactive(s.id, feeMonth)) {
+        const paid = cachedFeePayments.filter(p => p.student_id === s.id && p.month === feeMonth).reduce((sum, p) => sum + (p.amount || 0), 0);
+        return paid > 0;
       }
       return true;
     }
 
-    // Case 2: Exited / Left students
+    // Case 2: Exited / Left students — check via lifecycle history
     if (s.status === 'left') {
-      const exitMonth = s.exit_date ? s.exit_date.substring(0, 7) : null;
+      // Find the most recent exit event
+      const exits = cachedLifecycleEvents
+        .filter(e => e.student_id === s.id && e.event_type === 'exit')
+        .sort((a, b) => b.event_date.localeCompare(a.event_date));
+      const latestExitMonth = exits.length ? exits[0].event_date.substring(0, 7)
+        : (s.exit_date ? s.exit_date.substring(0, 7) : null); // fallback to legacy field
+
       // Active during this fee month (left during or after feeMonth)
-      if (exitMonth && exitMonth >= feeMonth) return true;
+      if (latestExitMonth && latestExitMonth >= feeMonth) return true;
 
       // Left in a prior month, but still has unpaid dues or arrears!
       const expFee = getExpectedFee(s, feeMonth);
@@ -2905,26 +3003,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isEnrolledForMonth(student.doj, month)) return 0;
     if (isExemptForMonth(student.id, month)) return 0;
 
-    // Check exited vs rejoined lifecycle periods
-    if (student.exit_date) {
-      const exitMonth = student.exit_date.substring(0, 7);
+    // Phase 3: Use lifecycle history to determine inactive gaps (supports multiple exits/rejoins)
+    if (isMonthInactive(student.id, month)) return 0;
 
-      // If student is currently marked as 'left': no fee after exitMonth
-      if (student.status === 'left') {
-        if (month > exitMonth) return 0;
-      } else if (student.rejoin_date) {
-        // Student has rejoined: gap between exitMonth and rejoinLiabilityMonth is INACTIVE (₹0 expected)
-        const rejoinLiabilityMonth = computeRejoinFeeMonth(student.rejoin_date);
-        if (month > exitMonth && month < rejoinLiabilityMonth) {
-          return 0; // Inactive gap
-        }
-      }
-    } else if (student.status !== 'approved') {
-      // If student is not approved and has no exit_date (e.g. rejected)
-      if (student.rejoin_date) {
-        const rejoinLiabilityMonth = computeRejoinFeeMonth(student.rejoin_date);
-        if (month < rejoinLiabilityMonth) return 0;
-      }
+    // If student is currently marked as 'left', no fee after the latest exit
+    if (student.status === 'left') {
+      const exits = cachedLifecycleEvents
+        .filter(e => e.student_id === student.id && e.event_type === 'exit')
+        .sort((a, b) => b.event_date.localeCompare(a.event_date));
+      const latestExitMonth = exits.length ? exits[0].event_date.substring(0, 7)
+        : (student.exit_date ? student.exit_date.substring(0, 7) : null); // fallback to legacy field
+      if (latestExitMonth && month > latestExitMonth) return 0;
     }
 
     if (student.doj) {
@@ -3078,8 +3167,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!cachedStudents || !cachedStudents.length) {
         cachedStudents = [...window.DEMO_DATA.students];
       }
-      cachedFeePayments   = [...window.DEMO_DATA.feePayments];
-      cachedFeeExemptions = [...window.DEMO_DATA.feeExemptions];
+      cachedFeePayments      = [...window.DEMO_DATA.feePayments];
+      cachedFeeExemptions    = [...window.DEMO_DATA.feeExemptions];
+      cachedLifecycleEvents  = [...(window.DEMO_DATA.lifecycleEvents || [])];
       if (feeLabel) feeLabel.textContent = feeMonthLabel(feeCurrentMonth);
       renderFeeMatrix();
       return;
@@ -3113,6 +3203,13 @@ document.addEventListener('DOMContentLoaded', () => {
         .gte('month', ARREARS_START);
       if (error) throw error;
       cachedFeePayments = payments || [];
+
+      // Phase 2: Fetch full lifecycle history (exit & rejoin events)
+      try {
+        const { data: lifecycle } = await window._supabase
+          .from('student_lifecycle_events').select('*');
+        cachedLifecycleEvents = lifecycle || [];
+      } catch (_) { cachedLifecycleEvents = []; /* table may not exist yet */ }
 
       // Fetch exemptions
       try {
@@ -4475,14 +4572,14 @@ document.addEventListener('DOMContentLoaded', () => {
       orderedBatches.forEach((batchName, bIdx) => {
         const batchStudents = groups[batchName];
 
-        // Main collection checklist table: includes all students (regular, exited with dues, and trustee) in the matrix
-        const pending = batchStudents.filter(e => 
-          (e.totalDue > 0 || e.status === 'Unpaid' || e.status === 'Partial' || e.student.is_trustee) && 
-          e.status !== 'Exempt' && 
+        // Main collection checklist table: includes all students (regular, exited with dues, trustee, and paid)
+        const pending = batchStudents.filter(e =>
+          (e.totalDue > 0 || e.status === 'Unpaid' || e.status === 'Partial' || e.status === 'Paid' || e.student.is_trustee) &&
+          e.status !== 'Exempt' &&
           e.status !== 'No Fee'
         );
 
-        const paidList = batchStudents.filter(e => e.status === 'Paid' && e.student.status !== 'left' && !e.student.is_trustee);
+        const paidList = []; // paid students are now shown inline in the matrix
         const exemptList = batchStudents.filter(e => (e.status === 'Exempt' || e.status === 'No Fee') && !e.student.is_trustee);
         const exitedSettledList = batchStudents.filter(e => e.student.status === 'left' && e.totalDue === 0 && e.status !== 'Exempt' && e.status !== 'No Fee' && !e.student.is_trustee);
 
@@ -4493,16 +4590,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalArrears = collectiblePending.reduce((s, e) => s + e.arrears, 0);
         const pageBreak = bIdx > 0 ? 'page-break-before:always;' : '';
 
-        // Sort pending table rows: Unpaid first, then Partial, then alphabetical (no special Trustee isolation)
+        // Sort: Unpaid first → Partial → Trustee/Paid (already settled) → alphabetical within groups
         pending.sort((a, b) => {
           if (a.student.status !== b.student.status) {
             if (a.student.status === 'approved' && b.student.status === 'left') return -1;
             if (a.student.status === 'left' && b.student.status === 'approved') return 1;
           }
-          if (a.status !== b.status) {
-            if (a.status === 'Unpaid') return -1;
-            if (b.status === 'Unpaid') return 1;
-          }
+          const statusOrder = { 'Unpaid': 0, 'Partial': 1, 'Paid': 3 };
+          const aOrder = a.student.is_trustee ? 2 : (statusOrder[a.status] ?? 2);
+          const bOrder = b.student.is_trustee ? 2 : (statusOrder[b.status] ?? 2);
+          if (aOrder !== bOrder) return aOrder - bOrder;
           return (a.student.student_name || '').localeCompare(b.student.student_name || '');
         });
 
@@ -4563,7 +4660,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const monthDisp = `₹${e.remaining.toLocaleString('en-IN')}`;
             const arrearsDisp = e.arrears > 0 ? `₹${e.arrears.toLocaleString('en-IN')}` : '—';
             const totalDisp = `₹${e.totalDue.toLocaleString('en-IN')}`;
-            const checkboxDisp = isTrustee ? '—' : '☐';
+            const checkboxDisp = (isTrustee || e.status === 'Paid') ? '—' : '☐';
 
             tableHTML += `
                 <tr style="background:${bg};">
@@ -4594,11 +4691,7 @@ document.addEventListener('DOMContentLoaded', () => {
           tableHTML += `<p style="font-size:8.5pt;color:#16a34a;font-style:italic;margin:6px 0;font-family:'Inter',sans-serif;">✓ All regular students in this batch have paid for ${feeMonthLabel(feeCurrentMonth)}.</p>`;
         }
 
-        // Compact reference — Paid students
-        if (paidList.length > 0) {
-          const paidNames = paidList.map(e => e.student.student_name).sort().join(', ');
-          tableHTML += `<p style="font-size:7.5pt;color:#6b7280;margin:4px 0;font-family:'Inter',sans-serif;"><strong style="color:#16a34a;">✓ Paid (${paidList.length}):</strong> ${paidNames}</p>`;
-        }
+        // Compact reference — Paid students (now shown inline in the matrix above)
 
         // Compact reference — Exempt students
         if (exemptList.length > 0) {
@@ -5429,16 +5522,24 @@ document.addEventListener('DOMContentLoaded', () => {
     modal.showModal();
 
     let payments = [];
+    let studentLifecycle = [];
     if (window._supabase) {
       try {
-        const { data, error } = await window._supabase
-          .from('fee_payments')
-          .select('*')
-          .eq('student_id', studentId)
-          .order('month', { ascending: false });
-        if (!error && data) payments = data;
+        const [paymentsResult, lifecycleResult] = await Promise.all([
+          window._supabase.from('fee_payments').select('*').eq('student_id', studentId).order('month', { ascending: false }),
+          window._supabase.from('student_lifecycle_events').select('*').eq('student_id', studentId).order('event_date', { ascending: true })
+        ]);
+        if (!paymentsResult.error && paymentsResult.data) payments = paymentsResult.data;
+        if (!lifecycleResult.error && lifecycleResult.data) {
+          studentLifecycle = lifecycleResult.data;
+          // Merge into global cache so fee engine stays consistent
+          cachedLifecycleEvents = [
+            ...cachedLifecycleEvents.filter(e => e.student_id !== student.id),
+            ...studentLifecycle
+          ];
+        }
       } catch (err) {
-        console.error('Error fetching payments for profile:', err);
+        console.error('Error fetching profile data:', err);
       }
     }
 
@@ -5454,10 +5555,59 @@ document.addEventListener('DOMContentLoaded', () => {
     let avatarClass = student.gender === 'Female' ? 'female' : '';
     if (student.status === 'left') avatarClass = 'left';
 
-    let exitSectionHtml = '';
-    if (student.status === 'left') {
+    // Phase 6: Build enrollment lifecycle timeline from history
+    let lifecycleSectionHtml = '';
+    if (studentLifecycle.length > 0) {
+      const timelineItems = [];
+      // Add original DOJ as the first entry
+      if (student.doj) {
+        const fmtDoj = new Date(student.doj).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        timelineItems.push(`
+          <div class="lifecycle-item lifecycle-join">
+            <span class="lifecycle-dot"></span>
+            <div class="lifecycle-body">
+              <strong>Enrolled</strong>
+              <span class="lifecycle-date">${fmtDoj}</span>
+            </div>
+          </div>`);
+      }
+      for (const ev of studentLifecycle) {
+        const fmtDate = new Date(ev.event_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        if (ev.event_type === 'exit') {
+          const reason = ev.exit_reason || 'Unspecified';
+          const displayReason = reason.startsWith('Other: ') ? `Other (${reason.slice(7)})` : reason;
+          timelineItems.push(`
+            <div class="lifecycle-item lifecycle-exit">
+              <span class="lifecycle-dot"></span>
+              <div class="lifecycle-body">
+                <strong>Left</strong>
+                <span class="lifecycle-date">${fmtDate}</span>
+                <span class="lifecycle-note">${displayReason}${ev.exit_notes ? ' — ' + ev.exit_notes : ''}</span>
+              </div>
+            </div>`);
+        } else if (ev.event_type === 'rejoin') {
+          timelineItems.push(`
+            <div class="lifecycle-item lifecycle-rejoin">
+              <span class="lifecycle-dot"></span>
+              <div class="lifecycle-body">
+                <strong>Rejoined</strong>
+                <span class="lifecycle-date">${fmtDate}</span>
+                ${ev.batch ? `<span class="lifecycle-note">${ev.batch} batch${ev.course ? ' · ' + ev.course : ''}</span>` : ''}
+              </div>
+            </div>`);
+        }
+      }
+      lifecycleSectionHtml = `
+        <div class="profile-section-card lifecycle-card" style="grid-column: span 2;">
+          <h4>Enrollment Timeline</h4>
+          <div class="lifecycle-timeline">
+            ${timelineItems.join('')}
+          </div>
+        </div>`;
+    } else if (student.status === 'left') {
+      // Fallback for students who exited before the lifecycle table existed
       const formattedExitDate = student.exit_date ? new Date(student.exit_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
-      exitSectionHtml = `
+      lifecycleSectionHtml = `
           <div class="profile-exit-alert">
             <h4>
               <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16" style="vertical-align: middle;">
@@ -5507,7 +5657,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     content.innerHTML = `
-        ${exitSectionHtml}
+        ${lifecycleSectionHtml}
         <div class="profile-header">
           <div class="profile-avatar ${avatarClass}">${initials}</div>
           <div class="profile-header-meta">

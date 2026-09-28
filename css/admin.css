@@ -1982,6 +1982,77 @@ body:has(dialog.admin-modal[open])>*:not(dialog):not(#toast-container) {
   line-height: 1.5;
 }
 
+/* ─── Lifecycle / Enrollment Timeline ─────────────────────────── */
+.lifecycle-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0.25rem 0;
+  position: relative;
+}
+
+.lifecycle-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.55rem 0;
+  position: relative;
+}
+
+/* Vertical connector line between items */
+.lifecycle-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 22px;
+  bottom: -12px;
+  width: 2px;
+  background: var(--admin-border);
+}
+
+.lifecycle-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+  border: 2px solid transparent;
+  box-shadow: 0 0 0 2px var(--admin-bg);
+}
+
+.lifecycle-join .lifecycle-dot  { background: #16a34a; border-color: #16a34a; }
+.lifecycle-exit .lifecycle-dot  { background: #dc2626; border-color: #dc2626; }
+.lifecycle-rejoin .lifecycle-dot { background: #2563eb; border-color: #2563eb; }
+
+.lifecycle-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.lifecycle-body strong {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--admin-text);
+}
+
+.lifecycle-join .lifecycle-body strong  { color: #16a34a; }
+.lifecycle-exit .lifecycle-body strong  { color: #dc2626; }
+.lifecycle-rejoin .lifecycle-body strong { color: #2563eb; }
+
+.lifecycle-date {
+  font-size: 0.78rem;
+  color: var(--admin-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.lifecycle-note {
+  font-size: 0.78rem;
+  color: var(--admin-muted);
+  font-style: italic;
+}
+
+
 @media (max-width: 600px) {
   .profile-grid {
     grid-template-columns: 1fr;
