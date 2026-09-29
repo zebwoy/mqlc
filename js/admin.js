@@ -3003,6 +3003,42 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isEnrolledForMonth(student.doj, month)) return 0;
     if (isExemptForMonth(student.id, month)) return 0;
 
+    // Auto-exempt: student joined (or rejoined) and left within 7 days in the same month
+    // They owe ₹0 for that month — no manual exemption needed
+    if (student.exit_date || cachedLifecycleEvents.some(e => e.student_id === student.id && e.event_type === 'exit')) {
+      const exitEvents = cachedLifecycleEvents
+        .filter(e => e.student_id === student.id && e.event_type === 'exit')
+        .map(e => e.event_date)
+        .concat(student.exit_date ? [student.exit_date] : [])
+        .filter(Boolean);
+      const rejoinEvents = cachedLifecycleEvents
+        .filter(e => e.student_id === student.id && e.event_type === 'rejoin')
+        .map(e => e.event_date);
+
+      // For each exit, find the corresponding join/rejoin date
+      // (the most recent join/rejoin that is on or before this exit)
+      for (const exitDate of exitEvents) {
+        const exitMonth = exitDate.substring(0, 7);
+        if (exitMonth !== month) continue; // only applies to the exit month
+
+        // Find the join date for this stint
+        // Could be the original DOJ or the most recent rejoin before this exit
+        const rejoinsBeforeExit = rejoinEvents.filter(r => r <= exitDate).sort();
+        const joinDateForStint = rejoinsBeforeExit.length > 0
+          ? rejoinsBeforeExit[rejoinsBeforeExit.length - 1]  // latest rejoin before this exit
+          : student.doj;                                      // original joining date
+
+        if (!joinDateForStint) continue;
+        const joinMonth = joinDateForStint.substring(0, 7);
+        if (joinMonth !== exitMonth) continue; // join and exit in different months — slabs handle this
+
+        // Same month: check if gap is ≤ 7 days
+        const joinDay = parseInt(joinDateForStint.substring(8, 10)) || 1;
+        const exitDay = parseInt(exitDate.substring(8, 10)) || 1;
+        if ((exitDay - joinDay) <= 7) return 0; // short stay — auto-exempt
+      }
+    }
+
     // Phase 3: Use lifecycle history to determine inactive gaps (supports multiple exits/rejoins)
     if (isMonthInactive(student.id, month)) return 0;
 
