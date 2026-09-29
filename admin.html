@@ -1756,7 +1756,7 @@
       <h3>Exempt Student</h3>
       <button onclick="document.getElementById('modal-exempt').close()" class="modal-close-btn">✕</button>
     </div>
-    <div class="modal-body" style="overflow: hidden;">
+    <div class="modal-body">
       <form id="form-exempt">
         <input type="hidden" id="exempt-student-id">
         <div class="modal-context-card" style="margin-bottom: 1.25rem;">
@@ -1767,7 +1767,7 @@
         </div>
         <div class="modal-field">
           <label class="modal-label">Reason for Exemption</label>
-          <select id="exempt-reason" class="modal-input" style="padding: 0.5rem 0.75rem;">
+          <select id="exempt-reason" data-native class="modal-input" style="padding: 0.5rem 0.75rem;">
             <option value="On leave">On leave</option>
             <option value="Medical">Medical</option>
             <option value="Family emergency">Family emergency</option>

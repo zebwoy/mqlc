@@ -35,9 +35,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Initialize reusable custom select dropdowns
-  document.querySelectorAll('select').forEach(select => {
+  // Selects with [data-native] use the browser's native popup (escapes overflow clipping)
+  document.querySelectorAll('select:not([data-native])').forEach(select => {
     new CustomSelect(select);
   });
+
 
   // ─── 0. DATE UI ENHANCEMENTS (FLATPICKR) ──────────────────────
   if (typeof flatpickr !== 'undefined') {
