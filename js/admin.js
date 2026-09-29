@@ -3801,7 +3801,18 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('exempt-student-name').textContent = btn.dataset.name;
         document.getElementById('exempt-month-label').textContent = feeMonthLabel(feeCurrentMonth);
         document.getElementById('exempt-reason').value = 'On leave';
-        document.getElementById('modal-exempt').showModal();
+        const exemptModal = document.getElementById('modal-exempt');
+        exemptModal.showModal();
+        // Reset scroll so context card is always visible at top
+        requestAnimationFrame(() => {
+          const body = exemptModal.querySelector('.modal-body');
+          if (body) { body.scrollTop = 0; }
+          // Blur any auto-focused element inside (CustomSelect trigger) so browser
+          // doesn't scroll to it
+          if (document.activeElement && exemptModal.contains(document.activeElement)) {
+            document.activeElement.blur();
+          }
+        });
       });
     });
     feed.querySelectorAll('.btn-fee-unexempt').forEach(btn => {
