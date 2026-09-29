@@ -3800,7 +3800,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('exempt-student-id').value = btn.dataset.sid;
         document.getElementById('exempt-student-name').textContent = btn.dataset.name;
         document.getElementById('exempt-month-label').textContent = feeMonthLabel(feeCurrentMonth);
-        document.getElementById('exempt-reason').value = 'On leave';
+        // Reset radio to default
+        const defaultRadio = document.querySelector('input[name="exempt-reason"][value="On leave"]');
+        if (defaultRadio) defaultRadio.checked = true;
         const exemptModal = document.getElementById('modal-exempt');
         exemptModal.showModal();
         // Reset scroll so context card is always visible at top
@@ -5318,7 +5320,7 @@ document.addEventListener('DOMContentLoaded', () => {
     exemptForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const studentId = document.getElementById('exempt-student-id').value;
-      const reason = document.getElementById('exempt-reason').value;
+      const reason = (document.querySelector('input[name="exempt-reason"]:checked') || {}).value || 'On leave';
       const btn = document.getElementById('btn-exempt-submit');
 
       btn.textContent = 'Saving...';

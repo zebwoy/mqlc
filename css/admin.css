@@ -1983,6 +1983,82 @@ body:has(dialog.admin-modal[open])>*:not(dialog):not(#toast-container) {
   line-height: 1.5;
 }
 
+/* ─── Exempt Modal — Reason Radio Grid ────────────────────── */
+.exempt-reason-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.exempt-reason-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.6rem 0.75rem;
+  border: 1.5px solid var(--admin-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  background: var(--admin-white);
+  user-select: none;
+  line-height: 1.3;
+}
+
+.exempt-reason-option:hover {
+  border-color: var(--admin-accent);
+  background: #f0fdf4;
+}
+
+.exempt-reason-option input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  border: 2px solid var(--admin-border);
+  border-radius: 50%;
+  margin-top: 1px;
+  transition: border-color 0.15s, background 0.15s;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.exempt-reason-option input[type="radio"]:checked {
+  border-color: var(--admin-accent);
+  background: var(--admin-accent);
+}
+
+.exempt-reason-option input[type="radio"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 5px;
+  height: 5px;
+  background: #fff;
+  border-radius: 50%;
+}
+
+.exempt-reason-option:has(input:checked) {
+  border-color: var(--admin-accent);
+  background: #f0fdf4;
+  box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.08);
+}
+
+.exempt-reason-option span {
+  font-size: 0.85rem;
+  color: var(--admin-text);
+  font-weight: 500;
+}
+
+.exempt-reason-option:has(input:checked) span {
+  color: var(--admin-accent);
+  font-weight: 600;
+}
+
+
 /* ─── Lifecycle / Enrollment Timeline ─────────────────────────── */
 .lifecycle-timeline {
   display: flex;

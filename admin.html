@@ -1767,14 +1767,32 @@
         </div>
         <div class="modal-field">
           <label class="modal-label">Reason for Exemption</label>
-          <select id="exempt-reason" class="modal-input" style="padding: 0.5rem 0.75rem;">
-            <option value="On leave">On leave</option>
-            <option value="Medical">Medical</option>
-            <option value="Family emergency">Family emergency</option>
-            <option value="Travel">Travel</option>
-            <option value="Ramadan break">Ramadan break</option>
-            <option value="Other">Other</option>
-          </select>
+          <div class="exempt-reason-grid">
+            <label class="exempt-reason-option">
+              <input type="radio" name="exempt-reason" value="On leave" checked>
+              <span>On leave</span>
+            </label>
+            <label class="exempt-reason-option">
+              <input type="radio" name="exempt-reason" value="Medical">
+              <span>Medical</span>
+            </label>
+            <label class="exempt-reason-option">
+              <input type="radio" name="exempt-reason" value="Family emergency">
+              <span>Family emergency</span>
+            </label>
+            <label class="exempt-reason-option">
+              <input type="radio" name="exempt-reason" value="Travel">
+              <span>Travel</span>
+            </label>
+            <label class="exempt-reason-option">
+              <input type="radio" name="exempt-reason" value="Ramadan break">
+              <span>Ramadan break</span>
+            </label>
+            <label class="exempt-reason-option">
+              <input type="radio" name="exempt-reason" value="Other">
+              <span>Other</span>
+            </label>
+          </div>
         </div>
         <div class="modal-actions">
           <button type="submit" id="btn-exempt-submit" class="btn-primary">Confirm Exemption</button>
