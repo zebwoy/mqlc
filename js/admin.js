@@ -3729,8 +3729,8 @@ document.addEventListener('DOMContentLoaded', () => {
             ? `<button class="btn-fee-exempt btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="Exempt this month">⏸ Exempt</button>`
             : '';
 
-        // Waive arrears button (appears when student has past overdue arrears)
-        const waiveBtn = (!exempt && arrears > 0)
+        // Waive arrears button (appears whenever student has past overdue arrears, regardless of exempt status)
+        const waiveBtn = (arrears > 0)
           ? `<button class="btn-fee-waive btn-secondary" data-sid="${s.id}" data-name="${s.student_name}" style="padding: 0.3rem 0.6rem; font-size: 0.75rem; border-radius: 50px;" title="Waive past overdue arrears">🕊️ Waive</button>`
           : '';
 
