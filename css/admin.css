@@ -1153,17 +1153,6 @@ body:has(dialog.admin-modal[open])>*:not(dialog):not(#toast-container) {
   padding: 0.8rem 0.9rem;
 }
 
-/* Native selects (data-native) — keep browser popup but style to match custom selects */
-select[data-native].modal-input {
-  appearance: auto;
-  -webkit-appearance: auto;
-  cursor: pointer;
-  padding-right: 2rem;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 12px;
-}
 
 .modal-select {
   cursor: pointer;
@@ -2170,14 +2159,11 @@ select[data-native].modal-input {
 }
 
 .custom-select-dropdown {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  min-width: 100%;
+  /* Position and coordinates are set by JS (_positionDropdown) via position:fixed */
+  min-width: 120px;
   width: max-content;
-  max-width: 280px;
+  max-width: 320px;
   box-sizing: border-box;
-  z-index: 2000;
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -2193,25 +2179,30 @@ select[data-native].modal-input {
   transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Open state — triggered directly on the dropdown element (portal is in body) */
+.custom-select-dropdown.open {
+  opacity: 1;
+  transform: none;
+  pointer-events: all;
+}
+
+/* Keep legacy descendant selector working for non-portal usage */
 .custom-select-wrapper.open .custom-select-dropdown {
   opacity: 1;
   transform: none;
   pointer-events: all;
 }
 
-/* Drop-up variation for selects near bottom of modals / viewport */
-.custom-select-wrapper.drop-up .custom-select-dropdown {
-  top: auto;
-  bottom: calc(100% + 6px);
+/* Drop-up animation origin */
+.custom-select-dropdown.drop-up {
   transform: translateY(8px) scale(0.98);
   box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.12), 0 -8px 16px -6px rgba(0, 0, 0, 0.08);
 }
 
-.custom-select-wrapper.drop-up.open .custom-select-dropdown {
-  opacity: 1;
+.custom-select-dropdown.drop-up.open {
   transform: none;
-  pointer-events: all;
 }
+
 
 .custom-select-option {
   padding: 0.6rem 0.8rem;
