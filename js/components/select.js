@@ -1,4 +1,4 @@
-﻿/* ─── js/components/select.js ──────────────────────────────── */
+/* ─── js/components/select.js ──────────────────────────────── */
 (function (window) {
   'use strict';
 
@@ -6,38 +6,55 @@
     constructor(selectElement, options = {}) {
       this.nativeSelect = typeof selectElement === 'string' ? document.querySelector(selectElement) : selectElement;
       if (!this.nativeSelect) return;
+      
       this.options = options;
       this.init();
     }
 
     init() {
+      // 1. Wrap the native select or hide it
       this.nativeSelect.style.display = 'none';
 
+      // Create wrapper element
       this.wrapper = document.createElement('div');
       this.wrapper.className = 'custom-select-wrapper';
-
-      const isRounded =
-        this.nativeSelect.id.includes('filter') ||
-        this.nativeSelect.id.includes('month') ||
+      
+      // If the native select has a rounded border style, is a filter, month/year selector, or quiz selector, inherit the rounded inline class
+      const isRounded = 
+        this.nativeSelect.id.includes('filter') || 
+        this.nativeSelect.id.includes('month') || 
         this.nativeSelect.id.includes('year') ||
         this.nativeSelect.id.includes('quiz') ||
         this.nativeSelect.classList.contains('rounded') ||
         (this.nativeSelect.style.borderRadius && parseInt(this.nativeSelect.style.borderRadius) > 12) ||
         this.options.rounded;
-      if (isRounded) this.wrapper.classList.add('rounded');
-      if (this.nativeSelect.classList.contains('modal-select')) this.wrapper.classList.add('modal-select-wrapper');
 
+      if (isRounded) {
+        this.wrapper.classList.add('rounded');
+      }
+      
+      // Inherit modal-select class for spacing if present
+      if (this.nativeSelect.classList.contains('modal-select')) {
+        this.wrapper.classList.add('modal-select-wrapper');
+      }
+
+      // Insert wrapper after native select and move native select inside
       this.nativeSelect.parentNode.insertBefore(this.wrapper, this.nativeSelect);
       this.wrapper.appendChild(this.nativeSelect);
+
+      // Attach instance to wrapper for external access (e.g. form reset syncing)
       this.wrapper._csInstance = this;
 
+      // Transfer layout styles from native select to wrapper
       const stylesToTransfer = ['flex', 'width', 'minWidth', 'maxWidth', 'margin', 'marginLeft', 'marginRight', 'marginTop', 'marginBottom'];
       stylesToTransfer.forEach(styleName => {
         const val = this.nativeSelect.style[styleName];
-        if (val) this.wrapper.style[styleName] = val;
+        if (val) {
+          this.wrapper.style[styleName] = val;
+        }
       });
 
-      // Trigger button
+      // 2. Create the Trigger Button
       this.trigger = document.createElement('button');
       this.trigger.type = 'button';
       this.trigger.className = 'custom-select-trigger';
@@ -49,42 +66,49 @@
       `;
       this.wrapper.appendChild(this.trigger);
 
-      // Dropdown — portalled to document.body so it escapes ALL ancestor overflow contexts
+      // 3. Create the Custom Dropdown List
       this.dropdown = document.createElement('div');
-      this.dropdown.className = 'custom-select-dropdown custom-select-portal';
-      this.dropdown.style.cssText = 'position:fixed;z-index:99999;';
-      document.body.appendChild(this.dropdown);
+      this.dropdown.className = 'custom-select-dropdown';
+      this.wrapper.appendChild(this.dropdown);
 
+      // 4. Load initial options list
       this.syncOptions();
 
-      // Watch for dynamic option changes
-      this.observer = new MutationObserver(() => this.syncOptions());
+      // 5. Setup MutationObserver to automatically watch for dynamic option changes in native select
+      this.observer = new MutationObserver(() => {
+        this.syncOptions();
+      });
       this.observer.observe(this.nativeSelect, { childList: true, subtree: true, attributes: true, attributeFilter: ['selected'] });
 
-      // Intercept programmatic .value = to auto-sync the UI
+      // 5b. Intercept programmatic .value assignments on native select to auto-sync CustomSelect UI
       const nativeValueDesc = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
       if (nativeValueDesc && nativeValueDesc.set) {
         const self = this;
         Object.defineProperty(this.nativeSelect, 'value', {
-          get() { return nativeValueDesc.get.call(this); },
-          set(val) { nativeValueDesc.set.call(this, val); self.syncOptions(); },
+          get() {
+            return nativeValueDesc.get.call(this);
+          },
+          set(val) {
+            nativeValueDesc.set.call(this, val);
+            self.syncOptions();
+          },
           configurable: true
         });
       }
 
-      // Click trigger
-      this.trigger.addEventListener('click', (e) => { e.stopPropagation(); this.toggle(); });
+      // 6. Bind Events
+      this.trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggle();
+      });
 
-      // Click outside closes
+      // Handle document click to close dropdown when clicking outside
       this.documentClickHandler = (e) => {
-        if (!this.wrapper.contains(e.target) && !this.dropdown.contains(e.target)) this.close();
+        if (!this.wrapper.contains(e.target)) {
+          this.close();
+        }
       };
       document.addEventListener('click', this.documentClickHandler);
-
-      // Reposition portal on scroll/resize
-      this.repositionHandler = () => { if (this.wrapper.classList.contains('open')) this._positionDropdown(); };
-      window.addEventListener('scroll', this.repositionHandler, true);
-      window.addEventListener('resize', this.repositionHandler);
 
       // Keyboard navigation
       this.trigger.addEventListener('keydown', (e) => {
@@ -94,15 +118,26 @@
 
         if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
           e.preventDefault();
-          if (!isOpen) { this.open(); return; }
+          if (!isOpen) {
+            this.open();
+            return;
+          }
           let nextIndex = activeIndex;
-          if (e.key === 'ArrowDown') nextIndex = activeIndex < items.length - 1 ? activeIndex + 1 : 0;
-          else nextIndex = activeIndex > 0 ? activeIndex - 1 : items.length - 1;
-          if (items[nextIndex]) this.selectValue(items[nextIndex].dataset.value);
+          if (e.key === 'ArrowDown') {
+            nextIndex = activeIndex < items.length - 1 ? activeIndex + 1 : 0;
+          } else {
+            nextIndex = activeIndex > 0 ? activeIndex - 1 : items.length - 1;
+          }
+          if (items[nextIndex]) {
+            const val = items[nextIndex].dataset.value;
+            this.selectValue(val);
+          }
         } else if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault(); this.toggle();
+          e.preventDefault();
+          this.toggle();
         } else if (e.key === 'Escape') {
-          e.preventDefault(); this.close();
+          e.preventDefault();
+          this.close();
         } else if (e.key === 'Tab') {
           this.close();
         }
@@ -110,89 +145,110 @@
     }
 
     syncOptions() {
+      // Rebuild the custom list items from the native select options
       const optionsList = Array.from(this.nativeSelect.options);
       this.dropdown.innerHTML = '';
+      
       const selectedValue = this.nativeSelect.value;
       let selectedText = '';
 
       optionsList.forEach(opt => {
-        if (opt.disabled && !opt.value) return;
+        if (opt.disabled && !opt.value) return; // skip dummy placeholders that have no value
+
         const item = document.createElement('div');
         item.className = 'custom-select-option';
         item.dataset.value = opt.value;
         item.textContent = opt.textContent;
+
         const isSelected = opt.value === selectedValue;
-        if (isSelected) { item.classList.add('selected'); selectedText = opt.textContent; }
-        item.addEventListener('click', (e) => { e.stopPropagation(); this.selectValue(opt.value); this.close(); });
+        if (isSelected) {
+          item.classList.add('selected');
+          selectedText = opt.textContent;
+        }
+
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.selectValue(opt.value);
+          this.close();
+        });
+
         this.dropdown.appendChild(item);
       });
 
+      // Update the trigger label text
       this.trigger.querySelector('span').textContent = selectedText || this.nativeSelect.value || 'Select...';
     }
 
     selectValue(value) {
       if (this.nativeSelect.value === value) return;
       this.nativeSelect.value = value;
+      
+      // Dispatch a change event on the native select so existing listeners capture it!
       const event = new Event('change', { bubbles: true });
       this.nativeSelect.dispatchEvent(event);
+      
+      // Re-sync UI state
       this.syncOptions();
     }
 
     toggle() {
-      this.wrapper.classList.contains('open') ? this.close() : this.open();
-    }
-
-    // Position the portal using the trigger's fixed viewport coords
-    _positionDropdown() {
-      const triggerRect = this.trigger.getBoundingClientRect();
-      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-      const dropdownHeight = this.dropdown.offsetHeight || 220;
-      const spaceBelow = viewportHeight - triggerRect.bottom;
-      const spaceAbove = triggerRect.top;
-      const openUpward = spaceBelow < dropdownHeight + 8 && spaceAbove > spaceBelow;
-
-      this.dropdown.style.width = triggerRect.width + 'px';
-      this.dropdown.style.left  = triggerRect.left + 'px';
-
-      if (openUpward) {
-        this.dropdown.style.top    = 'auto';
-        this.dropdown.style.bottom = (viewportHeight - triggerRect.top + 4) + 'px';
-        this.dropdown.classList.add('drop-up');
-        this.wrapper.classList.add('drop-up');
+      if (this.wrapper.classList.contains('open')) {
+        this.close();
       } else {
-        this.dropdown.style.top    = (triggerRect.bottom + 4) + 'px';
-        this.dropdown.style.bottom = 'auto';
-        this.dropdown.classList.remove('drop-up');
-        this.wrapper.classList.remove('drop-up');
+        this.open();
       }
     }
 
     open() {
+      // Close any other open custom selects first
       document.querySelectorAll('.custom-select-wrapper.open').forEach(el => {
-        if (el !== this.wrapper && el._csInstance) el._csInstance.close();
+        if (el !== this.wrapper) {
+          el.classList.remove('open');
+          el.classList.remove('drop-up');
+        }
       });
-      this.syncOptions();
+      
+      this.syncOptions(); // make sure it's fully in sync before displaying
+
+      // Smart direction positioning: calculate space below vs space above
+      const triggerRect = this.trigger.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      const spaceBelow = viewportHeight - triggerRect.bottom;
+      const spaceAbove = triggerRect.top;
+
+      // Check space inside modal body container if applicable
+      const modalBody = this.wrapper.closest('.modal-body, dialog, .admin-modal');
+      let spaceBelowParent = spaceBelow;
+      if (modalBody) {
+        const parentRect = modalBody.getBoundingClientRect();
+        spaceBelowParent = Math.min(spaceBelow, parentRect.bottom - triggerRect.bottom);
+      }
+
+      // If space below is under 220px and there is more room above, open upwards
+      if (spaceBelowParent < 220 && spaceAbove > spaceBelowParent) {
+        this.wrapper.classList.add('drop-up');
+      } else {
+        this.wrapper.classList.remove('drop-up');
+      }
+
       this.wrapper.classList.add('open');
-      this.dropdown.classList.add('open');
-      requestAnimationFrame(() => {
-        this._positionDropdown();
-        const selectedOpt = this.dropdown.querySelector('.custom-select-option.selected');
-        if (selectedOpt) selectedOpt.scrollIntoView({ block: 'nearest' });
-      });
+      
+      // Scroll selected option into view if list is long
+      const selectedOpt = this.dropdown.querySelector('.custom-select-option.selected');
+      if (selectedOpt) {
+        selectedOpt.scrollIntoView({ block: 'nearest' });
+      }
     }
 
     close() {
-      this.wrapper.classList.remove('open', 'drop-up');
-      this.dropdown.classList.remove('open', 'drop-up');
+      this.wrapper.classList.remove('open');
+      this.wrapper.classList.remove('drop-up');
     }
 
     destroy() {
       document.removeEventListener('click', this.documentClickHandler);
-      window.removeEventListener('scroll', this.repositionHandler, true);
-      window.removeEventListener('resize', this.repositionHandler);
       if (this.observer) this.observer.disconnect();
       this.nativeSelect.style.display = '';
-      if (this.dropdown && this.dropdown.parentNode) this.dropdown.parentNode.removeChild(this.dropdown);
       if (this.wrapper.parentNode) {
         this.wrapper.parentNode.insertBefore(this.nativeSelect, this.wrapper);
         this.wrapper.remove();

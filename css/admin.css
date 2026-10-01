@@ -2235,11 +2235,14 @@ body:has(dialog.admin-modal[open])>*:not(dialog):not(#toast-container) {
 }
 
 .custom-select-dropdown {
-  /* Position and coordinates are set by JS (_positionDropdown) via position:fixed */
-  min-width: 120px;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 100%;
   width: max-content;
-  max-width: 320px;
+  max-width: 280px;
   box-sizing: border-box;
+  z-index: 2000;
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -2255,28 +2258,24 @@ body:has(dialog.admin-modal[open])>*:not(dialog):not(#toast-container) {
   transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Open state — triggered directly on the dropdown element (portal is in body) */
-.custom-select-dropdown.open {
-  opacity: 1;
-  transform: none;
-  pointer-events: all;
-}
-
-/* Keep legacy descendant selector working for non-portal usage */
 .custom-select-wrapper.open .custom-select-dropdown {
   opacity: 1;
   transform: none;
   pointer-events: all;
 }
 
-/* Drop-up animation origin */
-.custom-select-dropdown.drop-up {
+/* Drop-up variation for selects near bottom of viewport */
+.custom-select-wrapper.drop-up .custom-select-dropdown {
+  top: auto;
+  bottom: calc(100% + 6px);
   transform: translateY(8px) scale(0.98);
   box-shadow: 0 -10px 25px -5px rgba(0, 0, 0, 0.12), 0 -8px 16px -6px rgba(0, 0, 0, 0.08);
 }
 
-.custom-select-dropdown.drop-up.open {
+.custom-select-wrapper.drop-up.open .custom-select-dropdown {
+  opacity: 1;
   transform: none;
+  pointer-events: all;
 }
 
 
