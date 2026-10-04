@@ -4681,7 +4681,8 @@ document.addEventListener('DOMContentLoaded', () => {
                   <th style="${thStyleR}width:10%;">Arrears</th>
                   <th style="${thStyleR}width:11%;">Total Due</th>
                   <th style="${thStyleC}width:8%;">Status</th>
-                  <th style="${thStyleC}width:10%;">Fees Collected ✅</th>
+                  <th style="${thStyleC}width:7%;">Cash ✅</th>
+                  <th style="${thStyleC}width:7%;">Online ✅</th>
                 </tr>
               </thead>
               <tbody>`;
@@ -4722,6 +4723,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   <td style="${tdStyleR}font-weight:700;">${totalDisp}</td>
                   <td style="${tdStyleC}"><span style="background:${statusBg};color:${statusColor};padding:2px 6px;border-radius:4px;font-size:7pt;font-weight:600;">${displayStatus}</span></td>
                   <td style="${tdStyleC}font-size:12pt;">${checkboxDisp}</td>
+                  <td style="${tdStyleC}font-size:12pt;">${checkboxDisp}</td>
                 </tr>`;
           });
 
@@ -4732,7 +4734,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   <td style="${tdStyleR}">₹${totalRemaining.toLocaleString('en-IN')}</td>
                   <td style="${tdStyleR}color:#dc2626;">₹${totalArrears.toLocaleString('en-IN')}</td>
                   <td style="${tdStyleR}">₹${totalToCollect.toLocaleString('en-IN')}</td>
-                  <td colspan="2" style="${tdStyleC}"></td>
+                  <td colspan="3" style="${tdStyleC}"></td>
                 </tr>
               </tbody>
             </table>`;
